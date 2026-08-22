@@ -1,5 +1,5 @@
-# Logs
-logs
+# Logs (root dir only — app/api/**/logs is a route)
+/logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
