@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "./catalog";
-import { CRANE_CORE_KEYS, parseHostManifest, secretKeysForGrant } from "./packages";
+import { CRANE_CORE_KEYS, PACKAGES, parseHostManifest, secretKeysForGrant } from "./packages";
 import type { CatalogEntry } from "./types";
 
 const sample: CatalogEntry[] = [
@@ -30,6 +30,18 @@ describe("parseHostManifest", () => {
     expect(entry.name).toBe("maps");
     expect(entry.envKeys).toEqual(["GOOGLE_MAPS_API_KEY"]);
     expect(entry.auth_args).toBeUndefined();
+  });
+});
+
+describe("PACKAGES", () => {
+  it("is the full yard menu (grant is still that crane’s mcp.toml)", () => {
+    const byName = Object.fromEntries(PACKAGES.map((p) => [p.name, p]));
+    expect(byName.ghealth?.command).toBe("google-health-mcp");
+    expect(byName.flights?.command).toBe("flights-search-mcp");
+    expect(byName.rentals?.command).toBe("rentals-search-mcp");
+    expect(byName.cars?.command).toBe("cars-search-mcp");
+    expect(byName.google?.command).toBe("google-mcp");
+    expect(byName.cast?.command).toBe("mcp-beam");
   });
 });
 

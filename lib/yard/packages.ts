@@ -14,7 +14,11 @@ function ghRelease(repo: string, archive: string): string {
   return `https://github.com/shotah/${repo}/releases/download/{tag}/${archive}_{version}_{os}_{arch}.tar.gz`;
 }
 
-/** Yard offers these packages. Shape comes from `<command> host-manifest`. */
+/**
+ * Yard menu — listed here ≠ granted. Grant is `[[server]]` in that crane’s
+ * mcp.toml (toggle on writes it; toggle off omits it). Profiles only seed
+ * a *new* crane.
+ */
 export type PackageRef = {
   name: string;
   command: string;
@@ -28,6 +32,7 @@ export const PACKAGES: PackageRef[] = [
   { name: "math", command: "mcp-go-math", repo: "mcp-go-math", downloadTag: "latest", downloadUrl: ghRelease("mcp-go-math", "mcp-go-math") },
   { name: "google-search", command: "mcp-gemini-google-search", repo: "mcp-gemini-search", downloadTag: "latest", downloadUrl: ghRelease("mcp-gemini-search", "mcp-gemini-google-search") },
   { name: "google", command: "google-mcp", repo: "google-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-mcp", "google-mcp") },
+  { name: "ghealth", command: "google-health-mcp", repo: "google-health-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-health-mcp", "google-health-mcp") },
   { name: "strava", command: "strava-mcp", repo: "go-strava-mcp", downloadTag: "latest", downloadUrl: ghRelease("go-strava-mcp", "strava-mcp") },
   { name: "garmin", command: "garmin", repo: "go-garmin", downloadTag: "latest", downloadUrl: ghRelease("go-garmin", "garmin") },
   { name: "feeds", command: "feeds-mcp", repo: "feeds-mcp", downloadTag: "latest", downloadUrl: ghRelease("feeds-mcp", "feeds-mcp") },
@@ -35,6 +40,9 @@ export const PACKAGES: PackageRef[] = [
   { name: "maps", command: "google-maps-mcp", repo: "google-maps-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-maps-mcp", "google-maps-mcp") },
   { name: "youtube", command: "youtube-go-mcp", repo: "youtube-go-mcp", downloadTag: "latest", downloadUrl: ghRelease("youtube-go-mcp", "youtube-go-mcp") },
   { name: "cast", command: "mcp-beam", repo: "mcp-beam", downloadTag: "latest", downloadUrl: ghRelease("mcp-beam", "mcp-beam") },
+  { name: "flights", command: "flights-search-mcp", repo: "flights-search-mcp", downloadTag: "latest", downloadUrl: ghRelease("flights-search-mcp", "flights-search-mcp") },
+  { name: "rentals", command: "rentals-search-mcp", repo: "rentals-search-mcp", downloadTag: "latest", downloadUrl: ghRelease("rentals-search-mcp", "rentals-search-mcp") },
+  { name: "cars", command: "cars-search-mcp", repo: "cars-search-mcp", downloadTag: "latest", downloadUrl: ghRelease("cars-search-mcp", "cars-search-mcp") },
 ];
 
 export const SLIM_GRANT = ["google-search", "math"];
