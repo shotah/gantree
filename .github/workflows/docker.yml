@@ -1,0 +1,96 @@
+# Build the console image and push to Docker Hub (+ GHCR).
+# Same secret names as shotah/ai-gantry:
+#   DOCKER_HUB_USERNAME
+#   DOCKER_HUB_ACCESS_TOKEN
+name: docker
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "assets/**"
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/docker.yml"
+      - "compose.yml"
+      - "app/**"
+      - "lib/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+env:
+  HUB_IMAGE: shotah/gantree
+  GHCR_IMAGE: ghcr.io/shotah/gantree
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.HUB_IMAGE }}
+            ${{ env.GHCR_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=edge,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')) }}
+            type=sha,prefix=sha-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ github.event_name == 'pull_request' && format('{0}:ci-smoke', env.HUB_IMAGE) || steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          cache-from: type=gha,scope=gantree
+          cache-to: type=gha,mode=max,scope=gantree
+
+      - name: Smoke — dist present
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            img="${{ env.HUB_IMAGE }}:ci-smoke"
+          else
+            img="${{ env.GHCR_IMAGE }}:sha-${GITHUB_SHA::7}"
+            docker pull --platform linux/amd64 "$img"
+          fi
+          docker run --rm --platform linux/amd64 --entrypoint node "$img" -e "require('fs').accessSync('dist'); console.log('gantree', require('./package.json').version)"

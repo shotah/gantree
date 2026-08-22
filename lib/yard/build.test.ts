@@ -22,6 +22,12 @@ describe("writeCraneFiles", () => {
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("math");
     expect(readFileSync(out.envFile, "utf8")).toContain("CHANNEL=stdio");
     expect(readFileSync(join(root, "gantree.toml"), "utf8")).toContain("slug = \"kit\"");
+    const compose = readFileSync(join(out.dir, "compose.yml"), "utf8");
+    const uid = process.getuid?.();
+    const gid = process.getgid?.();
+    if (uid != null && gid != null && uid !== 0) {
+      expect(compose).toContain(`user: "${uid}:${gid}"`);
+    }
     delete process.env.GANTREE_ROOT;
     delete process.env.GANTREE_TOML;
   });

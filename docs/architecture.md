@@ -101,6 +101,11 @@ port, a scrape, or a hook that taxes parallel tool calls, Completer
 rounds, or RSS. If a dashboard want would make `ai-gantry` slower, the
 want is wrong.
 
+Recreate / pin **keep** the crane’s host `user` (Vinext uid:gid, never
+image `65532`), `network_mode`, and extra binds. Dropping uid is how
+`session store open failed` happens: Distroless cannot write a
+`gantry.db` owned by your login.
+
 ---
 
 ## Repo layout
@@ -141,9 +146,11 @@ home-only (mDNS / host network). Custom servers:
 
 ## v1 vs later
 
-**v1:** this Node process on the Docker host. Board, per-crane dashboard,
+**v1:** this Node process on the Docker host, or the Hub image
+`shotah/gantree` with `docker.sock`. Board, per-crane dashboard,
 build wizard, MCP toggles, auth hop, start / stop / recreate, image pin.
-Telegram + Hub `shotah/ai-gantry`. Bind localhost.
+Telegram + Hub `shotah/ai-gantry`. Bind localhost. `npm run release` tags
+and publishes the console image (same Hub secrets as the harness).
 
 **Later:** Vinext-on-Workers as a portal in front of one or more host
 agents; systemd yards; a `gantree` CLI only if `npm` scripts are

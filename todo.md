@@ -219,6 +219,7 @@ Start / stop / recreate. Env change **recreates** (restart keeps ghost
 allowlists).
 
 - [x] `lib/yard` start / stop; recreate = remove + create with current env/files
+- [x] Recreate / pin keep host uid:gid (not Distroless 65532), network_mode, extra binds
 - [x] Image pin (pull Hub tag + recreate)
 - [x] Recreate waits until doctor is green-or-honest, not just “started”
 - [x] Backup: copy `gantry.db` + `SELF.md` to `backups/<stamp>` (no `.env`)
@@ -290,6 +291,7 @@ Same console. Host chosen at build / init time.
       (`/opt/gantree`, compose, CI pulls the harness image)
 - [x] Console never `0.0.0.0` on the public internet
 - [x] Cloud docs: Tailscale or Cloudflare Tunnel to Gantree only
+- [x] Hub image `shotah/gantree` (Actions → Docker Hub + GHCR); `npm run release`
 - [ ] **Walk (home):** stranger clones this repo, `npm start`, builds
       one crane in the UI, grants search, chats on Telegram.
 - [ ] **Walk (cloud):** same from a laptop over Tailscale. No Cast.
@@ -339,7 +341,7 @@ emits. Do not ask the harness to grow dashboard hooks.
 - Vinext-on-Workers as a portal in front of one or more host agents
 - systemd yards, not only compose
 - A `gantree` CLI (only if the UI + `npm` scripts are genuinely not
-  enough — still TypeScript, not a Go binary)
+  enough — still TypeScript, not a Go Makefile)
 - Token-expiry / skipped-MCP nags
 - sqlite event log (v1 inventory stays `gantree.toml`; v1 graphs are
   an in-memory ring buffer)

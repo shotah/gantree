@@ -8,6 +8,7 @@
   <a href="https://github.com/shotah/gantree/actions/workflows/ci.yml"><img src="https://github.com/shotah/gantree/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/shotah/gantree/actions/workflows/ci.yml"><img src="https://github.com/shotah/gantree/raw/gh-pages/badges/coverage.svg" alt="Coverage"></a>
   <a href="https://github.com/shotah/gantree"><img src="https://img.shields.io/github/package-json/v/shotah/gantree?label=version" alt="Version"></a>
+  <a href="https://hub.docker.com/r/shotah/gantree"><img src="https://img.shields.io/docker/v/shotah/gantree?logo=docker&label=docker" alt="Docker Hub"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/shotah/gantree" alt="License"></a>
 </p>
 
@@ -82,7 +83,8 @@ Walkthrough: **[docs/install.md](docs/install.md)**.
 | Path | When |
 | --- | --- |
 | `npm start` | Console on this host (`127.0.0.1`) |
-| `docker compose up -d --build` | Same console, containerized |
+| `docker compose up -d` | Hub image `shotah/gantree` (`GANTREE_CRANE_USER=$(id -u):$(id -g)`) |
+| `docker compose up -d --build` | Same console, build this checkout |
 | **[docs/headless.md](docs/headless.md)** | Headless host: Node 22, attach existing dirs, SSH tunnel |
 | **[docs/install.md](docs/install.md)** | Home Mini vs your GCE/EC2 (Tailscale / Cloudflare Tunnel — never `0.0.0.0`) |
 | **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard — `docker compose up` in that repo |

@@ -3,14 +3,24 @@
 # Do not change the host mapping to 0.0.0.0:3000:3000 on a public VM.
 # Reach the console from another machine via Tailscale Serve, an SSH tunnel,
 # or Cloudflare Tunnel to http://127.0.0.1:3000 — see docs/install.md.
+#
+# Cranes must run as the host user that owns data/ (not Distroless 65532).
+# Console-in-Docker is often root, so pass the host uid:
+#   GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose pull && docker compose up -d
+#   GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d --build
+# Attach existing agents by mounting their host paths at the same path
+# (gantree.toml uses those paths for recreate). Example:
+#   - /opt/agents:/opt/agents
 
 services:
   gantree:
+    image: shotah/gantree:${GANTREE_TAG:-latest}
     build: .
     environment:
       HOST: 0.0.0.0
       PORT: 3000
       DOCKER_SOCKET: /var/run/docker.sock
+      GANTREE_CRANE_USER: ${GANTREE_CRANE_USER:-}
     ports:
       - "127.0.0.1:3000:3000"
     volumes:

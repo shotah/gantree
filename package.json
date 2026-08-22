@@ -13,7 +13,10 @@
     "start": "vinext start -H ${HOST:-127.0.0.1}",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "docker:build": "docker build -t gantree:local .",
+    "release": "node scripts/release.mjs",
+    "release:dry": "node scripts/release.mjs --dry-run"
   },
   "dependencies": {
     "dockerode": "^5.0.1",

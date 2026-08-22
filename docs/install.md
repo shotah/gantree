@@ -20,7 +20,8 @@ cp gantree.toml.example gantree.toml
 npm install
 npm run build
 npm start          # http://127.0.0.1:3000  (not the host LAN IP)
-# or: docker compose up -d --build
+# or:
+GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d --build
 ```
 
 Open the board. Build a crane (yard = home Mini). Grant search. Chat is
@@ -45,7 +46,7 @@ sudo git clone https://github.com/shotah/gantree.git /opt/gantree
 cd /opt/gantree
 cp gantree.toml.example gantree.toml
 # gantree.toml: yard = "cloud"
-docker compose up -d --build
+GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d --build
 ```
 
 The compose file publishes **`127.0.0.1:3000` only**. The process inside the
@@ -76,3 +77,27 @@ A server that is not on the Tools grid: hand-edit that crane’s `mcp.toml`
 
 New cranes use `shotah/ai-gantry:0.1.66`. Override per crane with **pull +
 recreate**. `:latest` and `:edge` move; prefer a `0.x.y` tag.
+
+**pull + recreate** runs `docker pull` then replaces the container as the
+**host user that owns `data/`** (the same account as `npm start`, or
+`GANTREE_CRANE_USER`). Distroless default uid `65532` cannot open a
+`gantry.db` written by your login — that is `session store open failed`.
+Recreate without pull keeps that uid too; it does not fetch a new image.
+
+Console-in-Docker (sock + same-path binds): [headless.md](headless.md#8-console-in-docker).
+Hub image: `shotah/gantree` (`latest` / `edge` / `0.x.y`). Same secrets as
+ai-gantry on this GitHub repo: `DOCKER_HUB_USERNAME`, `DOCKER_HUB_ACCESS_TOKEN`.
+
+## Release
+
+No Makefile. This repo is npm.
+
+```bash
+npm test
+npm run release:dry          # show next tag
+npm run release              # patch bump, tag v*, push → Hub + GH Release
+npm run release -- --bump=minor
+```
+
+Requires a clean tree. Updates `package.json` / lockfile, annotated `vX.Y.Z`,
+moves floating git tag `latest`, pushes. CI builds `linux/amd64` + `arm64`.

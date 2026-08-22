@@ -1,0 +1,38 @@
+# Sync docs/dockerhub.md → Docker Hub overview + short description.
+#
+# Secrets (same as shotah/ai-gantry — add them on this repo too):
+#   DOCKER_HUB_USERNAME      — Hub username (e.g. shotah), not email
+#   DOCKER_HUB_ACCESS_TOKEN  — PAT with Read, Write, AND Delete
+#
+# Image push only needs Write. Updating the Hub README uses a PATCH that Docker
+# treats as admin → Forbidden unless Delete is also granted on the token.
+name: dockerhub-description
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/dockerhub.md
+      - assets/banner.svg
+      - .github/workflows/dockerhub-description.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dockerhub:
+    name: Publish Hub overview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          repository: shotah/gantree
+          readme-filepath: ./docs/dockerhub.md
+          short-description: Shipping yard for ai-gantry. Operate personal agents. Chat stays Telegram.
+          enable-url-completion: true

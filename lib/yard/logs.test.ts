@@ -18,6 +18,11 @@ describe("parseLogLine", () => {
     expect(turnFromLog(line)?.rounds).toBe(3);
   });
 
+  it("surfaces slog err on the message", () => {
+    const line = parseLogLine('{"level":"ERROR","msg":"session store open failed","err":"session: mkdir data dir: permission denied"}');
+    expect(line.msg).toContain("permission denied");
+  });
+
   it("reads ai-gantry turn perf prompt+gen tokens", () => {
     const line = parseLogLine(
       '{"time":"2026-08-22T18:00:00.000Z","level":"INFO","msg":"turn perf","source":"user","user_id":"42","session_id":"s-1","iterations":2,"recoveries":0,"prompt_est_tokens":8000,"gen_est_tokens":400,"outcome":"ok"}',

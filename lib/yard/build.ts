@@ -1,7 +1,7 @@
 import { chmodSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog } from "./catalog";
-import { docker, inspectByName, normalizeName } from "./docker";
+import { craneRuntime, docker, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "./docker";
 import { writeEnvFile } from "./envfile";
 import { stringifyMcpToml, upsertTomlGantry, writeText, yardRoot } from "./files";
 import { DEFAULT_IMAGE, type McpServer } from "./types";
@@ -80,6 +80,7 @@ export function writeCraneFiles(input: BuildInput): {
     CHANNEL: input.channel || "telegram",
     ...(input.env ?? {}),
   });
+  const user = hostUserSpec();
   writeText(
     resolve(dir, "compose.yml"),
     [
@@ -88,6 +89,7 @@ export function writeCraneFiles(input: BuildInput): {
       `    image: ${input.image || DEFAULT_IMAGE}`,
       `    container_name: ${slug}`,
       `    restart: unless-stopped`,
+      ...(user ? [`    user: "${user}"`] : [`    # user: "UID:GID" — account that owns data/`]),
       `    env_file: .env`,
       `    environment:`,
       `      PERSONA_DIR: /persona`,
@@ -126,6 +128,7 @@ export async function createOrReplaceContainer(opts: {
   mcpManifest: string;
 }): Promise<{ id: string; detail: string }> {
   const existing = await inspectByName(opts.slug);
+  const runtime = craneRuntime(existing?.info);
   if (existing) {
     const c = docker().getContainer(existing.info.Id);
     try {
@@ -135,10 +138,12 @@ export async function createOrReplaceContainer(opts: {
     }
     await c.remove({ force: true });
   }
+  const requiredBinds = [`${opts.personaDir}:/persona`, `${opts.dataDir}:/data`, `${opts.mcpManifest}:/etc/gantry/mcp.toml`];
   const created = await docker().createContainer({
     name: opts.slug,
     Image: opts.image,
-    Labels: { "gantree.slug": opts.slug },
+    User: runtime.user,
+    Labels: { ...runtime.labels, "gantree.slug": opts.slug },
     Env: Object.entries({
       PERSONA_DIR: "/persona",
       DATA_DIR: "/data",
@@ -147,14 +152,17 @@ export async function createOrReplaceContainer(opts: {
       PATH: `/data/bin:${opts.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
     }).map(([k, v]) => `${k}=${v}`),
     HostConfig: {
-      Binds: [`${opts.personaDir}:/persona`, `${opts.dataDir}:/data`, `${opts.mcpManifest}:/etc/gantry/mcp.toml`],
+      Binds: mergeBinds(requiredBinds, runtime.binds),
       RestartPolicy: { Name: "unless-stopped" },
+      NetworkMode: runtime.networkMode,
+      GroupAdd: runtime.groupAdd,
     },
     OpenStdin: opts.env.CHANNEL === "stdio",
     Tty: opts.env.CHANNEL === "stdio",
   });
   await created.start();
-  return { id: created.id, detail: `built crane ${normalizeName(opts.slug)} from ${opts.image}` };
+  const who = runtime.user ? ` as ${runtime.user}` : "";
+  return { id: created.id, detail: `built crane ${normalizeName(opts.slug)} from ${opts.image}${who}` };
 }
 
 export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; detail: string; slug: string }> {

@@ -1,7 +1,7 @@
 export { kickAuth, exchangeAuth, waitAuth, toolsFetch } from "./auth";
 export { CRANE_CORE_KEYS, LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog, parseHostManifest, secretKeysForGrant } from "./catalog";
 export { doctor } from "./doctor";
-export { containerLogsBuffer, containerLogsFollow, dockerErrorMessage, inspectByName, pullImage } from "./docker";
+export { craneUser, hostUserSpec, inspectByName, pullImage, containerLogsBuffer, containerLogsFollow, dockerErrorMessage } from "./docker";
 export { parseMcpToml, readText, writeText } from "./files";
 export { grant, revoke } from "./grant";
 export { getGantry, listYard } from "./inventory";

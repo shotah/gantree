@@ -17,10 +17,10 @@ Stranger hello: [install.md](install.md).
 - Run `npm audit fix --force`.
 - `npm install-scripts approve *` — bash expands `*` to files in cwd.
 - Type `vinext` on the shell — it is not on `PATH`. Use `npm run …`.
-- **Recreate** or uncheck Tools on day one (drops host-network / UID / compose).
 - Start the same Telegram bot on two machines (one `getUpdates` per bot).
 - Copy a laptop `data/` over the host. Live OAuth is on the host.
 - **Build a crane** for a slug that already has a `data/` — that writes a **new** empty dir.
+- Run Gantree as **root** (`sudo npm start`) — recreate would then skip a host uid.
 
 ---
 
@@ -156,16 +156,73 @@ is the other path. Never open 3000 on a cloud firewall.
 
 ---
 
-## 7. Day one — look only
+## 7. Day one — look only, then pin
 
 You should see one card per `[[gantry]]`. Click → logs / doctor.
 
-- **Do not** Recreate.
-- **Do not** uncheck Tools.
-- Start / stop still: that crane’s existing compose on the host.
+Start / stop still talks to the existing container. **Recreate** / **pull +
+recreate** now keep:
 
-Grant + recreate from the UI comes after recreate preserves host network,
-UID, and the existing compose file.
+- `user` — host uid:gid of the Vinext process (or `GANTREE_CRANE_USER`), never
+  Distroless `65532`
+- `network_mode` (host for Cast)
+- extra binds (sound, extra mounts)
+
+Do **not** uncheck Tools on day one. Do **not** use **Build** for a slug that
+already has `data/`.
+
+### `session store open failed` after an old recreate
+
+Older Gantree dropped `user:`. The image default is uid `65532`; `gantry.db`
+is owned by your login (e.g. `1000`). Persona mounts read-only-enough to load;
+SQLite cannot create WAL files. Docker restarts the crash.
+
+1. Rebuild this console (`npm run build`, restart `npm start`).
+2. On that crane: **recreate** (or **pull + recreate**). Notice should say
+   `as 1000:1000` (your `id -u`:`id -g`).
+3. Logs should show `session store ready`, not `session store open failed`.
+
+Still looping: `docker inspect <name> --format '{{.Config.User}}'` must match
+`ls -ln data/gantry.db`. Do not `chown` `data/` to `65532` — that strands
+`.config/` OAuth too.
+
+---
+
+## 8. Console in Docker
+
+Yes. Compose already mounts `docker.sock`, so Gantree can inspect / start /
+recreate **sibling** agent containers. Chat still stays Telegram. Agents still
+open zero ports.
+
+The console container is usually **root** (needs the socket). Cranes must
+still be your host user:
+
+```bash
+export GANTREE_CRANE_USER="$(id -u):$(id -g)"
+# Hub image (after a release):
+docker compose pull
+docker compose up -d
+# or build this checkout:
+docker compose up -d --build
+```
+
+`gantree.toml` paths are resolved **inside** the console container. Relative
+`./gantries/<slug>` works (that dir is mounted). Absolute attach paths must
+exist at the **same path** in the console:
+
+```yaml
+# compose.yml — extra volume
+- /opt/agents:/opt/agents
+```
+
+```toml
+data_dir = "/opt/agents/kit/data"
+```
+
+Without that mount, the board can still *see* Docker, but recreate cannot
+bind `/opt/agents/kit/data`.
+
+Do not publish `0.0.0.0:3000` on a cloud VM. Keep `127.0.0.1:3000:3000`.
 
 ---
 

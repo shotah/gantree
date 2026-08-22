@@ -391,6 +391,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       <section>
         <h2 className="mb-1 text-sm font-medium text-zinc-400">Image pin</h2>
+        <p className="mb-2 text-xs text-zinc-600">
+          pull + recreate uses this tag, keeps the host uid that owns <code className="text-zinc-500">data/</code>, and
+          waits for doctor. Recreate without pull does the same uid keep — it does not docker pull.
+        </p>
         <div className="flex flex-wrap gap-2">
           <input className="min-w-64 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs" value={pin} onChange={(e) => setPin(e.target.value)} />
           <button

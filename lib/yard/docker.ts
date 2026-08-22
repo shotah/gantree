@@ -42,6 +42,69 @@ export function stateOf(raw: string | undefined): GantryState {
   }
 }
 
+const DISTROLESS_USER = /^(65532|65532:65532|nonroot)$/i;
+
+/** uid:gid for cranes. Same account as `npm start`, or GANTREE_CRANE_USER when the console is a container. */
+export function hostUserSpec(): string | undefined {
+  const env = process.env.GANTREE_CRANE_USER?.trim();
+  if (env && /^\d+:\d+$/.test(env)) {
+    return env;
+  }
+  if (typeof process.getuid !== "function" || typeof process.getgid !== "function") {
+    return undefined;
+  }
+  const uid = process.getuid();
+  const gid = process.getgid();
+  if (uid === 0) {
+    return undefined;
+  }
+  return `${uid}:${gid}`;
+}
+
+/** Keep a real host user from inspect. Drop image-default nonroot (that cannot write host-owned data/). */
+export function craneUser(existing?: string | null): string | undefined {
+  const kept = (existing ?? "").trim();
+  if (kept && !DISTROLESS_USER.test(kept) && kept !== "0" && kept !== "0:0" && kept !== "root") {
+    return kept;
+  }
+  return hostUserSpec();
+}
+
+/** Dest path inside the container (`src:dest` or `src:dest:mode`). */
+export function bindDest(bind: string): string {
+  const parts = bind.split(":");
+  return parts.length >= 2 ? parts[1] : bind;
+}
+
+export function mergeBinds(required: string[], existing?: string[] | null): string[] {
+  const seen = new Set(required.map(bindDest));
+  const extra = (existing ?? []).filter((b) => !seen.has(bindDest(b)));
+  return [...required, ...extra];
+}
+
+export type CraneRuntime = {
+  user?: string;
+  networkMode?: string;
+  binds: string[];
+  groupAdd?: string[];
+  labels: Record<string, string>;
+};
+
+export function craneRuntime(info?: {
+  Config?: { User?: string; Labels?: Record<string, string> | null };
+  HostConfig?: { NetworkMode?: string; Binds?: string[] | null; GroupAdd?: string[] | null };
+}): CraneRuntime {
+  const networkMode = info?.HostConfig?.NetworkMode?.trim();
+  const groupAdd = (info?.HostConfig?.GroupAdd ?? []).filter((g) => Boolean(g));
+  return {
+    user: craneUser(info?.Config?.User),
+    networkMode: networkMode && networkMode !== "default" ? networkMode : undefined,
+    binds: info?.HostConfig?.Binds ?? [],
+    groupAdd: groupAdd.length ? groupAdd : undefined,
+    labels: { ...(info?.Config?.Labels ?? {}) },
+  };
+}
+
 export function looksLikeGantry(image: string, names: string[]): boolean {
   const n = names.map(normalizeName).join(" ");
   if (/\bgantree\b/.test(image) || /\bgantree\b/.test(n)) {
