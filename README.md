@@ -86,7 +86,7 @@ Walkthrough: **[docs/install.md](docs/install.md)**.
 | `docker compose up -d` | Hub image `shotah/gantree` (`GANTREE_CRANE_USER=$(id -u):$(id -g)`) |
 | `docker compose up -d --build` | Same console, build this checkout |
 | **[docs/headless.md](docs/headless.md)** | Headless host: Node 22, attach existing dirs, SSH tunnel |
-| **[docs/install.md](docs/install.md)** | Home Mini vs your GCE/EC2 (Tailscale / Cloudflare Tunnel — never `0.0.0.0`) |
+| **[docs/install.md](docs/install.md)** | Home Mini (LAN `:3000`) vs cloud VM (loopback + tunnel) |
 | **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard — `docker compose up` in that repo |
 
 ```bash

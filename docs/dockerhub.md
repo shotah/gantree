@@ -24,7 +24,8 @@ docker compose up -d
 ```
 
 Compose must mount `docker.sock` and the yard files (`gantree.toml`, `gantries/`).
-Publish **`127.0.0.1:3000` only**. Do not bind `0.0.0.0` on a cloud VM.
+Home LAN: host `:3000` on all interfaces. Cloud VM: `GANTREE_LISTEN=127.0.0.1`
+and do not open a WAN firewall port.
 
 Cranes must run as the host user that owns `data/` — Distroless default uid
 `65532` cannot open `gantry.db`. That is what `GANTREE_CRANE_USER` is for.
@@ -51,8 +52,8 @@ Also on GHCR: `ghcr.io/shotah/gantree` (same tags). `linux/amd64` only.
 - **Operator plane**, not the chat. Node 22 + Vinext. Needs the Docker socket.
 - Spawns and operates [`shotah/ai-gantry`](https://hub.docker.com/r/shotah/ai-gantry)
   cranes (one container, one persona, one `data/` each).
-- Listens on `0.0.0.0:3000` *inside* the container so the port map works.
-  The compose file still publishes `127.0.0.1:3000` on the host.
+- Listens on `0.0.0.0` *inside* the container so the port map works.
+  Compose publishes host `:3000` on the LAN (`GANTREE_LISTEN=127.0.0.1` on a VM).
 - Does not bake MCP binaries or `gantry.db`. Those stay on the host binds.
 
 Harness image (the cranes): [`shotah/ai-gantry`](https://hub.docker.com/r/shotah/ai-gantry).

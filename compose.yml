@@ -1,8 +1,6 @@
-# Console on the Docker host. Bind the *published* port to localhost only.
+# Console on the Docker host. Home LAN: publish :3000 on all interfaces.
+# Cloud VM: GANTREE_LISTEN=127.0.0.1 — do not open a WAN firewall port.
 # Inside the container Vinext must listen on 0.0.0.0 so the port map works.
-# Do not change the host mapping to 0.0.0.0:3000:3000 on a public VM.
-# Reach the console from another machine via Tailscale Serve, an SSH tunnel,
-# or Cloudflare Tunnel to http://127.0.0.1:3000 — see docs/install.md.
 #
 # Cranes must run as the host user that owns data/ (not Distroless 65532).
 # Console-in-Docker is often root, so pass the host uid:
@@ -18,11 +16,11 @@ services:
     build: .
     environment:
       HOST: 0.0.0.0
-      PORT: 3000
+      PORT: 80
       DOCKER_SOCKET: /var/run/docker.sock
       GANTREE_CRANE_USER: ${GANTREE_CRANE_USER:-}
     ports:
-      - "127.0.0.1:3000:3000"
+      - "${GANTREE_LISTEN:-0.0.0.0}:3000:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./gantree.toml:/app/gantree.toml

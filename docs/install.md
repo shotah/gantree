@@ -19,20 +19,14 @@ cd gantree
 cp gantree.toml.example gantree.toml
 npm install
 npm run build
-npm start          # http://127.0.0.1:3000  (not the host LAN IP)
-# or:
-GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d --build
+npm start          # http://127.0.0.1:3000 — or HOST=0.0.0.0 npm start for LAN
+# or Hub / compose (LAN :3000):
+GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d
 ```
 
-Open the board. Build a crane (yard = home Mini). Grant search. Chat is
-Telegram — not this UI.
-
-From another device on your tailnet, do **not** publish `0.0.0.0:3000`. Use
-[Tailscale Serve](https://tailscale.com/kb/1242/tailscale-serve) or SSH:
-
-```bash
-ssh -N -L 3000:127.0.0.1:3000 mini
-```
+Open the board at `http://<pc-lan-ip>:3000` or
+`http://<headless-lan-ip>:3000`. Build a crane (yard = home). Grant search.
+Chat is Telegram — not this UI.
 
 ## Cloud (your GCE / EC2)
 
@@ -46,12 +40,12 @@ sudo git clone https://github.com/shotah/gantree.git /opt/gantree
 cd /opt/gantree
 cp gantree.toml.example gantree.toml
 # gantree.toml: yard = "cloud"
-GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d --build
+GANTREE_LISTEN=127.0.0.1 GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d
 ```
 
-The compose file publishes **`127.0.0.1:3000` only**. The process inside the
-container listens on `0.0.0.0` so the port map works; that is not a public
-load balancer.
+On a cloud VM pin the publish to loopback (`GANTREE_LISTEN=127.0.0.1`).
+The process inside still listens on `0.0.0.0` so the port map works; that
+is not a public load balancer. Do not open a cloud firewall port to the world.
 
 Reach it from a laptop:
 

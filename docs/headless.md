@@ -222,7 +222,9 @@ data_dir = "/opt/agents/kit/data"
 Without that mount, the board can still *see* Docker, but recreate cannot
 bind `/opt/agents/kit/data`.
 
-Do not publish `0.0.0.0:3000` on a cloud VM. Keep `127.0.0.1:3000:3000`.
+Home LAN: compose publishes `:3000` on all interfaces
+(`http://<headless-lan-ip>:3000`). Cloud VM: `GANTREE_LISTEN=127.0.0.1` — do
+not open a WAN firewall port.
 
 ---
 
