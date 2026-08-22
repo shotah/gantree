@@ -141,3 +141,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Nested local repositories (keep the folder, ignore contents)
+repos/*
+!repos/.gitkeep
