@@ -4,7 +4,7 @@ repos
 .next
 dist
 .vinext
-gantries
+/gantries
 gantree.toml
 backups
 *.md

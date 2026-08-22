@@ -6,6 +6,10 @@
 
 yard = "home"
 
+# New cranes from the UI live under ./gantries/<slug>/.
+# Existing agents: point these paths at the live dirs (absolute is fine).
+# See docs/headless.md. container must match `docker ps`.
+#
 # [[gantry]]
 # slug = "kit"
 # container = "kit"

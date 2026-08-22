@@ -9,13 +9,17 @@ dev only — do not copy `.env` or `data/` from a private checkout.
 ## Home (Mini / NUC)
 
 Docker on the box. Cast / `life-cast` is allowed (mDNS, TV on the LAN).
+Need **Node 22** (`node -v`). Distro `apt install npm` is often Node 20 and
+will fail. Headless host, attach existing agents, tunnel, gotchas:
+**[headless.md](headless.md)**.
 
 ```bash
 git clone https://github.com/shotah/gantree.git
 cd gantree
 cp gantree.toml.example gantree.toml
 npm install
-npm start          # http://127.0.0.1:3000
+npm run build
+npm start          # http://127.0.0.1:3000  (not the host LAN IP)
 # or: docker compose up -d --build
 ```
 

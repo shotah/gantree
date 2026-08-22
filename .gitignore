@@ -154,6 +154,7 @@ next-env.d.ts
 
 # Local yard inventory may contain paths; example is committed
 gantree.toml
-gantries/
+# Runtime crane dirs at repo root only — do not ignore app/api/gantries or app/gantries
+/gantries/
 backups/
 .tmp-*

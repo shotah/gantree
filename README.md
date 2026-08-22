@@ -60,8 +60,12 @@ git clone https://github.com/shotah/gantree.git
 cd gantree
 cp gantree.toml.example gantree.toml
 npm install
+npm run build
 npm start                 # http://127.0.0.1:3000
 ```
+
+Need **Node 22**. Headless host + attach existing agents:
+**[docs/headless.md](docs/headless.md)**.
 
 Build a crane from the board (yard type first: home Mini or cloud VM).
 Click the card for graphs + logs. Grant a tool, recreate, watch *that*
@@ -79,6 +83,7 @@ Walkthrough: **[docs/install.md](docs/install.md)**.
 | --- | --- |
 | `npm start` | Console on this host (`127.0.0.1`) |
 | `docker compose up -d --build` | Same console, containerized |
+| **[docs/headless.md](docs/headless.md)** | Headless host: Node 22, attach existing dirs, SSH tunnel |
 | **[docs/install.md](docs/install.md)** | Home Mini vs your GCE/EC2 (Tailscale / Cloudflare Tunnel — never `0.0.0.0`) |
 | **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard — `docker compose up` in that repo |
 
@@ -135,6 +140,7 @@ directory, one `data/`. Delete a tryout = delete that directory.
 | If you want… | Go here |
 | --- | --- |
 | Home Mini vs cloud VM | **[docs/install.md](docs/install.md)** |
+| Headless host + attach existing agents | **[docs/headless.md](docs/headless.md)** |
 | A custom MCP binary | **[docs/custom-mcp.md](docs/custom-mcp.md)** |
 | How the yard is put together (Vinext, Docker, files) | **[docs/architecture.md](docs/architecture.md)** |
 | The crane — loop, memory, long-horizon contract | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
