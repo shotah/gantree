@@ -113,7 +113,8 @@ image `65532`), `network_mode`, and extra binds. Dropping uid is how
 ```text
 gantree/                    this repo — shipping yard
 ├── app/                    Vinext / Next-shaped UI
-├── assets/banner.svg       README banner
+├── assets/banner.svg       GitHub README banner
+├── assets/banner.png       Hub overview (Hub does not render SVG)
 ├── lib/yard/               Docker + files (not RSC)
 └── repos/                  local nested checkouts (gitignored)
     └── ai-gantry/          harness — own remote, own git

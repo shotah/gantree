@@ -100,4 +100,4 @@ npm run release -- --bump=minor
 ```
 
 Requires a clean tree. Updates `package.json` / lockfile, annotated `vX.Y.Z`,
-moves floating git tag `latest`, pushes. CI builds `linux/amd64` + `arm64`.
+moves floating git tag `latest`, pushes. CI builds `linux/amd64` only.
