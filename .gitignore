@@ -145,3 +145,15 @@ vite.config.ts.timestamp-*
 # Nested local repositories (keep the folder, ignore contents)
 repos/*
 !repos/.gitkeep
+
+# Vinext / Next
+.next
+next-env.d.ts
+/dist/
+.vinext/
+
+# Local yard inventory may contain paths; example is committed
+gantree.toml
+gantries/
+backups/
+.tmp-*

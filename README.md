@@ -1,13 +1,26 @@
 # gantree
 
-The yard console for [ai-gantry](https://github.com/shotah/ai-gantry).
+<p align="center">
+  <img src="assets/banner.svg" alt="Shipping yard for personal agents - operator plane, not the chat" width="100%">
+</p>
 
-The harness is a crane: one process, one persona, one model, one `data/`.
-It talks to a human in Telegram. It does not grow a settings page.
+<p align="center">
+  <a href="https://github.com/shotah/gantree/actions/workflows/ci.yml"><img src="https://github.com/shotah/gantree/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/shotah/gantree/actions/workflows/ci.yml"><img src="https://github.com/shotah/gantree/raw/gh-pages/badges/coverage.svg" alt="Coverage"></a>
+  <a href="https://github.com/shotah/gantree"><img src="https://img.shields.io/github/package-json/v/shotah/gantree?label=version" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/shotah/gantree" alt="License"></a>
+</p>
 
-**Gantree** is where you run the yard. See the gantries. Plant a new one.
-Grant Google, yank Strava, notice a dead token, recreate, read logs.
-Chat stays the agent’s mouth. This is the operator’s.
+The shipping yard for [ai-gantry](https://github.com/shotah/ai-gantry).
+
+The harness is a **crane**: one process, one persona, one model, one
+`data/`. It talks to a human in Telegram. It does not grow a settings
+page.
+
+**Gantree** is the shipping yard — where you operate cranes. See them.
+Build a new one. Grant Google, yank Strava, notice a dead token,
+recreate, read logs. Chat stays the agent’s mouth. This is the
+operator’s.
 
 ```text
 [ browser ]
@@ -24,8 +37,8 @@ Chat stays the agent’s mouth. This is the operator’s.
 Agents open **zero** inbound ports. Gantree never sits in a chat turn.
 If you expose the console, you expose it to yourself.
 
-The yard is allowed to be a bit meh. It is JS, in a browser, for an
-operator who clicks a few pets. The crane is not. [ai-gantry](https://github.com/shotah/ai-gantry)
+The shipping yard is allowed to be a bit meh. It is JS, in a browser,
+for an operator who clicks a few cranes. The crane is not. [ai-gantry](https://github.com/shotah/ai-gantry)
 is a tight Go harness — parallel tool batches, cheap Completer
 rounds, small RSS — and that speed is the product the *human* feels.
 Gantree reads Docker and files after the fact. It does not get a vote
@@ -51,7 +64,7 @@ standalone), running **on the Docker host** — Mini or a small VM.
 
 | Layer | Where it lives | Why |
 | --- | --- | --- |
-| UI (`app/`) | Vinext / React | Yard, plant, Tools, per-agent graphs + logs |
+| UI (`app/`) | Vinext / React | Shipping yard, build crane, Tools, graphs + logs |
 | Host I/O (`lib/yard`) | Node route handlers | dockerode, compose, files |
 | Harness | `shotah/ai-gantry` container | Chat, memory, MCP children |
 
@@ -111,13 +124,13 @@ selling per-customer agent instances as a SaaS.
 One runtime: Linux + Docker + Vinext Node on that host. Two install
 stories: home Mini, or your GCE/EC2.
 
-- Board of named pets (not a Kubernetes dashboard)
-- Per-agent dashboard: metric graphs + visual logs (one page per instance)
-- Plant wizard (yard type first, then slug / model / channel / profile)
+- Board of named cranes (not a Kubernetes dashboard)
+- Per-crane dashboard: metric graphs + visual logs (one page per instance)
+- Build-a-crane wizard (yard type first, then slug / model / channel / profile)
 - MCP grant toggles that write `mcp.toml`, fetch bins, recreate
 - Start / stop / recreate, image pin
 - Bind `127.0.0.1` by default
-- Telegram + Hub image `shotah/ai-gantry`
+- Telegram + Hub image `shotah/ai-gantry:0.1.66`
 
 **Not v1:** `gantree` CLI / Go binary, Workers portal, systemd yards,
 hosted Gantree, Kubernetes, pairing chat through the console.
@@ -131,29 +144,45 @@ Design notes from the harness side:
 ## Repo layout
 
 ```text
-gantree/                    this repo — console + yard
+gantree/                    this repo — shipping yard
 ├── app/                    Vinext / Next-shaped UI
+├── assets/banner.svg       README banner (name stays in the heading)
 ├── lib/yard/               Docker + files (not RSC)
 └── repos/                  local nested checkouts (gitignored)
     └── ai-gantry/          harness — own remote, own git
         └── repos/          MCP servers — own remotes
 ```
 
-Nested trees are for **dev**. Runtime pins `shotah/ai-gantry` by image
-tag and speaks the file/env contract. Each nested project keeps its
-own remote when you push.
+Nested checkouts are for **dev**. Runtime pins `shotah/ai-gantry:0.1.66` and
+speaks the file/env contract. Each nested project keeps its own remote when
+you push. Do not copy `.env` or `data/` from a private checkout.
 
 ---
 
-## Status
+## Hello
 
-Scaffolding. The product is not running yet. Build order and v1
-definition: [todo.md](todo.md).
+Docker on the same host. Linux.
 
 ```bash
-# soon
-npx vinext create --platform=node
-# then: lib/yard talking to a local gantry container's logs
+git clone https://github.com/shotah/gantree.git
+cd gantree
+cp gantree.toml.example gantree.toml
+npm install
+npm start                 # http://127.0.0.1:3000
 ```
+
+Build a crane from the board (yard type first). Click the card for graphs +
+logs. Grant a tool, recreate, watch *that* crane’s doctor. Chat stays in
+Telegram.
+
+Home Mini vs cloud VM (Tailscale / Cloudflare Tunnel, never a public
+`0.0.0.0`): [docs/install.md](docs/install.md).
+
+```bash
+npm run dev               # Vinext dev, still 127.0.0.1
+docker compose up -d --build
+```
+
+Walk order and leftover walks: [todo.md](todo.md).
 
 License: [MIT](LICENSE).

@@ -1,0 +1,71 @@
+# Install — home Mini or cloud VM
+
+Same console. Same files. Agents still open **zero** inbound ports.
+Only this UI is reachable, and only through a path you chose.
+
+Harness image pin: `shotah/ai-gantry:0.1.66` (Hub). Nested `repos/ai-gantry` is
+dev only — do not copy `.env` or `data/` from a private checkout.
+
+## Home (Mini / NUC)
+
+Docker on the box. Cast / `life-cast` is allowed (mDNS, TV on the LAN).
+
+```bash
+git clone https://github.com/shotah/gantree.git
+cd gantree
+cp gantree.toml.example gantree.toml
+npm install
+npm start          # http://127.0.0.1:3000
+# or: docker compose up -d --build
+```
+
+Open the board. Build a crane (yard = home Mini). Grant search. Chat is
+Telegram — not this UI.
+
+From another device on your tailnet, do **not** publish `0.0.0.0:3000`. Use
+[Tailscale Serve](https://tailscale.com/kb/1242/tailscale-serve) or SSH:
+
+```bash
+ssh -N -L 3000:127.0.0.1:3000 mini
+```
+
+## Cloud (your GCE / EC2)
+
+Still your machine. Layout in the spirit of
+[ai-gantry examples/hosting](https://github.com/shotah/ai-gantry/tree/main/examples/hosting)
+(`/opt/gantree`, compose, Hub pull). `life-cast` is hidden.
+
+```bash
+sudo mkdir -p /opt/gantree
+sudo git clone https://github.com/shotah/gantree.git /opt/gantree
+cd /opt/gantree
+cp gantree.toml.example gantree.toml
+# gantree.toml: yard = "cloud"
+docker compose up -d --build
+```
+
+The compose file publishes **`127.0.0.1:3000` only**. The process inside the
+container listens on `0.0.0.0` so the port map works; that is not a public
+load balancer.
+
+Reach it from a laptop:
+
+**Tailscale** (preferred): install Tailscale on the VM, then Serve or an
+SSH tunnel to `127.0.0.1:3000`. Do not open a cloud firewall port to the
+world.
+
+**Cloudflare Tunnel** (console only — never the agents):
+
+```bash
+cloudflared tunnel --url http://127.0.0.1:3000
+```
+
+OAuth is always the laptop hop: **needs auth** → start hop or `/auth` in
+Telegram → paste the code on the Tools screen.
+
+Agents have no `ports:` in their compose. Do not add any.
+
+## Image pin
+
+New cranes use `shotah/ai-gantry:0.1.66`. Override per crane with **pull +
+recreate**. `:latest` and `:edge` move; prefer a `0.x.y` tag.

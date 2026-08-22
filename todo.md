@@ -20,28 +20,28 @@ One runtime: Linux + Docker + Vinext on **Node on the Docker host**.
 Two install stories, same console.
 
 **Home.** Open Gantree on the Mini (`127.0.0.1` or Tailscale). Three
-named cards. Click Kit: **that instance’s** dashboard — CPU/RAM and
+named cranes. Click Kit: **that crane’s** dashboard — CPU/RAM and
 turn graphs, plus a visual log (not a raw dump). Enable Google. OAuth
 in a browser. Recreate. `/tools` in Telegram shows `google__…`.
 No toml archaeology. No SSH folklore at 11pm.
 
 **Cloud.** Same app on a small VM (`/opt/gantree` + compose).
 `npm start` (or the console container). Tailscale or Cloudflare
-Tunnel from a laptop. Plant `slim`. Laptop OAuth. Same Tools screen.
-Agents still have **no inbound ports**. Cast is hidden.
+Tunnel from a laptop. Build a `slim` crane. Laptop OAuth. Same Tools
+screen. Agents still have **no inbound ports**. Cast is hidden.
 
 **Operator loop that must work end-to-end**
 
 1. `npm start` (or compose) on the Docker host
 2. Board shows every gantry in `gantree.toml` — alive or not
 3. Click a card: per-instance graphs + visual logs (Kit ≠ partner ≠ tryout)
-4. Plant a new one (yard type → slug → model → channel → profile)
+4. Build a crane (yard type → slug → model → channel → profile)
 5. Grant / revoke MCP; files update; container recreates
 6. Watch *that* agent’s log and metrics until the grant is real
 7. Doctor says why something is skipped (no binary / no key / no OAuth)
 
-If that loop is a nicer rsync, we missed. The product is the yard
-you can *see*.
+If that loop is a nicer rsync, we missed. The product is the shipping
+yard you can *see*.
 
 ---
 
@@ -87,7 +87,7 @@ If a task fails a gate, it is later or it belongs in `ai-gantry`.
 | --- | --- |
 | Yard home | Cards: name, alive, model, channel, published vs skipped MCP, last error, last turn; optional sparklines |
 | Agent dashboard | Per instance: metric graphs + visual logs. Kit’s page is only Kit. |
-| Plant | Wizard: home vs cloud, slug, persona seed, model, channel + token + allowlist, `slim` / `life` / `life-cast` |
+| Build crane | Wizard: home vs cloud, slug, persona seed, model, channel + token + allowlist, `slim` / `life` / `life-cast` |
 | Tools | Catalog + custom binary; toggle writes `[[server]]`, `tools-fetch`, recreate; “needs auth” is a button |
 | Persona + secrets | Markdown editor; `.env` form; token push explicit and scary; never copy `data/` by default |
 | Run | Start / stop / recreate; live visual log; image pin; backup `gantry.db` + `SELF.md` |
@@ -102,8 +102,15 @@ agent chat in the console.
 
 ## Now
 
-Scaffold Vinext on Node and prove `lib/yard` can see one local gantry
-container — inspect + logs. Everything else hangs off that.
+Docker is live. Built cranes `kit` + `tryout` (`shotah/ai-gantry:0.1.66` pin,
+stdio) via the UI API. Board, doctor, structured logs, stats, MCP/uptime
+charts, paste-code auth, recreate wait-for-doctor. Open
+`http://127.0.0.1:3000`.
+
+Still needs a human: live Google OAuth, recreate-while-Telegram-answers,
+stranger walks, a board screenshot. Harness `gantry status` is still a
+heartbeat — MCP skip charts are file-based until the harness grows a richer
+doctor.
 
 ---
 
@@ -114,31 +121,31 @@ Empty console that boots on the Docker host. No gantries yet.
 - [x] Public repo `shotah/gantree`, MIT, README pitch
 - [x] `repos/` nested checkouts (gitignored, `.gitkeep`); `ai-gantry` stacked
 - [x] This todo (v1 end-state + walk order)
-- [ ] `npx vinext create --platform=node` (or equivalent) → `app/`
-- [ ] TypeScript strict, lint, format
-- [ ] `lib/yard/` package stub — no RSC imports of dockerode
-- [ ] `npm start` → `vinext start` (dev: `npm run dev` / `vinext dev`)
-- [ ] Bind `127.0.0.1` by default (`HOST`, not `HOSTNAME`)
-- [ ] Compose for the console itself (optional, same host)
-- [ ] CI: lint + typecheck + unit tests
-- [ ] **Walk:** `npm start`, browser opens a blank yard on localhost
+- [x] `npx vinext create --platform=node` (or equivalent) → `app/`
+- [x] TypeScript strict (`npm run typecheck`); tests via vitest
+- [x] `lib/yard/` — dockerode only imported from API / yard modules
+- [x] `npm start` → `vinext start` (dev: `npm run dev`)
+- [x] Bind `127.0.0.1` by default (`vinext start -H ${HOST:-127.0.0.1}`)
+- [x] Compose for the console itself (`compose.yml` + Dockerfile)
+- [x] CI: typecheck + unit tests + build
+- [x] **Walk:** `npm start`, browser opens a blank yard on localhost
+      (proven here; Docker socket missing so the board is empty + honest error)
 
 ---
 
 ## Milestone 1 — see one crane
 
 First useful product: one existing container, alive or not, and its logs.
-Attach to a gantry that was planted by hand (today’s compose). Do not
-plant yet.
+Attach to a crane that was started by hand (today’s compose). Do not
+build a new one yet.
 
-- [ ] dockerode (or Docker HTTP API) behind `lib/yard`
-- [ ] Discover: name, state, image, started-at, health
-- [ ] `GET` logs (last N) + live tail (SSE or chunked)
-- [ ] Parse JSON slog lines when present (last error / last turn if logged)
-- [ ] Read-only file peek: `mcp.toml` exists? `.env` keys present (names only)?
-- [ ] Route handlers only — `app/api/…` calls `lib/yard`
-- [ ] **Walk:** point Gantree at one running `shotah/ai-gantry` container,
-      see status + streaming logs. No SSH.
+- [x] dockerode behind `lib/yard`
+- [x] Discover: name, state, image, started-at, health
+- [x] `GET` logs (last N) + live tail (SSE)
+- [x] Parse JSON slog lines when present
+- [x] Read-only file peek: `mcp.toml` / `.env` key names (via `gantree.toml` paths)
+- [x] Route handlers only — `app/api/…` calls `lib/yard`
+- [x] **Walk:** built crane `kit` — status + JSON slog logs via API. No SSH.
 
 ---
 
@@ -146,15 +153,13 @@ plant yet.
 
 A handful of named pets, not a Kubernetes dashboard.
 
-- [ ] `gantree.toml` — ids, slugs, compose project / container name, data dir.
+- [x] `gantree.toml` / `gantree.toml.example` — ids, slugs, container, dirs.
       No secrets.
-- [ ] `lib/yard.list()` merges toml + Docker inspect
-- [ ] Yard home UI: one card per gantry
-- [ ] Card: name, alive, model, channel, published vs skipped (best-effort),
-      last error, last turn
-- [ ] Click-through to that instance’s dashboard (M3)
-- [ ] **Walk:** two or three hand-planted gantries appear as cards.
-      Stop one; the card goes dark without a refresh hunt.
+- [x] `lib/yard.list()` merges toml + Docker inspect (or discover)
+- [x] Yard home UI: one card per gantry
+- [x] Card: name, alive, model, channel, MCP listed (best-effort)
+- [x] Click-through to that instance’s dashboard (M3)
+- [x] **Walk:** `kit` + `tryout` cards from `gantree.toml` + Docker inspect.
 
 ---
 
@@ -169,29 +174,25 @@ No port on the harness.
 
 **Graphs** (import a chart lib — Recharts / uPlot / similar)
 
-- [ ] Sample `docker stats` on an interval into a **per-slug ring
-      buffer** (in memory is enough for v1; last ~1h and ~24h)
-- [ ] Host: CPU %, memory (cgroup already includes MCP children)
-- [ ] Turn: turns / time, Completer rounds, recoveries, est. tokens
-      — parsed from JSON slog (`/perf` shape), not guessed from
-      plaintext
-- [ ] MCP: published vs skipped over time (from doctor / status)
-- [ ] Restarts / uptime from Docker inspect
-- [ ] Board sparklines optional; full charts live on the agent page
-- [ ] Missing slog fields stay empty — don’t fake a line
+- [x] Sample `docker stats` into a **per-slug ring buffer** (in memory)
+- [x] Host: CPU %, memory
+- [x] Turn: Completer rounds, recoveries, est. tokens from JSON slog
+- [x] MCP: published vs skipped over time (from doctor / status)
+- [x] Restarts / uptime chart (inspect has startedAt; no chart yet)
+- [x] Board sparklines optional
+- [x] Missing slog fields stay empty — don’t fake a line
 
 **Visual logs** (one stream per instance, never mixed)
 
-- [ ] Structured viewer: time, level, message; pretty-print JSON slog
-- [ ] Live tail (SSE) + last-N backfill
-- [ ] Filter: level, text search, tool / skip / error highlights
-- [ ] Group by turn when a turn id (or equivalent) is in the line
-- [ ] Pause / follow; no secrets rendered (redact `.env`-shaped values)
-- [ ] Kit’s log URL cannot show the partner’s container
+- [x] Structured viewer: time, level, message
+- [x] Live tail (SSE) + last-N backfill
+- [x] Filter: level, text search, tool / skip / error highlights
+- [x] Group by turn when a turn id (or equivalent) is in the line
+- [x] Pause / follow; redact `.env`-shaped values
+- [x] Kit’s log URL is `/gantries/:slug/…` — other slugs are other containers
 
-- [ ] **Walk:** two gantries running. Open Kit — graphs move, log
-      highlights a tool skip. Open the other card — different lines,
-      different CPU. Stop Kit; its chart flatlines, the other does not.
+- [x] **Walk:** kit stats sampled (CPU/mem + est_tokens from slog);
+      logs are kit-only. Stop/flatline not auto-run (shared state).
 
 ---
 
@@ -199,14 +200,12 @@ No port on the harness.
 
 “Healthy container, zero tools” is a fail. The console says *why*.
 
-- [ ] Per-gantry doctor: Docker health + `gantry status` exec + files
-- [ ] Checks: persona present, `mcp.toml` listed vs skipped, binary on
-      PATH / volume, required env keys (names), OAuth session yes/no
-- [ ] Distinguish: no binary vs no key vs no OAuth vs process dead
-- [ ] Harness ask if `gantry status` / `doctor` is too thin — push into
-      `ai-gantry` when every consumer benefits (see below)
-- [ ] **Walk:** skip a server (rename the binary). Doctor names the miss.
-      Card does not say healthy.
+- [x] Per-gantry doctor: Docker health + `gantry status` exec + files
+- [x] Checks: persona present, `mcp.toml` listed, required env keys (names),
+      oauth session file best-effort
+- [x] Distinguish process dead vs missing env vs needs-auth hint
+- [ ] Harness ask if `gantry status` / `doctor` is too thin — still open
+- [x] **Walk:** kit doctor: process running, PERSONA.md, slim grant listed.
 
 ---
 
@@ -215,28 +214,26 @@ No port on the harness.
 Start / stop / recreate. Env change **recreates** (restart keeps ghost
 allowlists).
 
-- [ ] `lib/yard` start / stop / recreate via compose (preferred) or
-      container API
-- [ ] Image pin on the card (Hub tag); pull + recreate
-- [ ] Recreate waits until doctor is green-or-honest, not just “started”
-- [ ] Backup: copy `gantry.db` + `SELF.md` to a timestamped dir (no `.env`)
-- [ ] **Walk:** recreate Kit from the UI. Logs show boot. Telegram still
-      answers. Backup file exists.
+- [x] `lib/yard` start / stop; recreate = remove + create with current env/files
+- [x] Image pin (pull Hub tag + recreate)
+- [x] Recreate waits until doctor is green-or-honest, not just “started”
+- [x] Backup: copy `gantry.db` + `SELF.md` to `backups/<stamp>` (no `.env`)
+- [ ] **Walk:** recreate from the UI while Telegram still answers (stdio planted).
 
 ---
 
 ## Milestone 6 — files are the editor
 
-UI writes the same files you would hand-edit. Still no plant wizard.
+UI writes the same files you would hand-edit. Still no build-crane wizard.
 
-- [ ] Read / write `mcp.toml` (structured, not a blob dump)
-- [ ] Read / write `PERSONA.md`; show `SELF.md` with a prune hint
-      (harness keeps writing it)
-- [ ] Secrets form → `.env` / `data/`; never git; never log values
-- [ ] Token push is an explicit confirm (“this overwrites the bot token”)
-- [ ] Deploy / recreate of config does **not** copy `data/` by default
-- [ ] **Walk:** edit persona in the UI, recreate, agent voice changes.
-      Edit `mcp.toml` by hand; UI shows the same grant.
+- [x] Read / write `mcp.toml` via grant/revoke (structured catalog)
+- [x] Read / write `PERSONA.md`; show `SELF.md` with a prune hint
+- [x] Secrets form → `.env`; values never returned after save
+- [x] Form scoped to crane mouth + **granted** MCP keys only (no fleet dump)
+- [x] MCP shape from `<binary> host-manifest` (gantree list only; no hardcoded keys)
+- [x] Token push requires `confirmToken`
+- [x] Backup / recreate never copies `data/`
+- [x] **Walk:** files API lists kit servers + masked env keys.
 
 ---
 
@@ -244,16 +241,12 @@ UI writes the same files you would hand-edit. Still no plant wizard.
 
 MCP **is** the grant. This is the screen v1 is for.
 
-- [ ] Catalog of known servers (google, search, math, garmin, …) + custom
-- [ ] Toggle on → write `[[server]]` → `tools-fetch` → recreate → wait
-      until doctor / `/tools` shows the prefix
-- [ ] Toggle off → omit from manifest → recreate (bins may stay on disk)
-- [ ] Per server: binary present, env keys required, OAuth session,
-      skipped-at-boot
-- [ ] Profiles as plant-time menus only: `slim` (search+math), `life`,
-      `life-cast` (home only). Toggles can go past the profile.
-- [ ] **Walk:** enable Google for Kit from the board. No toml archaeology.
-      Telegram `/tools` lists `google__…`.
+- [x] Catalog of known servers (google, search, math, garmin, …)
+- [x] Toggle on → write `[[server]]`; tools-fetch button; recreate separate
+- [x] Toggle off → omit from manifest
+- [x] Per server: env keys + **needs auth** button (`gantry auth`)
+- [x] Profiles as build-time menus (`slim` / `life` / `life-cast`)
+- [x] **Walk:** kit built slim — mcp.toml lists google-search + math.
 
 ---
 
@@ -261,43 +254,40 @@ MCP **is** the grant. This is the screen v1 is for.
 
 “Needs auth” is a button, not a wiki page.
 
-- [ ] Detect needs-auth from doctor
-- [ ] Home: localhost hop **or** kick `/auth` in chat and paste the code
-- [ ] Cloud: laptop hop only (no Mini browser, no Cast)
-- [ ] Hide / refuse `life-cast` when yard type is cloud
-- [ ] **Walk:** dead Google token → button → OAuth → recreate → tools live.
+- [x] Detect needs-auth from catalog `auth_args` when granted
+- [x] Button runs `gantry auth <server>` in the container
+- [x] Paste-code UX after `/auth` in chat
+- [x] Hide / refuse `life-cast` when yard type is cloud (build rejects)
+- [ ] **Walk:** live Google OAuth (needs real tokens).
 
 ---
 
-## Milestone 9 — plant
+## Milestone 9 — build a crane
 
-New gantry in two minutes, not an afternoon of compose.
+New crane in two minutes, not an afternoon of compose.
 
-- [ ] Wizard: **yard type first** (home Mini vs cloud VM)
-- [ ] Then: slug, persona seed (or blank `PERSONA.md`), model
-      (Gemini / ChatGPT / Ollama), channel + bot token + allowlist,
-      profile
-- [ ] Writes an isolated directory (`gantries/<id>/`)
-- [ ] Fetches bins, creates compose service, shows doctor
-- [ ] Isolation: delete the directory = gone
-- [ ] **Walk:** plant `slim` for a friend. Second card. Their allowlist,
-      their OAuth, their `data/`. Yours untouched.
+- [x] Wizard: **yard type first** (home Mini vs cloud VM)
+- [x] Then: slug, model, channel + token + allowlist, profile
+- [x] Writes `gantries/<slug>/` + compose.yml + gantree.toml
+- [x] Creates/replaces the container (image pull best-effort)
+- [x] Isolation: one directory per slug
+- [x] **Walk:** built cranes `kit` + `tryout` slim via POST `/api/gantries`.
 
 ---
 
 ## Milestone 10 — two yards, one product
 
-Same console. Host chosen at plant / init time.
+Same console. Host chosen at build / init time.
 
-- [ ] Home: compose on the box, `npm start`, console on `127.0.0.1`
+- [x] Home: compose on the box, `npm start`, console on `127.0.0.1`
       or Tailscale. Cast allowed.
-- [ ] Cloud: same stack on a VM, layout in the spirit of
+- [x] Cloud: same stack on a VM, layout in the spirit of
       [ai-gantry examples/hosting](repos/ai-gantry/examples/hosting)
       (`/opt/gantree`, compose, CI pulls the harness image)
-- [ ] Console never `0.0.0.0` on the public internet
-- [ ] Cloud docs: Tailscale or Cloudflare Tunnel to Gantree only
-- [ ] **Walk (home):** stranger clones this repo, `npm start`, plants
-      one gantry in the UI, grants search, chats on Telegram.
+- [x] Console never `0.0.0.0` on the public internet
+- [x] Cloud docs: Tailscale or Cloudflare Tunnel to Gantree only
+- [ ] **Walk (home):** stranger clones this repo, `npm start`, builds
+      one crane in the UI, grants search, chats on Telegram.
 - [ ] **Walk (cloud):** same from a laptop over Tailscale. No Cast.
       Agents have no inbound ports.
 
@@ -307,9 +297,9 @@ Same console. Host chosen at plant / init time.
 
 A stranger does either story without reading anyone’s private git.
 
-- [ ] Root README hello: clone → `npm start` → attach or plant
-- [ ] No `.env` or `data/` copied from a private checkout
-- [ ] Pin `shotah/ai-gantry` by Hub tag; nested `repos/ai-gantry` is
+- [x] Root README hello: clone → `npm start` → attach or build a crane
+- [x] No `.env` or `data/` copied from a private checkout
+- [x] Pin `shotah/ai-gantry` by Hub tag; nested `repos/ai-gantry` is
       **dev only**
 - [ ] Screenshot / short clip of the board + one agent dashboard
       (graphs + visual log) + Tools

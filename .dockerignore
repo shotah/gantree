@@ -1,0 +1,11 @@
+node_modules
+repos
+.git
+.next
+dist
+.vinext
+gantries
+gantree.toml
+backups
+*.md
+!README.md

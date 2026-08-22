@@ -1,0 +1,15 @@
+# Inventory — no secrets. Copy to gantree.toml (gitignored).
+# If this file is missing, gantree discovers running ai-gantry containers.
+#
+# yard = "home"  # Mini / LAN — Cast allowed
+# yard = "cloud" # VM — life-cast refused at build
+
+yard = "home"
+
+# [[gantry]]
+# slug = "kit"
+# container = "kit"
+# data_dir = "./gantries/kit/data"
+# persona_dir = "./gantries/kit/persona"
+# mcp_manifest = "./gantries/kit/mcp.toml"
+# env_file = "./gantries/kit/.env"
