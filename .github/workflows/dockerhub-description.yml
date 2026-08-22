@@ -6,6 +6,8 @@
 #
 # Image push only needs Write. Updating the Hub README uses a PATCH that Docker
 # treats as admin → Forbidden unless Delete is also granted on the token.
+# 404 Not Found = shotah/gantree does not exist on Hub yet. The docker.yml
+# push creates it; run that first (or use workflow_dispatch after a successful publish).
 name: dockerhub-description
 
 on:

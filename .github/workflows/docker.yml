@@ -94,3 +94,15 @@ jobs:
             docker pull --platform linux/amd64 "$img"
           fi
           docker run --rm --platform linux/amd64 --entrypoint node "$img" -e "require('fs').accessSync('dist'); console.log('gantree', require('./package.json').version)"
+
+      # Hub PATCH 404s if the repo does not exist yet. First successful push creates it.
+      - name: Hub overview
+        if: github.event_name != 'pull_request'
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          repository: shotah/gantree
+          readme-filepath: ./docs/dockerhub.md
+          short-description: Shipping yard for ai-gantry. Operate personal agents. Chat stays Telegram.
+          enable-url-completion: true
