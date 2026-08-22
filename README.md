@@ -11,157 +11,49 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/shotah/gantree" alt="License"></a>
 </p>
 
-The shipping yard for [ai-gantry](https://github.com/shotah/ai-gantry).
+> **gantree** *(n.)* — the shipping yard. A **gantry** is one crane: one
+> process, one persona, one model, one `data/`. The frame does nothing by
+> itself; the tools and the memory do the work. The yard is where you
+> *operate* those cranes — see them, grant a tool, yank another, recreate,
+> read logs — so each one can **plan on a long horizon**.
 
-The harness is a **crane**: one process, one persona, one model, one
-`data/`. It talks to a human in Telegram. It does not grow a settings
-page.
+> Make a yard small enough that an operator can see every crane, careful
+> enough that the chat loop never waits on a dashboard, and personal
+> enough that you, a partner, and a tryout stay three brains. Long-horizon
+> planning lives in the harness. This repo keeps each crane granted, alive,
+> and itself.
 
-**Gantree** is the shipping yard — where you operate cranes. See them.
-Build a new one. Grant Google, yank Strava, notice a dead token,
-recreate, read logs. Chat stays the agent’s mouth. This is the
-operator’s.
-
-```text
-[ browser ]
-     |
-     |  localhost | Tailscale | Cloudflare Tunnel (console only)
-     v
-[ gantree  — Vinext on Node, on the Docker host ]
-     |
-     |  Docker API + files on disk
-     v
-[ gantry ] [ gantry ] [ gantry ]     Hub image, outbound chat
-```
-
-Agents open **zero** inbound ports. Gantree never sits in a chat turn.
-If you expose the console, you expose it to yourself.
-
-The shipping yard is allowed to be a bit meh. It is JS, in a browser,
-for an operator who clicks a few cranes. The crane is not. [ai-gantry](https://github.com/shotah/ai-gantry)
-is a tight Go harness — parallel tool batches, cheap Completer
-rounds, small RSS — and that speed is the product the *human* feels.
-Gantree reads Docker and files after the fact. It does not get a vote
-in the tool loop.
-
----
-
-## Why a framework — and why Vinext
-
-We need a server that can **see Docker** from day one. Even the first
-useful screen is “is Kit up, and what did it just log?” That is
-`docker inspect` + `docker logs`, not a static site.
-
-So we start in a framework. [Vinext](https://vinext.dev/) is the pick:
-write `app/` like Next, run `vinext`, TypeScript the whole way. The
-harness stays Go. The dashboard is not Go.
-
-The thing that would be wrong is putting that framework **where Docker
-is not**. Vinext’s happy path is Cloudflare Workers. Workers cannot
-open `docker.sock`, tail a container, or rewrite `mcp.toml` on the Mini.
-v1 is therefore **Vinext targeting Node** (`--platform=node` /
-standalone), running **on the Docker host** — Mini or a small VM.
-
-| Layer | Where it lives | Why |
-| --- | --- | --- |
-| UI (`app/`) | Vinext / React | Shipping yard, build crane, Tools, graphs + logs |
-| Host I/O (`lib/yard`) | Node route handlers | dockerode, compose, files |
-| Harness | `shotah/ai-gantry` container | Chat, memory, MCP children |
-
-Docker, compose, and `tools-fetch` stay in **route handlers** (or
-`lib/yard`), never in a React Server Component. Vinext’s native-addon
-footgun is real; this is how we don’t step on it.
-
-Later, the *same* `app/` can sit on Workers as a portal that calls this
-host. That is a second skin, not v1. Tailscale or a Cloudflare Tunnel
-in front of the Node console is how you reach a cloud VM today.
-
-**Avoid:** Next-on-Vercel as the host. A SPA plus a mystery API.
-Harness + console in one Distroless image.
-
----
-
-## How gantree sees a gantry
-
-The crane does not grow a `/metrics` port. Gantree **pulls**.
-
-| What you want | Where it comes from |
-| --- | --- |
-| Alive, image, restart | Docker inspect / compose |
-| Visual logs (per instance) | `docker logs` stream, structured in the UI |
-| CPU / RAM graphs | sampled `docker stats` / cgroup (ring buffer) |
-| Turn / token graphs | JSON slog (`/perf` shape) on container stderr |
-| Published vs skipped MCP | `mcp.toml` + harness `doctor` / `status` |
-| Persona, secrets | `PERSONA.md`, `.env`, `data/` on disk |
-
-Files remain the source of truth. The UI is an editor of those files,
-not a second inventory. Secrets never go in git.
-
-The process is Vinext on Node. No second language, no `gantree` CLI
-until we actually need one:
-
-```bash
-npm start          # vinext start — bind 127.0.0.1
-npm run dev        # vinext dev
-```
-
----
-
-## Who it’s for
-
-An advanced home operator. You own the agents and the box. You might
-run several (you, a partner, a tryout). You run Docker — on a Mini in
-the living room, or an `e2-small` / `t3.small` so it is not your house
-power bill.
-
-Not for: team inboxes, multi-agent routers, “ChatGPT for work,” or
-selling per-customer agent instances as a SaaS.
-
----
-
-## v1
-
-One runtime: Linux + Docker + Vinext Node on that host. Two install
-stories: home Mini, or your GCE/EC2.
-
-- Board of named cranes (not a Kubernetes dashboard)
-- Per-crane dashboard: metric graphs + visual logs (one page per instance)
-- Build-a-crane wizard (yard type first, then slug / model / channel / profile)
-- MCP grant toggles that write `mcp.toml`, fetch bins, recreate
-- Start / stop / recreate, image pin
-- Bind `127.0.0.1` by default
-- Telegram + Hub image `shotah/ai-gantry:0.1.66`
-
-**Not v1:** `gantree` CLI / Go binary, Workers portal, systemd yards,
-hosted Gantree, Kubernetes, pairing chat through the console.
-
-Design notes from the harness side:
-[gantree proposal](repos/ai-gantry/docs/gantree.md)
-(nested checkout; see below).
-
----
-
-## Repo layout
+**Operate your own agents.** Open a board. Build a new crane. Grant Google,
+yank Strava, notice a dead token, recreate. Chat stays in Telegram. Nothing
+in this UI sits in a chat turn.
 
 ```text
-gantree/                    this repo — shipping yard
-├── app/                    Vinext / Next-shaped UI
-├── assets/banner.svg       README banner (name stays in the heading)
-├── lib/yard/               Docker + files (not RSC)
-└── repos/                  local nested checkouts (gitignored)
-    └── ai-gantry/          harness — own remote, own git
-        └── repos/          MCP servers — own remotes
+browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
+                                                         gantry  gantry  gantry
 ```
 
-Nested checkouts are for **dev**. Runtime pins `shotah/ai-gantry:0.1.66` and
-speaks the file/env contract. Each nested project keeps its own remote when
-you push. Do not copy `.env` or `data/` from a private checkout.
+The shipping yard for **[ai-gantry](https://github.com/shotah/ai-gantry)**.
+The harness is a tight Go loop — parallel tool batches, cheap Completer
+rounds, small RSS. **That speed is the product the human feels.** Gantree
+reads Docker and files after the fact. It does not get a vote in the tool
+loop. Agents open **zero** inbound ports. If you expose the console, you
+expose it to yourself.
+
+We spent the engineering budget on the **operator loop** that long-horizon
+agents actually need on week two: a named board, a grant that writes
+`mcp.toml`, a doctor that says why a tool is skipped, recreate that does
+not become SSH folklore at 11pm. Completeness of a platform is not the
+goal. Keeping Kit able to plan — with *its* tools and *its* personality —
+is.
+
+If you need a team inbox, a multi-agent router, or “ChatGPT for work” on
+day one, this is the wrong repo — and that’s fine.
 
 ---
 
 ## Hello
 
-Docker on the same host. Linux.
+Docker on the same Linux host.
 
 ```bash
 git clone https://github.com/shotah/gantree.git
@@ -171,19 +63,87 @@ npm install
 npm start                 # http://127.0.0.1:3000
 ```
 
-Build a crane from the board (yard type first). Click the card for graphs +
-logs. Grant a tool, recreate, watch *that* crane’s doctor. Chat stays in
-Telegram.
+Build a crane from the board (yard type first: home Mini or cloud VM).
+Click the card for graphs + logs. Grant a tool, recreate, watch *that*
+crane’s doctor. Message it on Telegram. `/tools` is the crane’s mouth;
+this page is the operator’s.
 
-Home Mini vs cloud VM (Tailscale / Cloudflare Tunnel, never a public
-`0.0.0.0`): [docs/install.md](docs/install.md). Your own MCP binary:
-[docs/custom-mcp.md](docs/custom-mcp.md).
+Pin: `shotah/ai-gantry:0.1.66` (Hub). Nested `repos/ai-gantry` is **dev
+only** — do not copy `.env` or `data/` from a private checkout.
+
+Walkthrough: **[docs/install.md](docs/install.md)**.
+
+### Other ways to run
+
+| Path | When |
+| --- | --- |
+| `npm start` | Console on this host (`127.0.0.1`) |
+| `docker compose up -d --build` | Same console, containerized |
+| **[docs/install.md](docs/install.md)** | Home Mini vs your GCE/EC2 (Tailscale / Cloudflare Tunnel — never `0.0.0.0`) |
+| **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard — `docker compose up` in that repo |
 
 ```bash
-npm run dev               # Vinext dev, still 127.0.0.1
-docker compose up -d --build
+npm run dev               # still 127.0.0.1
 ```
 
-Walk order and leftover walks: [todo.md](todo.md).
+---
 
-License: [MIT](LICENSE).
+## Chat stays the crane’s mouth
+
+Ops for the *human* live in Telegram (`/status`, `/tools`, `/auth`).
+Gantree is for the person who owns the box: a handful of named pets, not
+a Kubernetes dashboard. Click Kit and you get **Kit’s** graphs and
+**Kit’s** log — not a mixed fleet dump.
+
+The crane does not grow a `/metrics` port. The yard **pulls** (`docker
+inspect`, `docker logs`, sampled stats, JSON slog). Parse what the harness
+already emits. Do not tax parallel tool calls so a chart looks nicer.
+
+---
+
+## Grant is how it stays personal
+
+Long-horizon is useless if the container is “healthy” with zero tools and
+a dead token. MCP **is** the grant.
+
+Toggle on → write `[[server]]`, fetch the binary, recreate, wait until
+`/tools` shows the prefix. Toggle off → omit from the manifest. “Needs
+auth” is a button (laptop hop or paste a code from `/auth` in chat).
+Hand-editing `mcp.toml` still works; the UI is a structured editor of the
+same file, not a second inventory.
+
+Your own binary: **[docs/custom-mcp.md](docs/custom-mcp.md)**.
+
+### Two files, not a catalog
+
+Planning that survives `/new` is still the crane’s job. Most agents *feel*
+like someone after a long chat, then the session dies.
+
+| File | Who writes it |
+| --- | --- |
+| `PERSONA.md` | You — who it should be, who you are |
+| `SELF.md` | The agent — voice, rituals, north-star aims that survive `/new` |
+
+Gantree edits those files (and `.env`, and `mcp.toml`). It does not merge
+memories across cranes. Isolation is the feature: one human, one bot, one
+directory, one `data/`. Delete a tryout = delete that directory.
+
+---
+
+## Read next
+
+| If you want… | Go here |
+| --- | --- |
+| Home Mini vs cloud VM | **[docs/install.md](docs/install.md)** |
+| A custom MCP binary | **[docs/custom-mcp.md](docs/custom-mcp.md)** |
+| How the yard is put together (Vinext, Docker, files) | **[docs/architecture.md](docs/architecture.md)** |
+| The crane — loop, memory, long-horizon contract | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
+| Walk order | **[todo.md](todo.md)** |
+
+The yard is allowed to be a bit meh. It is JS, in a browser, for an
+operator who clicks a few cranes. The crane is not. Never sit in the
+token path.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

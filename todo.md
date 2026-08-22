@@ -2,7 +2,8 @@
 
 Work backwards from v1. This file is the build script: what “done” looks
 like, then the milestones in the order we walk them. Pitch lives in
-[README.md](README.md). Long-form design:
+[README.md](README.md). Stack and host I/O:
+[docs/architecture.md](docs/architecture.md). Harness-side note:
 [repos/ai-gantry/docs/gantree.md](repos/ai-gantry/docs/gantree.md).
 
 KISS / MLP: just enough to run the yard. Vinext + TypeScript only.
