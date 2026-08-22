@@ -9,5 +9,6 @@ export { decodeDockerLogs, groupLogsByTurn, parseLogLine, parseLogText } from ".
 export { mcpSnapshot } from "./mcp";
 export { buildCrane, writeCraneFiles } from "./build";
 export { run, waitUntilDoctorSettled } from "./run";
-export { sampleHost, sampleMcp, sampleTurns, sampleUptime } from "./stats";
+export { combineSpend, fmtEstTokens, rollupTurns } from "./spend";
+export { kickYardSamples, kickYardSpend, peekTurns, peekYardSpend, sampleHost, sampleMcp, sampleTurns, sampleUptime } from "./stats";
 export type * from "./types";

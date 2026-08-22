@@ -18,6 +18,27 @@ describe("parseLogLine", () => {
     expect(turnFromLog(line)?.rounds).toBe(3);
   });
 
+  it("reads ai-gantry turn perf prompt+gen tokens", () => {
+    const line = parseLogLine(
+      '{"time":"2026-08-22T18:00:00.000Z","level":"INFO","msg":"turn perf","source":"user","user_id":"42","session_id":"s-1","iterations":2,"recoveries":0,"prompt_est_tokens":8000,"gen_est_tokens":400,"outcome":"ok"}',
+    );
+    expect(line.kind).toBe("turn");
+    const t = turnFromLog(line);
+    expect(t?.estTokens).toBe(8400);
+    expect(t?.promptEstTokens).toBe(8000);
+    expect(t?.genEstTokens).toBe(400);
+    expect(t?.rounds).toBe(2);
+    expect(t?.recoveries).toBe(0);
+    expect(t?.source).toBe("user");
+    expect(t?.userId).toBe("42");
+    expect(t?.sessionId).toBe("s-1");
+  });
+
+  it("ignores boot schema est_tokens", () => {
+    const line = parseLogLine('{"time":"2026-08-22T18:00:00Z","msg":"tools_published","est_tokens":16000}');
+    expect(turnFromLog(line)).toBeNull();
+  });
+
   it("keeps plaintext and flags skips", () => {
     const line = parseLogLine("mcp server google skipped: no binary");
     expect(line.kind).toBe("skip");

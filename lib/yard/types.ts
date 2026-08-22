@@ -50,9 +50,43 @@ export type StatSample = {
 
 export type TurnSample = {
   at: number;
+  key: string;
   rounds: number | null;
   recoveries: number | null;
+  /** prompt_est_tokens + gen_est_tokens (chars/4). Null if the line had no token fields. */
   estTokens: number | null;
+  promptEstTokens: number | null;
+  genEstTokens: number | null;
+  source: string | null;
+  userId: string | null;
+  sessionId: string | null;
+  outcome: string | null;
+};
+
+export type SpendSlice = {
+  id: string;
+  turns: number;
+  estTokens: number;
+};
+
+export type SpendRollup = {
+  slug: string;
+  turns: number;
+  promptEst: number;
+  genEst: number;
+  estTokens: number;
+  lastAt: number | null;
+  byUser: SpendSlice[];
+  bySource: SpendSlice[];
+  unattributedTurns: number;
+};
+
+export type YardSpend = {
+  turns: number;
+  promptEst: number;
+  genEst: number;
+  estTokens: number;
+  cranes: SpendRollup[];
 };
 
 export type McpSample = {
@@ -120,4 +154,6 @@ export type YardInventory = {
   dockerError: string | null;
   /** CPU samples for board sparklines — filled by the list API, not listYard. */
   sparks?: Record<string, StatSample[]>;
+  /** Est. token spend from JSON slog — filled by the list API, not listYard. */
+  spend?: YardSpend;
 };

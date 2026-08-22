@@ -2,9 +2,12 @@ import { containerLogsBuffer, containerStatsOnce, cpuMemFromStats } from "./dock
 import { getGantry } from "./inventory";
 import { decodeDockerLogs, parseLogText, turnFromLog } from "./logs";
 import { mcpSnapshot } from "./mcp";
-import type { McpSample, StatSample, TurnSample, UptimeSample } from "./types";
+import { combineSpend, rollupTurns } from "./spend";
+import type { McpSample, StatSample, TurnSample, UptimeSample, YardSpend } from "./types";
 
 const HOST_MAX = 720;
+const TURN_TAIL = 1500;
+const TURN_MAX = 400;
 const hostRing = new Map<string, StatSample[]>();
 const turnRing = new Map<string, TurnSample[]>();
 const mcpRing = new Map<string, McpSample[]>();
@@ -41,20 +44,24 @@ export async function sampleTurns(slug: string): Promise<TurnSample[]> {
     return turnRing.get(slug) ?? [];
   }
   try {
-    const buf = await containerLogsBuffer(g.containerId, 80);
+    const buf = await containerLogsBuffer(g.containerId, TURN_TAIL);
     const lines = parseLogText(decodeDockerLogs(buf));
-    const existing = new Set((turnRing.get(slug) ?? []).map((t) => t.at));
+    const existing = new Set((turnRing.get(slug) ?? []).map((t) => t.key));
     for (const line of lines) {
       const t = turnFromLog(line);
       if (!t) {
         continue;
       }
-      const at = line.ts ? Date.parse(line.ts) : Date.now();
-      if (!Number.isFinite(at) || existing.has(at)) {
+      const at = line.ts ? Date.parse(line.ts) : NaN;
+      if (!Number.isFinite(at)) {
         continue;
       }
-      existing.add(at);
-      push(turnRing, slug, { at, ...t }, 200);
+      const key = line.raw;
+      if (existing.has(key)) {
+        continue;
+      }
+      existing.add(key);
+      push(turnRing, slug, { at, key, ...t }, TURN_MAX);
     }
   } catch {
     /* keep last ring */
@@ -92,6 +99,14 @@ export function peekHost(slug: string): StatSample[] {
   return hostRing.get(slug) ?? [];
 }
 
+export function peekTurns(slug: string): TurnSample[] {
+  return turnRing.get(slug) ?? [];
+}
+
+export function peekYardSpend(slugs: string[]): YardSpend {
+  return combineSpend(slugs.map((slug) => rollupTurns(slug, peekTurns(slug))));
+}
+
 /** Kick host samples for the board without blocking the list response. */
 export function kickYardSamples(slugs: string[]): Record<string, StatSample[]> {
   for (const slug of slugs) {
@@ -107,4 +122,12 @@ export function kickYardSamples(slugs: string[]): Record<string, StatSample[]> {
     }
   }
   return out;
+}
+
+/** Kick turn-perf samples for the board without blocking the list response. */
+export function kickYardSpend(slugs: string[]): YardSpend {
+  for (const slug of slugs) {
+    void sampleTurns(slug).catch(() => []);
+  }
+  return peekYardSpend(slugs);
 }

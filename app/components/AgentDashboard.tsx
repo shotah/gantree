@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { secretKeysForGrant } from "@/lib/yard/packages";
+import { rollupTurns } from "@/lib/yard/spend";
 import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, type McpSample, type McpServer, type StatSample, type TurnSample, type UptimeSample } from "@/lib/yard/types";
 import { LogViewer } from "./LogViewer";
 import { MetricCharts } from "./MetricCharts";
+import { CraneSpend } from "./SpendBoard";
 
 type EnvRow = { set: boolean; secret: boolean; value: string };
 type Files = {
@@ -174,6 +176,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-zinc-400">Metrics</h2>
+        <CraneSpend rollup={rollupTurns(slug, turns)} />
         <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} />
       </section>
 

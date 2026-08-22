@@ -169,17 +169,43 @@ export function turnFromLog(line: LogLine): {
   rounds: number | null;
   recoveries: number | null;
   estTokens: number | null;
+  promptEstTokens: number | null;
+  genEstTokens: number | null;
+  source: string | null;
+  userId: string | null;
+  sessionId: string | null;
+  outcome: string | null;
 } | null {
   if (!line.json) {
     return null;
   }
-  const rounds = num(line.json.rounds ?? line.json.invocations ?? line.json.completer_rounds);
+  const msg = (typeof line.json.msg === "string" ? line.json.msg : line.msg).trim();
+  const isTurnPerf = /^turn perf$/i.test(msg) || /^turn done$/i.test(msg);
+  const promptEstTokens = num(line.json.prompt_est_tokens);
+  const genEstTokens = num(line.json.gen_est_tokens);
+  const rounds = num(line.json.iterations ?? line.json.rounds ?? line.json.invocations ?? line.json.completer_rounds);
   const recoveries = num(line.json.recoveries ?? line.json.recovery);
-  const estTokens = num(line.json.est_tokens ?? line.json.estTokens ?? line.json.tokens);
-  if (rounds == null && recoveries == null && estTokens == null) {
+  const legacyTokens = num(line.json.est_tokens ?? line.json.estTokens ?? line.json.tokens);
+  let estTokens: number | null = null;
+  if (promptEstTokens != null || genEstTokens != null) {
+    estTokens = (promptEstTokens ?? 0) + (genEstTokens ?? 0);
+  } else if (legacyTokens != null && (isTurnPerf || rounds != null || recoveries != null || line.turnId != null)) {
+    estTokens = legacyTokens;
+  }
+  if (!isTurnPerf && promptEstTokens == null && genEstTokens == null && estTokens == null) {
     return null;
   }
-  return { rounds, recoveries, estTokens };
+  return {
+    rounds,
+    recoveries,
+    estTokens,
+    promptEstTokens,
+    genEstTokens,
+    source: str(line.json.source),
+    userId: str(line.json.user_id ?? line.json.userId),
+    sessionId: str(line.json.session_id ?? line.json.sessionId),
+    outcome: str(line.json.outcome),
+  };
 }
 
 function num(v: unknown): number | null {
@@ -188,6 +214,16 @@ function num(v: unknown): number | null {
   }
   if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) {
     return Number(v);
+  }
+  return null;
+}
+
+function str(v: unknown): string | null {
+  if (typeof v === "string" && v.trim()) {
+    return v.trim();
+  }
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return String(v);
   }
   return null;
 }

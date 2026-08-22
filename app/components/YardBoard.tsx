@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
+import { fmtEstTokens } from "@/lib/yard/spend";
 import { BuildCrane } from "./BuildCrane";
+import { SpendBoard } from "./SpendBoard";
 
 function Badge({ state }: { state: GantryCard["state"] }) {
   const on = state === "running";
@@ -13,6 +15,14 @@ function Badge({ state }: { state: GantryCard["state"] }) {
       {state}
     </span>
   );
+}
+
+function craneSpendLabel(yard: YardInventory, slug: string): string {
+  const row = yard.spend?.cranes.find((c) => c.slug === slug);
+  if (!row || row.estTokens <= 0) {
+    return "—";
+  }
+  return `${fmtEstTokens(row.estTokens)} · ${row.turns}t`;
 }
 
 function Spark({ samples }: { samples: StatSample[] | undefined }) {
@@ -82,6 +92,8 @@ export function YardBoard() {
         <p className="rounded-md border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200">{error}</p>
       ) : null}
 
+      {yard ? <SpendBoard spend={yard.spend} /> : null}
+
       {!yard ? <p className="text-sm text-zinc-500">Talking to Docker…</p> : null}
 
       {yard && yard.gantries.length === 0 ? (
@@ -123,6 +135,10 @@ export function YardBoard() {
                 <dd className="text-zinc-200">
                   {g.mcpPublished} published · {g.mcpSkipped} skipped
                 </dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt>est. tokens</dt>
+                <dd className="text-zinc-200">{craneSpendLabel(yard, g.slug)}</dd>
               </div>
               <div className="flex justify-between gap-2">
                 <dt>last turn</dt>

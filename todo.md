@@ -178,10 +178,13 @@ No port on the harness.
 - [x] Sample `docker stats` into a **per-slug ring buffer** (in memory)
 - [x] Host: CPU %, memory
 - [x] Turn: Completer rounds, recoveries, est. tokens from JSON slog
+      (`turn perf` → `prompt_est_tokens` + `gen_est_tokens`, not `est_tokens`)
 - [x] MCP: published vs skipped over time (from doctor / status)
 - [x] Restarts / uptime chart (inspect has startedAt; no chart yet)
 - [x] Board sparklines optional
 - [x] Missing slog fields stay empty — don’t fake a line
+- [x] Yard spend: combined est. tokens + per-crane ranking + per-user when
+      `user_id` is on `turn perf`
 
 **Visual logs** (one stream per instance, never mixed)
 
@@ -318,8 +321,11 @@ Do these in the harness repo, not here. Gantree consumes them.
 - [ ] Refuse “healthy” when the manifest is all skipped
 - [ ] Tool errors a model *and* a UI can tell apart: no binary vs no key
       vs no OAuth
-- [ ] Stable JSON slog fields for turns / tokens / recoveries so the
-      dashboard graphs are not regex soup
+- [x] Stable JSON slog fields for turns / tokens / recoveries so the
+      dashboard graphs are not regex soup (`turn perf`: `prompt_est_tokens`,
+      `gen_est_tokens`, `iterations`, `recoveries`; gantree consumes them)
+- [ ] `user_id` + `session_id` on `turn perf` (patched in nested harness;
+      needs an image bump before Mini cranes emit it)
 - [ ] Stable file/env contract docs the console can write against
 
 The harness never learns instance names. Gantree never sits in the
@@ -338,7 +344,10 @@ emits. Do not ask the harness to grow dashboard hooks.
 - sqlite event log (v1 inventory stays `gantree.toml`; v1 graphs are
   an in-memory ring buffer)
 - Prometheus / long-retention metrics store
-- Cross-agent compare view (v1 is one page per instance)
+- GCP / provider usage pull (billed $). v1 spend is chars/4 estimates
+  from `turn perf` in docker logs — good for “who burned the budget”,
+  not an invoice.
+- Cross-agent compare view beyond the board spend ranking
 
 ## Not the product
 

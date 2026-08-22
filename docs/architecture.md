@@ -85,7 +85,7 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | Alive, image, restart | Docker inspect / compose |
 | Visual logs (per instance) | `docker logs` stream, structured in the UI |
 | CPU / RAM graphs | sampled `docker stats` / cgroup (ring buffer) |
-| Turn / token graphs | JSON slog (`/perf` shape) on container stderr |
+| Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`) |
 | Published vs skipped MCP | `mcp.toml` + harness `doctor` / `status` |
 | Persona, secrets | `PERSONA.md`, `.env`, `data/` on disk |
 
