@@ -196,7 +196,9 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       <section>
         <h2 className="mb-1 text-sm font-medium text-zinc-400">Tools</h2>
-        <p className="mb-3 text-xs text-zinc-600">Toggle writes mcp.toml. Fetch bins, then recreate. Discover mode needs mcp_manifest in gantree.toml.</p>
+        <p className="mb-3 text-xs text-zinc-600">
+          Toggle writes mcp.toml. Fetch bins (output in the notice, not container logs), then recreate.
+        </p>
         <div className="mb-3 flex flex-wrap gap-2">
           <button
             type="button"

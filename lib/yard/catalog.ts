@@ -47,24 +47,19 @@ function toolsDir(): string | null {
 
 function discover(pkg: PackageRef): CatalogEntry {
   const fromPath = tryManifest(pkg.command, ["host-manifest"]);
-  if (fromPath) {
-    return fromPath;
-  }
   const tools = toolsDir();
-  if (tools) {
-    const fromTools = tryManifest(resolve(tools, pkg.command), ["host-manifest"]);
-    if (fromTools) {
-      return fromTools;
-    }
-  }
+  const fromTools = !fromPath && tools ? tryManifest(resolve(tools, pkg.command), ["host-manifest"]) : null;
   const repoDir = resolve(mcpReposRoot(), pkg.repo);
-  if (existsSync(repoDir)) {
-    const fromGo = tryManifest("go", ["run", ".", "host-manifest"], repoDir);
-    if (fromGo) {
-      return fromGo;
-    }
-  }
-  return fallbackEntry(pkg);
+  const fromGo =
+    !fromPath && !fromTools && existsSync(repoDir)
+      ? tryManifest("go", ["run", ".", "host-manifest"], repoDir)
+      : null;
+  const shape = fromPath ?? fromTools ?? fromGo ?? fallbackEntry(pkg);
+  return {
+    ...shape,
+    download_tag: shape.download_tag || pkg.downloadTag,
+    download_url: shape.download_url || pkg.downloadUrl,
+  };
 }
 
 let cached: CatalogEntry[] | null = null;

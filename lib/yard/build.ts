@@ -60,7 +60,14 @@ export function writeCraneFiles(input: BuildInput): {
   const servers: McpServer[] = names.map((name) => {
     const cat = loadCatalog().find((c) => c.name === name);
     return cat
-      ? { name: cat.name, command: cat.command, args: cat.args, auth_args: cat.auth_args }
+      ? {
+          name: cat.name,
+          command: cat.command,
+          args: cat.args,
+          auth_args: cat.auth_args,
+          download_tag: cat.download_tag,
+          download_url: cat.download_url,
+        }
       : { name, command: name };
   });
   writeText(mcpManifest, stringifyMcpToml(servers));
@@ -137,6 +144,7 @@ export async function createOrReplaceContainer(opts: {
       DATA_DIR: "/data",
       MCP_MANIFEST: "/etc/gantry/mcp.toml",
       ...opts.env,
+      PATH: `/data/bin:${opts.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
     }).map(([k, v]) => `${k}=${v}`),
     HostConfig: {
       Binds: [`${opts.personaDir}:/persona`, `${opts.dataDir}:/data`, `${opts.mcpManifest}:/etc/gantry/mcp.toml`],

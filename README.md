@@ -176,7 +176,8 @@ logs. Grant a tool, recreate, watch *that* crane’s doctor. Chat stays in
 Telegram.
 
 Home Mini vs cloud VM (Tailscale / Cloudflare Tunnel, never a public
-`0.0.0.0`): [docs/install.md](docs/install.md).
+`0.0.0.0`): [docs/install.md](docs/install.md). Your own MCP binary:
+[docs/custom-mcp.md](docs/custom-mcp.md).
 
 ```bash
 npm run dev               # Vinext dev, still 127.0.0.1

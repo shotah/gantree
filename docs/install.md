@@ -65,6 +65,9 @@ Telegram → paste the code on the Tools screen.
 
 Agents have no `ports:` in their compose. Do not add any.
 
+A server that is not on the Tools grid: hand-edit that crane’s `mcp.toml`
+([custom MCP](custom-mcp.md)).
+
 ## Image pin
 
 New cranes use `shotah/ai-gantry:0.1.66`. Override per crane with **pull +

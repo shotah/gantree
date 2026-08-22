@@ -85,7 +85,13 @@ export async function toolsFetch(slug: string): Promise<{ ok: boolean; detail: s
   if (!g?.containerId || g.state !== "running") {
     return { ok: false, detail: "container must be running for tools-fetch" };
   }
-  const result = await execGantry(g.containerId, ["tools-fetch"]);
+  const result = await execGantry(g.containerId, [
+    "tools-fetch",
+    "--outdir",
+    "/data/bin",
+    "--manifest",
+    "/etc/gantry/mcp.toml",
+  ]);
   if (!result) {
     return { ok: false, detail: "could not exec gantry tools-fetch" };
   }

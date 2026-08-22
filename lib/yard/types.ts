@@ -106,6 +106,8 @@ export type CatalogEntry = {
   args?: string[];
   auth_args?: string[];
   authFlow?: AuthFlow;
+  download_tag?: string;
+  download_url?: string;
   envKeys: string[];
   homeOnly?: boolean;
   blurb: string;

@@ -16,7 +16,14 @@ export async function grant(slug: string, name: string): Promise<{ ok: boolean; 
   const next: McpServer[] = [
     ...servers,
     cat
-      ? { name: cat.name, command: cat.command, args: cat.args, auth_args: cat.auth_args }
+      ? {
+          name: cat.name,
+          command: cat.command,
+          args: cat.args,
+          auth_args: cat.auth_args,
+          download_tag: cat.download_tag,
+          download_url: cat.download_url,
+        }
       : { name, command: name },
   ];
   writeText(g.mcpManifest, stringifyMcpToml(next));

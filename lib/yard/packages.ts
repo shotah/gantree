@@ -10,25 +10,31 @@ export const CRANE_CORE_KEYS = [
   "TELEGRAM_ALLOWED_USERS",
 ];
 
+function ghRelease(repo: string, archive: string): string {
+  return `https://github.com/shotah/${repo}/releases/download/{tag}/${archive}_{version}_{os}_{arch}.tar.gz`;
+}
+
 /** Yard offers these packages. Shape comes from `<command> host-manifest`. */
 export type PackageRef = {
   name: string;
   command: string;
   /** Directory under repos/ai-gantry/repos */
   repo: string;
+  downloadTag?: string;
+  downloadUrl?: string;
 };
 
 export const PACKAGES: PackageRef[] = [
-  { name: "math", command: "mcp-go-math", repo: "mcp-go-math" },
-  { name: "google-search", command: "mcp-gemini-google-search", repo: "mcp-gemini-search" },
-  { name: "google", command: "google-mcp", repo: "google-mcp" },
-  { name: "strava", command: "strava-mcp", repo: "go-strava-mcp" },
-  { name: "garmin", command: "garmin", repo: "go-garmin" },
-  { name: "feeds", command: "feeds-mcp", repo: "feeds-mcp" },
-  { name: "twitter", command: "twitter-mcp", repo: "twitter-mcp" },
-  { name: "maps", command: "google-maps-mcp", repo: "google-maps-mcp" },
-  { name: "youtube", command: "youtube-go-mcp", repo: "youtube-go-mcp" },
-  { name: "cast", command: "mcp-beam", repo: "mcp-beam" },
+  { name: "math", command: "mcp-go-math", repo: "mcp-go-math", downloadTag: "latest", downloadUrl: ghRelease("mcp-go-math", "mcp-go-math") },
+  { name: "google-search", command: "mcp-gemini-google-search", repo: "mcp-gemini-search", downloadTag: "latest", downloadUrl: ghRelease("mcp-gemini-search", "mcp-gemini-google-search") },
+  { name: "google", command: "google-mcp", repo: "google-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-mcp", "google-mcp") },
+  { name: "strava", command: "strava-mcp", repo: "go-strava-mcp", downloadTag: "latest", downloadUrl: ghRelease("go-strava-mcp", "strava-mcp") },
+  { name: "garmin", command: "garmin", repo: "go-garmin", downloadTag: "latest", downloadUrl: ghRelease("go-garmin", "garmin") },
+  { name: "feeds", command: "feeds-mcp", repo: "feeds-mcp", downloadTag: "latest", downloadUrl: ghRelease("feeds-mcp", "feeds-mcp") },
+  { name: "twitter", command: "twitter-mcp", repo: "twitter-mcp", downloadTag: "latest", downloadUrl: ghRelease("twitter-mcp", "twitter-mcp") },
+  { name: "maps", command: "google-maps-mcp", repo: "google-maps-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-maps-mcp", "google-maps-mcp") },
+  { name: "youtube", command: "youtube-go-mcp", repo: "youtube-go-mcp", downloadTag: "latest", downloadUrl: ghRelease("youtube-go-mcp", "youtube-go-mcp") },
+  { name: "cast", command: "mcp-beam", repo: "mcp-beam", downloadTag: "latest", downloadUrl: ghRelease("mcp-beam", "mcp-beam") },
 ];
 
 export const SLIM_GRANT = ["google-search", "math"];
@@ -64,12 +70,16 @@ export function parseHostManifest(raw: string): CatalogEntry {
   const auth_args = Array.isArray(j.auth_args) ? j.auth_args.map(String) : undefined;
   const flowRaw = typeof j.auth_flow === "string" ? j.auth_flow : undefined;
   const authFlow = flowRaw && AUTH_FLOWS.has(flowRaw as AuthFlow) ? (flowRaw as AuthFlow) : undefined;
+  const download_tag = typeof j.download_tag === "string" ? j.download_tag : undefined;
+  const download_url = typeof j.download_url === "string" ? j.download_url : undefined;
   return {
     name,
     command,
     args,
     auth_args,
     authFlow,
+    download_tag,
+    download_url,
     envKeys,
     homeOnly: Boolean(j.home_only ?? j.homeOnly),
     blurb: String(j.blurb ?? ""),

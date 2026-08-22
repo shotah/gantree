@@ -43,6 +43,7 @@ describe("loadCatalog", () => {
     }
     expect(maps?.envKeys).toContain("GOOGLE_MAPS_API_KEY");
     expect(maps?.auth_args).toBeUndefined();
+    expect(maps?.download_url).toContain("google-maps-mcp");
   });
 });
 
