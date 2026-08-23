@@ -1,10 +1,13 @@
-import { sessionCookieHeader, setupOperator, recordYardEvent } from "@/lib/yard/door";
+import { doorAuthBody, sessionCookieHeader, setupOperator, recordYardEvent } from "@/lib/yard/door";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { name?: string; passphrase?: string };
-  const result = setupOperator(String(body.name ?? ""), String(body.passphrase ?? ""));
+  const fields = doorAuthBody(await req.json().catch(() => null));
+  if ("error" in fields) {
+    return Response.json({ error: fields.error }, { status: 400 });
+  }
+  const result = setupOperator(fields.name, fields.passphrase);
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: result.status });
   }

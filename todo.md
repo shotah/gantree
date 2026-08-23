@@ -109,29 +109,30 @@ Those that belong here live under **v2** (or **Later**, after v2).
 
 ## Now
 
-Docker is live. Built cranes `kit` + `tryout` (`shotah/ai-gantry:0.1.66` pin,
+Docker is live. Built cranes `kit` + `tryout` (`shotah/ai-gantry:latest` pin,
 stdio) via the UI API. Board, doctor, structured logs, stats, MCP/uptime
 charts, paste-code auth, recreate wait-for-doctor. Open
 `http://127.0.0.1:3000`.
 
 Still needs a human: live Google OAuth, recreate-while-Telegram-answers,
-stranger walks. Harness `gantry status` is still a heartbeat — MCP skip
-charts are file-based until the harness grows a richer doctor.
+stranger walks. New cranes pin `shotah/ai-gantry:latest`. Existing kit/tryout
+keep their old compose tag until you pin/recreate.
 
 **Pitch shots** (GitHub / README). The case is live. Strangers still need
 to *see* the loop, not only the door:
 
 - [x] Login (cropped tight) + yard board
-- [ ] Recapture the board with **live** cranes — model, channel, MCP
-      published, last turn. The current cards are honest empties.
-- [ ] Crane dashboard: CPU/RAM + turn graphs with real samples (Kit’s
-      page, not a mixed dump)
+- [x] Recapture the board with **live** cranes — model, channel, MCP
+      published (`assets/yard.png`). last turn stays empty until a chat.
+- [x] Crane dashboard: CPU/RAM + MCP + uptime from live Ada
+      (`assets/crane-metrics.png`, `assets/metrics.png`). Token / completer
+      charts stay empty until a chat — not invented.
 - [ ] Telegram: one multi-step turn with tool trace — the mouth
       (Garmin → sheet → Strava, or contacts + calendars → create). Not a
       chat mock inside this UI.
 
-Those last three are how a stranger believes the runner. Do not invent
-them. Capture from a real Kit.
+The Telegram shot is how a stranger believes the runner. Do not invent
+it. Capture from a real Kit.
 
 ---
 
@@ -325,7 +326,7 @@ A stranger does either story without reading anyone’s private git.
 
 - [x] Root README hello: clone → `npm start` → attach or build a crane
 - [x] No `.env` or `data/` copied from a private checkout
-- [x] Pin `shotah/ai-gantry` by Hub tag; nested `repos/ai-gantry` is
+- [x] Pin `shotah/ai-gantry:latest`; nested `repos/ai-gantry` is
       **dev only**
 - [x] Screenshot / short clip of the board + one agent dashboard
       (graphs + visual log) + Tools
@@ -360,7 +361,9 @@ The harness never learns instance names. Gantree never sits in the
 token path of a chat turn. Consume slog / `status` the crane already
 emits. Do not ask the harness to grow dashboard hooks.
 
-- [ ] **Here:** bump Hub pin when that image is on Hub
+- [x] **Here:** pin Hub image to `shotah/ai-gantry:latest` (one constant,
+      not a semver chase). Existing cranes keep their compose tag until you
+      pin/recreate.
 
 ---
 

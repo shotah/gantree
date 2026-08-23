@@ -1,5 +1,7 @@
 import { bindIsOpen, closeYardDb, dbPath, warnOpenBindIfEmpty, yardDb } from "@/lib/yard/door/store";
 import {
+  LOGIN_FAIL_MAX,
+  MAX_PASSPHRASE,
   MIN_PASSPHRASE,
   SESSION_ABS_MS,
   SESSION_COOKIE,
@@ -8,6 +10,8 @@ import {
   changeOwnPassphrase,
   clearSessionCookieHeader,
   denyUnlessOperator,
+  devAutoLoginEnabled,
+  doorAuthBody,
   doorStatus,
   listOperators,
   loginOperator,
@@ -15,8 +19,10 @@ import {
   operatorCount,
   operatorFromRequest,
   removeOperator,
+  resetLoginThrottle,
   sessionCookieHeader,
   setupOperator,
+  withDevSessionCookie,
   withDoor,
 } from "@/lib/yard/door/gate";
 import { listYardEvents, recordFromRequest, recordYardEvent } from "@/lib/yard/door/events";
@@ -33,6 +39,10 @@ beforeEach(() => {
   process.env.GANTREE_ROOT = root;
   process.env.GANTREE_DB = join(root, "gantree.db");
   delete process.env.HOST;
+  delete process.env.GANTREE_DEV;
+  delete process.env.GANTREE_DEV_OPERATOR;
+  delete process.env.GANTREE_DEV_PASSPHRASE;
+  resetLoginThrottle();
 });
 
 afterEach(() => {
@@ -43,6 +53,9 @@ afterEach(() => {
   delete process.env.GANTREE_ROOT;
   delete process.env.GANTREE_DB;
   delete process.env.HOST;
+  delete process.env.GANTREE_DEV;
+  delete process.env.GANTREE_DEV_OPERATOR;
+  delete process.env.GANTREE_DEV_PASSPHRASE;
 });
 
 function req(path = "/api/gantries", cookie?: string): Request {
@@ -110,6 +123,36 @@ describe("setup and login", () => {
     expect(setupOperator("no spaces", "a-long-enough-pass").ok).toBe(false);
     expect(operatorCount()).toBe(0);
     expect(MIN_PASSPHRASE).toBe(10);
+    expect(MAX_PASSPHRASE).toBe(128);
+  });
+
+  it("rejects null, empty, common, and name-shaped passphrases", () => {
+    expect(doorAuthBody(null)).toEqual({ error: "name and passphrase required" });
+    expect(doorAuthBody({ name: "kit", passphrase: null })).toEqual({ error: "name and passphrase required" });
+    expect(doorAuthBody({ name: "kit", passphrase: 1234567890 })).toEqual({ error: "name and passphrase required" });
+    expect(doorAuthBody({ name: ["kit"], passphrase: "a-long-enough-pass" })).toEqual({
+      error: "name and passphrase required",
+    });
+    expect(doorAuthBody({ name: "kit", passphrase: "a-long-enough-pass" })).toEqual({
+      name: "kit",
+      passphrase: "a-long-enough-pass",
+    });
+
+    expect(setupOperator("kit", "          ").ok).toBe(false);
+    expect(setupOperator("kit", "null      ").ok).toBe(false);
+    expect(setupOperator("kit", "none      ").ok).toBe(false);
+    expect(setupOperator("kit", "nullnullnull").ok).toBe(false);
+    expect(setupOperator("kit", "password123").ok).toBe(false);
+    expect(setupOperator("kit", "1234567890").ok).toBe(false);
+    expect(setupOperator("kit", "aaaaaaaaaa").ok).toBe(false);
+    expect(setupOperator("kit", "abcdefghij").ok).toBe(false);
+    expect(setupOperator("kit", "kitkitkitkit").ok).toBe(false);
+    expect(setupOperator("kit", "a".repeat(MAX_PASSPHRASE + 1)).ok).toBe(false);
+    expect(operatorCount()).toBe(0);
+    expect(setupOperator("kit", "a-long-enough-pass").ok).toBe(true);
+    expect(loginOperator("kit", "").ok).toBe(false);
+    expect(loginOperator("kit", "x".repeat(MAX_PASSPHRASE + 1)).ok).toBe(false);
+    expect(loginOperator("kit", "a-long-enough-pass").ok).toBe(true);
   });
 
   it("uses the same error for unknown names and bad passphrases", () => {
@@ -142,6 +185,27 @@ describe("setup and login", () => {
   it("points at setup when the db is empty", () => {
     const login = loginOperator("kit", "a-long-enough-pass");
     expect(login).toMatchObject({ ok: false, setup: true });
+  });
+
+  it("backs off after repeated failed logins, even with the right passphrase", () => {
+    expect(setupOperator("kit", "a-long-enough-pass").ok).toBe(true);
+    for (let i = 0; i < LOGIN_FAIL_MAX - 1; i++) {
+      const miss = loginOperator("kit", "wrong-passphrase-here");
+      expect(miss.ok).toBe(false);
+      if (!miss.ok) {
+        expect(miss.error).toBe("invalid name or passphrase");
+        expect(miss.status).toBeUndefined();
+      }
+    }
+    const locked = loginOperator("kit", "wrong-passphrase-here");
+    expect(locked).toMatchObject({ ok: false, error: "too many attempts, try later", status: 429 });
+    const evenRight = loginOperator("kit", "a-long-enough-pass");
+    expect(evenRight).toMatchObject({ ok: false, status: 429 });
+    const unknown = loginOperator("nope", "wrong-passphrase-here");
+    expect(unknown.ok).toBe(false);
+    if (!unknown.ok) {
+      expect(unknown.error).toBe("invalid name or passphrase");
+    }
   });
 });
 
@@ -289,7 +353,17 @@ describe("operators", () => {
 
     expect(changeOwnPassphrase(first.operator.id, "wrong-passphrase-here", "brand-new-pass").ok).toBe(false);
     expect(changeOwnPassphrase(first.operator.id, "a-long-enough-pass", "short").ok).toBe(false);
-    expect(changeOwnPassphrase(first.operator.id, "a-long-enough-pass", "brand-new-pass").ok).toBe(true);
+    expect(changeOwnPassphrase(first.operator.id, "a-long-enough-pass", "password123").ok).toBe(false);
+    expect(changeOwnPassphrase(first.operator.id, "a-long-enough-pass", "a-long-enough-pass").ok).toBe(false);
+
+    const other = loginOperator("kit", "a-long-enough-pass");
+    expect(other.ok).toBe(true);
+    if (!other.ok) {
+      return;
+    }
+    expect(changeOwnPassphrase(first.operator.id, "a-long-enough-pass", "brand-new-pass", other.token).ok).toBe(true);
+    expect(operatorFromRequest(req("http://127.0.0.1/api/gantries", first.token))).toBeNull();
+    expect(operatorFromRequest(req("http://127.0.0.1/api/gantries", other.token))?.name).toBe("kit");
     expect(loginOperator("kit", "a-long-enough-pass").ok).toBe(false);
     expect(loginOperator("kit", "brand-new-pass").ok).toBe(true);
   });
@@ -313,5 +387,62 @@ describe("audit", () => {
     const handler = withDoor(async () => Response.json({ events: listYardEvents() }));
     expect((await handler(req())).status).toBe(401);
     expect((await handler(authed)).status).toBe(200);
+  });
+});
+
+describe("dev auto-login", () => {
+  function enableBob() {
+    process.env.GANTREE_DEV = "1";
+    process.env.GANTREE_DEV_OPERATOR = "bob";
+    process.env.GANTREE_DEV_PASSPHRASE = "bob-dev-ok";
+  }
+
+  it("sets up bob on loopback, gates APIs, and never stores the passphrase", async () => {
+    enableBob();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(devAutoLoginEnabled()).toBe(true);
+    const incoming = req("/api/door");
+    const status = doorStatus(incoming);
+    expect(status.ready).toBe(true);
+    expect(status.operator?.name).toBe("bob");
+    const cooked = withDevSessionCookie(incoming, Response.json(status));
+    expect(cooked.headers.get("set-cookie")).toMatch(new RegExp(`${SESSION_COOKIE}=`));
+
+    const handler = withDoor(async () => Response.json({ ok: true }));
+    expect((await handler(req())).status).toBe(200);
+    expect(operatorCount()).toBe(1);
+    expect(readFileSync(dbPath()).includes("bob-dev-ok")).toBe(false);
+    warn.mockRestore();
+  });
+
+  it("is ignored when bound on all interfaces", async () => {
+    enableBob();
+    process.env.HOST = "0.0.0.0";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(devAutoLoginEnabled()).toBe(false);
+    expect(denyUnlessOperator(req())?.status).toBe(401);
+    expect(operatorCount()).toBe(0);
+    warn.mockRestore();
+  });
+
+  it("rejects a short passphrase like setup does", () => {
+    process.env.GANTREE_DEV = "1";
+    process.env.GANTREE_DEV_OPERATOR = "bob";
+    process.env.GANTREE_DEV_PASSPHRASE = "bob";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(devAutoLoginEnabled()).toBe(false);
+    warn.mockRestore();
+  });
+
+  it("logs in an existing operator with the env passphrase", async () => {
+    expect(setupOperator("bob", "bob-dev-ok").ok).toBe(true);
+    enableBob();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const incoming = req();
+    const handler = withDoor(async (r) => Response.json({ me: operatorFromRequest(r)?.name }));
+    const res = await handler(incoming);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ me: "bob" });
+    warn.mockRestore();
   });
 });

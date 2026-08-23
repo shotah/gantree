@@ -4,8 +4,8 @@ export type GantryState = "running" | "exited" | "created" | "paused" | "restart
 export type CraneNagKind = "dead" | "skipped" | "auth";
 export type CraneNag = { kind: CraneNagKind; detail: string };
 
-/** Hub pin for new cranes. Bump when a release is known-good. `:latest` moves. */
-export const DEFAULT_IMAGE = "shotah/ai-gantry:0.1.66";
+/** Hub image for new cranes. One pin: `:latest`. Do not sprinkle semver. */
+export const DEFAULT_IMAGE = "shotah/ai-gantry:latest";
 
 export type GantryCard = {
   slug: string;

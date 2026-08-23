@@ -21,6 +21,9 @@ Stranger hello: [install.md](install.md). Board walk: [console.md](console.md).
 - Copy a laptop `data/` over the host. Live OAuth is on the host.
 - **Build a crane** for a slug that already has a `data/` — that writes a **new** empty dir.
 - Run Gantree as **root** (`sudo npm start`) — recreate would then skip a host uid.
+- Set `GANTREE_DEV` in compose. `HOST=0.0.0.0` ignores it; do not get in
+  the habit. Loopback auto-login is for `npm run dev` screenshots only
+  ([security.md](security.md#dev-auto-login)).
 
 ---
 
@@ -131,7 +134,8 @@ The UI has a **login**. First boot is `/setup` (one operator). Sessions
 live in yard `gantree.db` (compose: `var/gantree.db`) — not a crane’s
 `data/gantry.db`. Whoever can log in can read logs, edit `.env`, and
 recreate containers. Forgot the passphrase: stop, delete that sqlite
-file, start, run setup again. No email reset.
+file, start, run setup again. No email reset. What the door checks:
+[security.md](security.md).
 
 ![First operator](../assets/setup.png)
 

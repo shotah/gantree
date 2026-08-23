@@ -51,7 +51,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
         <h1 className="text-2xl font-semibold tracking-tight text-stone-100">{setup ? "First operator" : "Log in"}</h1>
         <p className="mt-1 text-sm text-zinc-500">
           {setup
-            ? "This yard has no door yet. Create the operator who owns the box. Forgot later: sqlite3 gantree.db, delete from operator."
+            ? "This yard has no door yet. Create the operator who owns the box. Passphrase ≥10 characters — not blank, not your name, not a common password. Forgot later: sqlite3 gantree.db, delete from operator."
             : "Same yard. Same files. Chat still stays Telegram."}
         </p>
       </div>
@@ -63,6 +63,9 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
+          minLength={2}
+          maxLength={32}
+          pattern="[a-zA-Z0-9._-]{2,32}"
         />
       </label>
       <label className="flex flex-col gap-1 text-xs text-zinc-500">
@@ -75,6 +78,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
           onChange={(e) => setPassphrase(e.target.value)}
           required
           minLength={10}
+          maxLength={128}
         />
       </label>
       {setup ? (
@@ -88,6 +92,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
             onChange={(e) => setConfirm(e.target.value)}
             required
             minLength={10}
+            maxLength={128}
           />
         </label>
       ) : null}

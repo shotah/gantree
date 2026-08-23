@@ -24,7 +24,11 @@ You opened the yard repo. **The product is the runner.**
 </p>
 
 <p align="center">
-  <img src="assets/yard.png" alt="The yard — a handful of named cranes, not a fleet dump">
+  <img src="assets/yard.png" alt="The yard — Ada and Jules running, MCP published vs skipped">
+</p>
+
+<p align="center">
+  <img src="assets/metrics.png" alt="Ada’s metrics — CPU and RAM from docker stats. Token charts wait for a chat.">
 </p>
 
 ---
@@ -108,7 +112,7 @@ npm start                 # http://127.0.0.1:3000
 Open the board. Build a crane. Grant a tool. Message it on your phone.
 The UI never sits in a chat turn.
 
-Cranes pin `shotah/ai-gantry:0.1.66`. Nested `repos/ai-gantry` is **dev
+Cranes pin `shotah/ai-gantry:latest`. Nested `repos/ai-gantry` is **dev
 only** — do not copy `.env` or `data/` from a private checkout.
 
 One crane, no board:
@@ -122,11 +126,12 @@ Home Mini vs cloud VM, tunnels, attach existing dirs:
 | Path | When |
 | --- | --- |
 | `npm start` | Console on this host (`127.0.0.1`) |
-| `docker compose up -d` | Hub image `shotah/gantree` |
+| `npm run dev` | Same, with hot reload. Loopback auto-login: `GANTREE_DEV` in `.env` ([security](docs/security.md#dev-auto-login)) |
+| `docker compose up -d` | Hub image `shotah/gantree` — never set `GANTREE_DEV` here |
 | **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard |
 
 ```bash
-npm run dev               # still 127.0.0.1
+npm run dev               # still 127.0.0.1; GANTREE_DEV auto-login is loopback only
 ```
 
 Agents open **zero** inbound ports. If you expose this console, you
@@ -156,6 +161,7 @@ day one, this is the wrong stack — and that’s fine.
 | Headless host + attach | **[docs/headless.md](docs/headless.md)** |
 | A custom MCP binary | **[docs/custom-mcp.md](docs/custom-mcp.md)** |
 | How the yard is put together | **[docs/architecture.md](docs/architecture.md)** |
+| The door (login, bind, hardening) | **[docs/security.md](docs/security.md)** |
 
 Never sit in the token path.
 

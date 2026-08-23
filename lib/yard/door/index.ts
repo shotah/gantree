@@ -6,6 +6,8 @@ export {
   yardDb,
 } from "./store";
 export {
+  LOGIN_FAIL_MAX,
+  MAX_PASSPHRASE,
   MIN_PASSPHRASE,
   SESSION_ABS_MS,
   SESSION_COOKIE,
@@ -14,15 +16,19 @@ export {
   changeOwnPassphrase,
   clearSessionCookieHeader,
   denyUnlessOperator,
+  devAutoLoginEnabled,
+  doorAuthBody,
   doorStatus,
   listOperators,
   loginOperator,
   logoutOperator,
   operatorCount,
   operatorFromRequest,
+  readCookie,
   removeOperator,
   sessionCookieHeader,
   setupOperator,
+  withDevSessionCookie,
   withDoor,
 } from "./gate";
 export type { DoorFail, DoorStatus, Operator, OperatorRow } from "./gate";

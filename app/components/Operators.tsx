@@ -65,7 +65,7 @@ export function Operators() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Operators</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          A handful of people who own the box. Equal access. Hashes never leave the yard sqlite.
+          A handful of people who own the box. Equal access. Passphrase ≥10, not blank, not the name, not a common password. Hashes never leave the yard sqlite.
         </p>
       </div>
 
@@ -155,6 +155,9 @@ export function Operators() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            minLength={2}
+            maxLength={32}
+            pattern="[a-zA-Z0-9._-]{2,32}"
             autoComplete="off"
           />
         </label>
@@ -167,6 +170,7 @@ export function Operators() {
             onChange={(e) => setPassphrase(e.target.value)}
             required
             minLength={10}
+            maxLength={128}
             autoComplete="new-password"
           />
         </label>
@@ -179,6 +183,7 @@ export function Operators() {
             onChange={(e) => setConfirmPass(e.target.value)}
             required
             minLength={10}
+            maxLength={128}
             autoComplete="new-password"
           />
         </label>
@@ -233,6 +238,7 @@ export function Operators() {
             onChange={(e) => setNext(e.target.value)}
             required
             minLength={10}
+            maxLength={128}
             autoComplete="new-password"
           />
         </label>
@@ -245,6 +251,7 @@ export function Operators() {
             onChange={(e) => setNextConfirm(e.target.value)}
             required
             minLength={10}
+            maxLength={128}
             autoComplete="new-password"
           />
         </label>

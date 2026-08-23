@@ -35,7 +35,7 @@ import { getGantry } from "@/lib/yard/crane/inventory";
 import { run, waitUntilDoctorSettled } from "@/lib/yard/crane/run";
 import { docker, pullImage } from "@/lib/yard/host/docker";
 import { backupFiles } from "@/lib/yard/host/files";
-import type { DoctorReport } from "@/lib/yard/types";
+import { DEFAULT_IMAGE, type DoctorReport } from "@/lib/yard/types";
 
 beforeEach(() => {
   vi.mocked(getGantry).mockReset();
@@ -148,7 +148,7 @@ describe("run", () => {
       ok: true,
       checks: [{ id: "process", ok: true, detail: "running" }],
     });
-    const pinned = await run("kit", "pin", "shotah/ai-gantry:0.1.66");
+    const pinned = await run("kit", "pin", DEFAULT_IMAGE);
     expect(pinned.ok).toBe(true);
     expect(pinned.detail).toMatch(/built crane/);
     expect(pullImage).toHaveBeenCalled();

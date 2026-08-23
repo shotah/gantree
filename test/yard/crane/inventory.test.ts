@@ -22,6 +22,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
 import { containerDisplayName, getGantry, listYard } from "@/lib/yard/crane/inventory";
 import { containerLogsBuffer, inspectByName, listGantryContainers } from "@/lib/yard/host/docker";
 import { stringifyMcpToml } from "@/lib/yard/host/files";
+import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
 const dirs: string[] = [];
 const prevRoot = process.env.GANTREE_ROOT;
@@ -65,7 +66,7 @@ function listed(over: Partial<{ id: string; name: string; image: string; state: 
   return {
     id: "abc123def",
     name: "kit",
-    image: "shotah/ai-gantry:0.1.66",
+    image: DEFAULT_IMAGE,
     state: "running" as const,
     status: "Up 2 minutes",
     labels: { "gantree.slug": "kit" },
@@ -162,7 +163,7 @@ env_file = "./.env"
     vi.mocked(inspectByName).mockResolvedValue({
       listed: {} as never,
       info: {
-        Config: { Image: "shotah/ai-gantry:0.1.66", Env: ["LLM_MODEL=dummy", "CHANNEL=stdio"] },
+        Config: { Image: DEFAULT_IMAGE, Env: ["LLM_MODEL=dummy", "CHANNEL=stdio"] },
         State: { Status: "exited", StartedAt: "2026-08-22T18:00:00.000Z" },
         RestartCount: "nope",
       },

@@ -1,4 +1,14 @@
-import { addOperator, changeOwnPassphrase, listOperators, operatorFromRequest, recordFromRequest, removeOperator, withDoor } from "@/lib/yard/door";
+import {
+  SESSION_COOKIE,
+  addOperator,
+  changeOwnPassphrase,
+  listOperators,
+  operatorFromRequest,
+  readCookie,
+  recordFromRequest,
+  removeOperator,
+  withDoor,
+} from "@/lib/yard/door";
 
 export const GET = withDoor(async (req: Request) => {
   const you = operatorFromRequest(req);
@@ -23,7 +33,10 @@ export const POST = withDoor(async (req: Request) => {
     return Response.json({ error: "confirm required" }, { status: 400 });
   }
   if (body.op === "add") {
-    const result = addOperator(String(body.name ?? ""), String(body.passphrase ?? ""));
+    if (typeof body.name !== "string" || typeof body.passphrase !== "string") {
+      return Response.json({ error: "name and passphrase required" }, { status: 400 });
+    }
+    const result = addOperator(body.name, body.passphrase);
     if (!result.ok) {
       return Response.json({ error: result.error }, { status: result.status });
     }
@@ -31,7 +44,10 @@ export const POST = withDoor(async (req: Request) => {
     return Response.json({ ok: true, operator: result.operator }, { status: 201 });
   }
   if (body.op === "remove") {
-    const result = removeOperator(you.id, String(body.id ?? ""));
+    if (typeof body.id !== "string" || !body.id) {
+      return Response.json({ error: "operator id required" }, { status: 400 });
+    }
+    const result = removeOperator(you.id, body.id);
     if (!result.ok) {
       return Response.json({ error: result.error }, { status: result.status });
     }
@@ -39,7 +55,10 @@ export const POST = withDoor(async (req: Request) => {
     return Response.json({ ok: true });
   }
   if (body.op === "passphrase") {
-    const result = changeOwnPassphrase(you.id, String(body.current ?? ""), String(body.next ?? ""));
+    if (typeof body.current !== "string" || typeof body.next !== "string") {
+      return Response.json({ error: "current and next passphrase required" }, { status: 400 });
+    }
+    const result = changeOwnPassphrase(you.id, body.current, body.next, readCookie(req, SESSION_COOKIE) ?? undefined);
     if (!result.ok) {
       return Response.json({ error: result.error }, { status: result.status });
     }

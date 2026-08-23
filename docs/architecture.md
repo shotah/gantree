@@ -120,6 +120,8 @@ gantree/                    this repo — shipping yard
 ├── assets/setup.png        console.md: first-boot operator
 ├── assets/login.png        console.md: log in
 ├── assets/yard.png         console.md: board with avatars
+├── assets/crane-metrics.png console.md: Ada dashboard graphs + logs
+├── assets/metrics.png      console.md: CPU / RAM charts
 ├── assets/crane-photo.png  console.md: upload photo
 ├── lib/yard/               host I/O (not RSC)
 │   ├── door/               operators, session, audit events
@@ -133,7 +135,7 @@ gantree/                    this repo — shipping yard
         └── repos/          MCP servers — own remotes
 ```
 
-Nested checkouts are for **dev**. Runtime pins `shotah/ai-gantry:0.1.66`
+Nested checkouts are for **dev**. Runtime pins `shotah/ai-gantry:latest`
 and speaks the file/env contract. Each nested project keeps its own
 remote when you push. Do not copy `.env` or `data/` from a private
 checkout.
@@ -171,7 +173,8 @@ the console image (same Hub secrets as the harness).
 **v2:** a door on that process (setup + login + session on every API
 and log SSE), a handful of operators in yard `gantree.db` (independent
 of each crane’s `gantry.db`), board nags for skipped MCP / needs-auth,
-sqlite so graphs survive a bounce, audit of who mutated what. Last walk:
+sqlite so graphs survive a bounce, audit of who mutated what. What that
+door checks: [security.md](security.md). Last walk:
 the same `app/` on Workers as a portal — host keeps `docker.sock`,
 portal never grows a Docker client.
 End state and walk: [todo.md](../todo.md) (**v2 looks like**).

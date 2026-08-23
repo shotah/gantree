@@ -5,7 +5,7 @@ The product is the crane:
 operator walk for **this** repo — the board that appears when you run more
 than one. Pitch and why the harness is worth operating live in the
 [root readme](../README.md). Install: [install.md](install.md). Headless
-host + attach: [headless.md](headless.md).
+host + attach: [headless.md](headless.md). Door: [security.md](security.md).
 
 Chat stays Telegram (or Discord / Slack). Nothing here sits in a chat turn.
 Gantree reads Docker and files after the fact. It writes the same files the
@@ -34,6 +34,13 @@ again. No email reset. Whoever can log in can read logs, edit `.env`, and
 recreate containers. Add a partner from **Operators** in the header
 (confirm-scary, like a token push). You cannot delete the last operator.
 
+Local screenshots / `npm run dev`: set `GANTREE_DEV=1` plus operator +
+passphrase in `.env` (see `.env.example`). That mints a real session on
+**loopback only**. Compose publishes `HOST=0.0.0.0`, so the flag is ignored
+on a LAN. Unset it to photograph `/login`. Passphrase ≥10 characters, not
+blank, not your name, not a common password. Failed logins back off.
+What the door actually checks: [security.md](security.md).
+
 ![First-boot setup: create the operator who owns the box](../assets/setup.png)
 
 ![Log in with name and passphrase](../assets/login.png)
@@ -58,9 +65,13 @@ a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 
 ![Shipping yard board with crane avatars](../assets/yard.png)
 
+![Ada’s page — CPU/RAM, MCP, uptime; Kit’s page is only Kit](../assets/crane-metrics.png)
+
+![Metrics on Ada: host graphs from docker stats, token charts empty until a chat](../assets/metrics.png)
+
 ![Crane page with avatar and upload photo](../assets/crane-photo.png)
 
-Pin: `shotah/ai-gantry:0.1.66` (Hub). Nested `repos/ai-gantry` is **dev
+Pin: `shotah/ai-gantry:latest` (Hub). Nested `repos/ai-gantry` is **dev
 only** — do not copy `.env` or `data/` from a private checkout.
 
 ---

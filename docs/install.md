@@ -3,7 +3,7 @@
 Same console. Same files. Agents still open **zero** inbound ports.
 Only this UI is reachable, and only through a path you chose.
 
-Harness image pin: `shotah/ai-gantry:0.1.66` (Hub). Nested `repos/ai-gantry` is
+Harness image pin: `shotah/ai-gantry:latest` (Hub). Nested `repos/ai-gantry` is
 dev only — do not copy `.env` or `data/` from a private checkout.
 
 ## Home (Mini / NUC)
@@ -30,6 +30,11 @@ Open the board at `http://<pc-lan-ip>/` or
 build a crane (yard = home). `npm start` stays `:3000`. Grant search.
 Chat is Telegram — not this UI.
 
+Local screenshots / `npm run dev`: `GANTREE_DEV=1` plus operator + passphrase
+in `.env` ([.env.example](../.env.example)). Loopback only — compose
+`HOST=0.0.0.0` ignores the flag. Unset it to photograph `/login`. Details:
+[security.md](security.md#dev-auto-login) · [console.md](console.md).
+
 ![First operator — create the person who owns the box](../assets/setup.png)
 
 ![Log in](../assets/login.png)
@@ -37,7 +42,7 @@ Chat is Telegram — not this UI.
 Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
 That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the
 passphrase: delete it and run `/setup` again. Add a partner from **Operators**
-in the header after login.
+in the header after login. What the door checks: [security.md](security.md).
 
 ## Cloud (your GCE / EC2)
 
@@ -80,8 +85,9 @@ A server that is not on the Tools grid: hand-edit that crane’s `mcp.toml`
 
 ## Image pin
 
-New cranes use `shotah/ai-gantry:0.1.66`. Override per crane with **pull +
-recreate**. `:latest` and `:edge` move; prefer a `0.x.y` tag.
+New cranes use `shotah/ai-gantry:latest` (`DEFAULT_IMAGE` in `lib/yard/types.ts`
+— that is the only place the tag lives). **pull + recreate** refreshes the
+floating tag. Override a crane with a `0.x.y` tag only if you need to freeze.
 
 **pull + recreate** runs `docker pull` then replaces the container as the
 **host user that owns `data/`** (file owner, then the compose shell `UID`).

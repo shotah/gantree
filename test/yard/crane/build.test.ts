@@ -19,6 +19,7 @@ vi.mock("@/lib/yard/tools/catalog", async (importOriginal) => {
 });
 
 import { buildCrane, writeCraneFiles } from "@/lib/yard/crane/build";
+import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
 const dirs: string[] = [];
 
@@ -41,6 +42,7 @@ describe("writeCraneFiles", () => {
     expect(readFileSync(join(root, "gantree.toml"), "utf8")).toContain("slug = \"kit\"");
     const compose = readFileSync(join(out.dir, "compose.yml"), "utf8");
     expect(compose).toContain("HOME: /data");
+    expect(compose).toContain(`image: ${DEFAULT_IMAGE}`);
     const uid = process.getuid?.();
     const gid = process.getgid?.();
     if (uid != null && gid != null && uid !== 0) {

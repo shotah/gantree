@@ -254,7 +254,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
         <TelegramBot slug={slug} busy={busy} setBusy={setBusy} onNotice={setNotice} onSaved={refresh} />
       ) : null}
 
-      <section>
+      <section data-shot="metrics">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-sm font-medium text-zinc-400">Metrics</h2>
           <SpendScope

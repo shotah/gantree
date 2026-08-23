@@ -87,7 +87,7 @@ export function YardBoard() {
   }, [load]);
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-6" data-shot="yard">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Shipping yard</h1>

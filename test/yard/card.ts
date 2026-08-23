@@ -1,4 +1,4 @@
-import type { GantryCard } from "@/lib/yard/types";
+import { DEFAULT_IMAGE, type GantryCard } from "@/lib/yard/types";
 
 /** Minimal crane card for yard unit tests. */
 export function card(over: Partial<GantryCard> = {}): GantryCard {
@@ -6,7 +6,7 @@ export function card(over: Partial<GantryCard> = {}): GantryCard {
     slug: "kit",
     containerName: "kit",
     containerId: "cid",
-    image: "shotah/ai-gantry:0.1.66",
+    image: DEFAULT_IMAGE,
     state: "running",
     health: "healthy",
     startedAt: "2026-08-22T18:00:00.000Z",
