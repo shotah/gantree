@@ -67,6 +67,7 @@ Hand-edit **that crane’s** `gantries/<slug>/mcp.toml`. Listed = granted.
 [[server]]
 name = "rentals"
 command = "rentals-search-mcp"
+env_keys = ["RENTCAST_API_KEY"]
 download_tag = "latest"
 download_url = "https://github.com/you/rentals-search-mcp/releases/download/{tag}/rentals-search-mcp_{version}_{os}_{arch}.tar.gz"
 # auth_args = ["auth"]   # only if the binary has an OAuth/login hop
@@ -78,21 +79,26 @@ Placeholders in `download_url`: `{tag}` `{version}` `{os}` `{arch}`.
 
 Then on the crane dashboard:
 
-1. Put required keys in the crane `.env` (secrets form only lists catalog
-   `env_keys`; for a custom server, type them in `.env` or we add the package
-   to the yard list)
+1. Put required keys in the crane `.env` (Secrets lists catalog
+   `env_keys`, plus any `env_keys` you wrote on that `[[server]]`)
 2. **recreate** — fetches bins into `/data/bin`, prunes leftovers not in
    `mcp.toml`, reloads MCP (`PATH` includes `/data/bin`). The tools-fetch
    button is the same install, without reload.
 
 Doctor / skip hints follow missing env and `auth_args`.
 
+On a compose console the MCP binary is not on PATH, so gantree uses the
+last-known `host-manifest` shape until tools-fetch lands a bin. Live
+`<binary> host-manifest` still wins when it can run.
+
 ### Yard catalog (optional)
 
 The toggle grid reads `lib/yard/tools/packages.ts`. Add a row there if this yard
 should offer the server to every crane (name, `command`, GitHub
 `downloadUrl`, clone `repo` for `go run . host-manifest`). Shape still
-comes from the binary. Do not hardcode `env_keys` in gantree.
+comes from the binary; last-known JSON is only a fallback when the console
+cannot run it. Do not invent keys in `packages.ts`.
 
 Until that row exists, User B’s MCP will not appear as a checkbox — only
-as a `[[server]]` you wrote.
+as a `[[server]]` you wrote. Set `env_keys` on that server so Secrets
+grows the fields.

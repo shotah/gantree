@@ -146,4 +146,45 @@ describe("TelegramBot", () => {
     fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
     expect(screen.getByText(/Paste TELEGRAM_BOT_TOKEN in Secrets/)).toBeTruthy();
   });
+
+  it("signals env written after saving the allowlist", async () => {
+    const onEnvWritten = vi.fn();
+    vi.mocked(yardFetch).mockImplementation(async (url, init) => {
+      if (String(url).includes("/api/operators")) {
+        return { json: async () => ({ operators: [] }) } as Response;
+      }
+      const posted = typeof init?.body === "string" && init.body.includes('"op":"allowlist"');
+      return {
+        ok: true,
+        statusText: "OK",
+        json: async () => ({
+          enabled: true,
+          tokenSet: true,
+          bot: { id: 99, username: "kit_bot", firstName: "Kit" },
+          name: "Kit",
+          description: "",
+          shortDescription: "",
+          commands: [],
+          allowlist: ["1"],
+          seen: [],
+          link: "https://t.me/kit_bot",
+          detail: posted ? "allowlist 1 id(s) — recreate to apply (do not just restart)" : "@kit_bot",
+        }),
+      } as Response;
+    });
+    render(
+      <TelegramBot
+        slug="kit"
+        busy={false}
+        setBusy={() => undefined}
+        onNotice={() => undefined}
+        onSaved={() => undefined}
+        onEnvWritten={onEnvWritten}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText("@kit_bot")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save allowlist" }));
+    await waitFor(() => expect(onEnvWritten).toHaveBeenCalledTimes(1));
+  });
 });

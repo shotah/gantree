@@ -224,6 +224,7 @@ export type McpServer = {
   auth_args?: string[];
   download_tag?: string;
   download_url?: string;
+  env_keys?: string[];
   tools?: string[];
   exclude?: string[];
   force?: boolean;

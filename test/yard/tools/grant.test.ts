@@ -10,7 +10,14 @@ vi.mock("@/lib/yard/crane/inventory", () => ({
 vi.mock("@/lib/yard/tools/catalog", () => ({
   loadCatalog: () => [
     { name: "math", command: "mcp-go-math", args: ["--quiet"], envKeys: [], blurb: "Math." },
-    { name: "google", command: "google-mcp", auth_args: ["auth"], envKeys: [], blurb: "Gmail." },
+    {
+      name: "google",
+      command: "google-mcp",
+      auth_args: ["auth"],
+      envKeys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+      blurb: "Gmail.",
+    },
+    { name: "maps", command: "google-maps-mcp", envKeys: ["GOOGLE_MAPS_API_KEY"], blurb: "Places." },
   ],
 }));
 
@@ -60,6 +67,7 @@ describe("grant", () => {
     vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp }));
     const google = await grant("kit", "google");
     expect(google.ok).toBe(true);
+    expect(google.detail).toContain("granted google");
     expect(google.servers).toEqual([
       expect.objectContaining({ name: "google", command: "google-mcp", auth_args: ["auth"] }),
     ]);
@@ -67,6 +75,16 @@ describe("grant", () => {
     expect(custom.servers.map((s) => s.name)).toEqual(["google", "mycustom"]);
     expect(custom.servers[1]).toEqual({ name: "mycustom", command: "mycustom" });
     expect(readFileSync(mcp, "utf8")).toContain("mycustom");
+  });
+
+  it("copies env_keys onto mcp.toml and names them in the detail", async () => {
+    const mcp = mcpFile(stringifyMcpToml([]));
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp }));
+    const maps = await grant("kit", "maps");
+    expect(maps.ok).toBe(true);
+    expect(maps.detail).toContain("GOOGLE_MAPS_API_KEY");
+    expect(maps.servers[0]).toEqual(expect.objectContaining({ name: "maps", env_keys: ["GOOGLE_MAPS_API_KEY"] }));
+    expect(readFileSync(mcp, "utf8")).toContain("GOOGLE_MAPS_API_KEY");
   });
 
   it("writes only that crane's mcp.toml", async () => {

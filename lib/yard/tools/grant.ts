@@ -2,6 +2,7 @@ import { getGantry } from "../crane/inventory";
 import { parseMcpToml, readText, stringifyMcpToml, writeText } from "../host/files";
 import type { CatalogEntry, McpServer } from "../types";
 import { loadCatalog } from "./catalog";
+import { serverFromCatalog } from "./packages";
 
 /** Fill catalog download_* when an attached mcp.toml only has name/command. */
 export function enrichDownloadUrls(servers: McpServer[], catalog: CatalogEntry[]): McpServer[] {
@@ -31,21 +32,10 @@ export async function grant(slug: string, name: string): Promise<{ ok: boolean; 
     return { ok: true, detail: `${name} already granted`, servers };
   }
   const cat = loadCatalog().find((c) => c.name === name);
-  const next: McpServer[] = [
-    ...servers,
-    cat
-      ? {
-          name: cat.name,
-          command: cat.command,
-          args: cat.args,
-          auth_args: cat.auth_args,
-          download_tag: cat.download_tag,
-          download_url: cat.download_url,
-        }
-      : { name, command: name },
-  ];
+  const next: McpServer[] = [...servers, cat ? serverFromCatalog(cat) : { name, command: name }];
   writeText(g.mcpManifest, stringifyMcpToml(next));
-  return { ok: true, detail: `granted ${name} — recreate to fetch bins and load it`, servers: next };
+  const needs = cat?.envKeys?.length ? ` — add ${cat.envKeys.join(", ")} in Secrets` : "";
+  return { ok: true, detail: `granted ${name} — recreate to fetch bins and load it${needs}`, servers: next };
 }
 
 export async function revoke(slug: string, name: string): Promise<{ ok: boolean; detail: string; servers: McpServer[] }> {

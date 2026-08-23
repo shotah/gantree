@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "@/lib/yard/tools/catalog";
-import { CRANE_CORE_KEYS, PACKAGES, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { CRANE_CORE_KEYS, PACKAGES, envKeysForServer, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import type { CatalogEntry } from "@/lib/yard/types";
 
 const sample: CatalogEntry[] = [
@@ -59,6 +59,16 @@ describe("loadCatalog", () => {
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.cast?.download_url).toContain("mcp-beam");
   });
+
+  it("fills env_keys and auth from last-known host-manifest when the binary cannot run", () => {
+    const byName = Object.fromEntries(loadCatalog().map((c) => [c.name, c]));
+    expect(byName.maps?.envKeys).toEqual(["GOOGLE_MAPS_API_KEY"]);
+    expect(byName.google?.envKeys).toEqual(["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"]);
+    expect(byName.google?.auth_args).toEqual(["auth"]);
+    expect(byName.garmin?.envKeys).toEqual(["GARMIN_EMAIL", "GARMIN_PASSWORD"]);
+    expect(byName.flights?.envKeys).toEqual(["SERPAPI_API_KEY"]);
+    expect(byName.math?.envKeys).toEqual([]);
+  });
 });
 
 describe("secretKeysForGrant", () => {
@@ -70,5 +80,21 @@ describe("secretKeysForGrant", () => {
     const keys = secretKeysForGrant(["maps"], sample);
     expect(keys).toContain("GOOGLE_MAPS_API_KEY");
     expect(keys).not.toContain("GARMIN_PASSWORD");
+  });
+
+  it("unions mcp.toml env_keys for a custom grant", () => {
+    const keys = secretKeysForGrant(["rentals"], sample, [{ name: "rentals", env_keys: ["RENTCAST_API_KEY"] }]);
+    expect(keys).toContain("RENTCAST_API_KEY");
+    expect(keys).not.toContain("GOOGLE_MAPS_API_KEY");
+  });
+});
+
+describe("envKeysForServer", () => {
+  it("prefers catalog keys and adds manifest extras", () => {
+    expect(envKeysForServer({ name: "maps" }, sample)).toEqual(["GOOGLE_MAPS_API_KEY"]);
+    expect(envKeysForServer({ name: "maps", env_keys: ["GOOGLE_MAPS_API_KEY", "EXTRA"] }, sample)).toEqual([
+      "GOOGLE_MAPS_API_KEY",
+      "EXTRA",
+    ]);
   });
 });

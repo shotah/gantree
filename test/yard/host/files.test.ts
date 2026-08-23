@@ -33,6 +33,14 @@ describe("mcp toml", () => {
     expect(servers[1]?.download_url).toContain("{tag}");
   });
 
+  it("round-trips env_keys so Secrets can list them", () => {
+    const text = stringifyMcpToml([
+      { name: "maps", command: "google-maps-mcp", env_keys: ["GOOGLE_MAPS_API_KEY"] },
+    ]);
+    expect(text).toContain("GOOGLE_MAPS_API_KEY");
+    expect(parseMcpToml(text)[0]?.env_keys).toEqual(["GOOGLE_MAPS_API_KEY"]);
+  });
+
   it("treats empty as no grant", () => {
     expect(parseMcpToml(null)).toEqual([]);
     expect(parseMcpToml("# none\n")).toEqual([]);

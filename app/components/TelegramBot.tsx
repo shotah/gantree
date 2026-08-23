@@ -20,6 +20,7 @@ export function TelegramBot({
   setBusy,
   onNotice,
   onSaved,
+  onEnvWritten,
   readOnly = false,
 }: {
   slug: string;
@@ -27,6 +28,7 @@ export function TelegramBot({
   setBusy: (v: boolean) => void;
   onNotice: (msg: string) => void;
   onSaved: () => void;
+  onEnvWritten?: () => void;
   readOnly?: boolean;
 }) {
   const [snap, setSnap] = useState<TelegramSnapshot | null>(null);
@@ -121,6 +123,9 @@ export function TelegramBot({
     if (res.ok) {
       load();
       onSaved();
+      if (body.op === "allowlist") {
+        onEnvWritten?.();
+      }
     }
   }
 

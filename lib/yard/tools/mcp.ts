@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { envKeyNames, parseMcpToml, readText } from "../host/files";
 import type { CraneNag, GantryCard, McpSnapshot } from "../types";
 import { loadCatalog } from "./catalog";
+import { envKeysForServer } from "./packages";
 
 function dirHasFile(dir: string, depth = 2): boolean {
   if (depth < 0) {
@@ -60,11 +61,12 @@ export function oauthSessionPresent(dataDir: string | null | undefined, name: st
 export function mcpSnapshot(g: Pick<GantryCard, "mcpManifest" | "envFile" | "dataDir">): McpSnapshot {
   const servers = parseMcpToml(readText(g.mcpManifest));
   const env = envKeyNames(g.envFile);
+  const catalog = loadCatalog();
   const skippedNames: string[] = [];
   const authMissing: string[] = [];
   for (const s of servers) {
-    const cat = loadCatalog().find((c) => c.name === s.name);
-    const missing = (cat?.envKeys ?? []).filter((k) => !env.valuesPresent[k]);
+    const cat = catalog.find((c) => c.name === s.name);
+    const missing = envKeysForServer(s, catalog).filter((k) => !env.valuesPresent[k]);
     if (missing.length > 0) {
       skippedNames.push(s.name);
       continue;

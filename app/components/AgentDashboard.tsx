@@ -20,12 +20,15 @@ import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, t
 import { CraneAvatar } from "./CraneAvatar";
 import { craneFoldKey, DashFold } from "./DashFold";
 import { DoctorPanel } from "./DoctorPanel";
+import { useDoor } from "./DoorShell";
 import { EventStrip } from "./EventStrip";
 import { HintField } from "./HintField";
+import { InjectUserModal } from "./InjectUserModal";
 import { LogViewer } from "./LogViewer";
 import { CraneSpend, SpendScope } from "./SpendBoard";
 import { TelegramBot } from "./TelegramBot";
 import { ChartSkeleton } from "./WhenVisible";
+import { YardModal } from "./YardModal";
 import { secretLook, secretNoun } from "@/lib/yard/secretLook";
 import { jpegFromFile } from "../lib/jpegFromFile";
 import { yardFetch } from "../lib/yardFetch";
@@ -78,11 +81,13 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [selfFromTemplate, setSelfFromTemplate] = useState(false);
   const [confirmPersonaReplace, setConfirmPersonaReplace] = useState(false);
   const [confirmSelfReplace, setConfirmSelfReplace] = useState(false);
+  const [injectOpen, setInjectOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [pin, setPin] = useState(DEFAULT_IMAGE);
   const [secretDraft, setSecretDraft] = useState<Record<string, string>>({});
   const [confirmToken, setConfirmToken] = useState(false);
+  const [envRecreateOpen, setEnvRecreateOpen] = useState(false);
   const [authFor, setAuthFor] = useState<string | null>(null);
   const [authDetail, setAuthDetail] = useState<string | null>(null);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
@@ -269,14 +274,45 @@ export function AgentDashboard({ slug }: { slug: string }) {
     refresh();
   }
 
+  async function saveEnv() {
+    setBusy(true);
+    const env: Record<string, string> = {};
+    for (const [k, v] of Object.entries(secretDraft)) {
+      if (SECRET_NAME.test(k) && v === "") {
+        continue;
+      }
+      env[k] = v;
+    }
+    const res = await yardFetch(`/api/gantries/${slug}/files`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ env, confirmToken }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; saved?: string[] };
+    if (res.ok) {
+      setNotice("env written — recreate (do not just restart)");
+      setSecretDraft({});
+      setConfirmToken(false);
+      setEnvRecreateOpen(true);
+    } else if (data.saved?.length) {
+      setNotice(`${data.saved.join(", ")} saved — check overwrite to write keys and tokens`);
+    } else {
+      setNotice(data.error || "env write refused");
+    }
+    setBusy(false);
+    refresh();
+  }
+
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
-  const secretKeys = secretKeysForGrant([...granted], catalog);
+  const secretKeys = secretKeysForGrant([...granted], catalog, files?.servers ?? []);
   const missingSecrets = files
     ? secretKeys.filter((k) => {
         const row = envRow(k, files.env);
         return row.secret && !row.set;
       }).length
     : 0;
+  const { operator } = useDoor();
+  const admin = operator?.role === "admin";
   const mutate = Boolean(gantry?.canMutate || files?.writable);
   const telegramOn =
     shouldPushTelegram(gantry?.channel ?? null) ||
@@ -378,7 +414,15 @@ export function AgentDashboard({ slug }: { slug: string }) {
       </DashFold>
 
       {telegramOn ? (
-        <TelegramBot slug={slug} busy={busy} setBusy={setBusy} onNotice={setNotice} onSaved={refresh} readOnly={!mutate} />
+        <TelegramBot
+          slug={slug}
+          busy={busy}
+          setBusy={setBusy}
+          onNotice={setNotice}
+          onSaved={refresh}
+          onEnvWritten={() => setEnvRecreateOpen(true)}
+          readOnly={!mutate}
+        />
       ) : null}
 
       <DashFold
@@ -452,6 +496,9 @@ export function AgentDashboard({ slug }: { slug: string }) {
                   <span className="flex-1">
                     <span className="font-medium text-stone-100">{c.name}</span>
                     <span className="block text-xs text-zinc-500">{c.blurb}</span>
+                    {c.envKeys?.length ? (
+                      <span className="block font-mono text-[11px] text-zinc-600">{c.envKeys.join(", ")}</span>
+                    ) : null}
                   </span>
                   {needsAuth && mutate ? (
                     <button
@@ -554,6 +601,16 @@ export function AgentDashboard({ slug }: { slug: string }) {
           >
             Replace from template
           </button>
+          {admin && files?.writable ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setInjectOpen(true)}
+              className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+            >
+              Inject user
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={busy || !files?.writable || (personaFromTemplate && !confirmPersonaReplace)}
@@ -628,9 +685,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
         }
       >
         <p className="mb-2 text-xs text-zinc-600">
-          Only the crane mouth plus keys for <em>granted</em> tools. Toggle a server
-          first. Never paste a whole fleet .env. Keys and tokens stay hidden after
-          save. Recreate after env change.
+          Only the crane mouth plus keys for <em>granted</em> tools (from that
+          package's host-manifest). Toggle a server first. Never paste a whole
+          fleet .env. Keys and tokens stay hidden after save. Recreate after env
+          change.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {secretKeys.map((k) => {
@@ -678,33 +736,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
         <button
           type="button"
           disabled={busy || !files?.writable}
-          onClick={async () => {
-            setBusy(true);
-            const env: Record<string, string> = {};
-            for (const [k, v] of Object.entries(secretDraft)) {
-              if (SECRET_NAME.test(k) && v === "") {
-                continue;
-              }
-              env[k] = v;
-            }
-            const res = await yardFetch(`/api/gantries/${slug}/files`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ env, confirmToken }),
-            });
-            const data = (await res.json().catch(() => ({}))) as { error?: string; saved?: string[] };
-            if (res.ok) {
-              setNotice("env written — recreate (do not just restart)");
-              setSecretDraft({});
-              setConfirmToken(false);
-            } else if (data.saved?.length) {
-              setNotice(`${data.saved.join(", ")} saved — check overwrite to write keys and tokens`);
-            } else {
-              setNotice(data.error || "env write refused");
-            }
-            setBusy(false);
-            refresh();
-          }}
+          onClick={() => void saveEnv()}
           className="mt-2 rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
         >
           Save .env
@@ -730,6 +762,50 @@ export function AgentDashboard({ slug }: { slug: string }) {
           </button>
         </div>
       </DashFold>
+
+      {envRecreateOpen ? (
+        <YardModal
+          title="Recreate to apply .env"
+          onClose={() => setEnvRecreateOpen(false)}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setEnvRecreateOpen(false)}
+                className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-zinc-500"
+              >
+                Later
+              </button>
+              {mutate ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setEnvRecreateOpen(false);
+                    void act("recreate");
+                  }}
+                  className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
+                >
+                  Recreate now
+                </button>
+              ) : null}
+            </>
+          }
+        >
+          <p>{HINTS.envRecreate.hint}</p>
+        </YardModal>
+      ) : null}
+      {injectOpen ? (
+        <InjectUserModal
+          persona={persona}
+          onClose={() => setInjectOpen(false)}
+          onInject={(next, label) => {
+            setPersona(next);
+            setInjectOpen(false);
+            setNotice(`${label} injected into PERSONA.md — Save to write`);
+          }}
+        />
+      ) : null}
     </section>
   );
 }

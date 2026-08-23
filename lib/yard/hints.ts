@@ -15,7 +15,7 @@ export const HINTS = {
   },
   buildModel: {
     hint: "Completer model id written to LLM_MODEL. Must exist on the provider behind LLM_BASE_URL / LLM_API_KEY.",
-    example: "gemini-3.5-flash",
+    example: "gemini-3.6-flash",
   },
   buildChannel: {
     hint: "Mouth. Telegram is the usual walk. Discord and Slack tokens go in Secrets after build. stdio is a terminal, not chat.",
@@ -127,11 +127,17 @@ export const HINTS = {
   persona: {
     hint: "Who she should be and who you are. New cranes get the ai-gantry template. Replace from template only fills the box — Save writes the file.",
   },
+  injectUser: {
+    hint: "Admin only. Copies selected operator profile fields into About you in the editor. Identity (the agent's name) stays put. Save still writes the file.",
+  },
   self: {
     hint: "The agent's voice, rituals, and north-star aims. /new distills the thread here. Prune it — don't treat it as config.",
   },
   authCode: {
     hint: "Code from /auth in Telegram, or from the laptop hop catch page. MFA servers want the email code, not an OAuth URL.",
+  },
+  envRecreate: {
+    hint: "The file is on disk. The running container still has the old environment. Recreate this crane — restart will not pick up the new values.",
   },
 } as const satisfies Record<string, HintCopy>;
 
@@ -146,7 +152,7 @@ const ENV_HINTS: Record<string, HintCopy> = {
   },
   LLM_MODEL: {
     hint: "Model id the crane asks the completer for. Must exist on that provider.",
-    example: "gemini-3.5-flash",
+    example: "gemini-3.6-flash",
   },
   CHANNEL: {
     hint: "Mouth: telegram, discord, slack, or stdio. Changing this does not mint a new bot — paste that channel's token too.",
@@ -190,6 +196,47 @@ const ENV_HINTS: Record<string, HintCopy> = {
   },
   GARMIN_PASSWORD: {
     hint: "Garmin account password. MFA, if enabled, is a later prompt — not this field.",
+  },
+  STRAVA_CLIENT_ID: {
+    hint: "Strava API application client id (not your athlete id). From https://www.strava.com/settings/api.",
+    example: "123456",
+  },
+  STRAVA_CLIENT_SECRET: {
+    hint: "Strava API client secret that pairs with STRAVA_CLIENT_ID. Then run the OAuth hop.",
+  },
+  X_BEARER_TOKEN: {
+    hint: "X (Twitter) bearer token from the developer portal. App-only; not your password.",
+    example: "AAAAAAAA…",
+  },
+  YOUTUBE_OAUTH_CLIENT_ID: {
+    hint: "Google Cloud OAuth client id for YouTube (TV/device). Often the same project as Google, different client type.",
+    example: "123456789-abc.apps.googleusercontent.com",
+  },
+  YOUTUBE_OAUTH_CLIENT_SECRET: {
+    hint: "OAuth client secret that pairs with YOUTUBE_OAUTH_CLIENT_ID.",
+  },
+  FEEDS_USER_AGENT: {
+    hint: "Contact User-Agent some feeds require (email or URL). Blank may work; set it if a feed 403s.",
+    example: "kit-feeds (you@example.com)",
+  },
+  GOOGLE_HEALTH_CLIENT_ID: {
+    hint: "OAuth client id for Google Health / Fitbit. Enable health.googleapis.com, Web application, loopback redirect.",
+    example: "123456789-abc.apps.googleusercontent.com",
+  },
+  GOOGLE_HEALTH_CLIENT_SECRET: {
+    hint: "OAuth client secret that pairs with GOOGLE_HEALTH_CLIENT_ID. Then the auth hop.",
+  },
+  SERPAPI_API_KEY: {
+    hint: "SerpAPI key for Google Flights search. Free tier is a monthly search quota, not an LLM key.",
+    example: "abc123…",
+  },
+  RENTCAST_API_KEY: {
+    hint: "RentCast API key for US listings. Developer plan is a small monthly request quota.",
+    example: "abc123…",
+  },
+  MARKETCHECK_API_KEY: {
+    hint: "MarketCheck Cars API key for used/new inventory. Free plan is a monthly call quota.",
+    example: "abc123…",
   },
 };
 

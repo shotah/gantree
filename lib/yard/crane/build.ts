@@ -1,6 +1,7 @@
 import { chmodSync, mkdirSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog } from "../tools/catalog";
+import { serverFromCatalog } from "../tools/packages";
 import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
 import { writeEnvFile } from "../host/envfile";
 import { stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
@@ -61,21 +62,12 @@ export function writeCraneFiles(input: BuildInput): {
   const names = profileNames(input.profile ?? "slim", yard);
   const servers: McpServer[] = names.map((name) => {
     const cat = loadCatalog().find((c) => c.name === name);
-    return cat
-      ? {
-          name: cat.name,
-          command: cat.command,
-          args: cat.args,
-          auth_args: cat.auth_args,
-          download_tag: cat.download_tag,
-          download_url: cat.download_url,
-        }
-      : { name, command: name };
+    return cat ? serverFromCatalog(cat) : { name, command: name };
   });
   writeText(mcpManifest, stringifyMcpToml(servers));
   seedPersonaFiles(personaDir, slug, { persona: input.persona });
   writeEnvFile(envFile, {
-    LLM_MODEL: input.model || "gemini-3.5-flash",
+    LLM_MODEL: input.model || "gemini-3.6-flash",
     CHANNEL: input.channel || "telegram",
     ...(input.env ?? {}),
   });
@@ -208,7 +200,7 @@ export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; deta
     /* local image may already exist */
   }
   const env = {
-    LLM_MODEL: input.model || "gemini-3.5-flash",
+    LLM_MODEL: input.model || "gemini-3.6-flash",
     CHANNEL: input.channel || "telegram",
     ...(input.env ?? {}),
   };

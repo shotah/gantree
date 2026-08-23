@@ -1,4 +1,4 @@
-import type { AuthFlow, CatalogEntry } from "../types";
+import type { AuthFlow, CatalogEntry, McpServer } from "../types";
 
 /** Crane mouth — always in scope. Not MCP. */
 export const CRANE_CORE_KEYS = [
@@ -94,7 +94,47 @@ export function parseHostManifest(raw: string): CatalogEntry {
   };
 }
 
-export function secretKeysForGrant(granted: string[], catalog: CatalogEntry[]): string[] {
-  const extra = catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.envKeys);
-  return [...CRANE_CORE_KEYS, ...extra];
+export function serverFromCatalog(cat: CatalogEntry): McpServer {
+  return {
+    name: cat.name,
+    command: cat.command,
+    args: cat.args,
+    auth_args: cat.auth_args,
+    download_tag: cat.download_tag,
+    download_url: cat.download_url,
+    ...(cat.envKeys.length ? { env_keys: cat.envKeys } : {}),
+  };
+}
+
+function uniqueKeys(keys: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const k of keys) {
+    if (!k || seen.has(k)) {
+      continue;
+    }
+    seen.add(k);
+    out.push(k);
+  }
+  return out;
+}
+
+export function envKeysForServer(
+  server: Pick<McpServer, "name" | "env_keys">,
+  catalog: CatalogEntry[],
+): string[] {
+  const cat = catalog.find((c) => c.name === server.name);
+  return uniqueKeys([...(cat?.envKeys ?? []), ...(server.env_keys ?? [])]);
+}
+
+export function secretKeysForGrant(
+  granted: string[],
+  catalog: CatalogEntry[],
+  servers: Pick<McpServer, "name" | "env_keys">[] = [],
+): string[] {
+  const extra = [
+    ...catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.envKeys),
+    ...servers.filter((s) => granted.includes(s.name)).flatMap((s) => s.env_keys ?? []),
+  ];
+  return uniqueKeys([...CRANE_CORE_KEYS, ...extra]);
 }

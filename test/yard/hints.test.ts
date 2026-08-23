@@ -9,8 +9,13 @@ describe("envHint", () => {
   });
 
   it("falls back for a granted-tool key we have not named", () => {
-    const h = envHint("RENTCAST_API_KEY");
+    const h = envHint("SOME_OBSCURE_VENDOR_TOKEN");
     expect(h.hint).toMatch(/granted tool/);
     expect(h.example).toBeUndefined();
+  });
+
+  it("names a maps key and a RentCast key", () => {
+    expect(envHint("GOOGLE_MAPS_API_KEY").hint).toMatch(/Maps/);
+    expect(envHint("RENTCAST_API_KEY").hint).toMatch(/RentCast/);
   });
 });
