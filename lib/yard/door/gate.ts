@@ -14,11 +14,15 @@ const DUMMY_SALT = Buffer.alloc(16, 7);
 
 export type Operator = { id: string; name: string };
 
+export type OperatorRow = Operator & { createdAt: string };
+
 export type DoorStatus = {
   ready: boolean;
   operator: Operator | null;
   bindOpen: boolean;
 };
+
+export type DoorFail = { ok: false; error: string; status: number };
 
 const NAME_RE = /^[a-zA-Z0-9._-]{2,32}$/;
 
@@ -126,6 +130,74 @@ export function logoutOperator(req: Request): void {
     return;
   }
   yardDb().prepare("DELETE FROM operator_session WHERE token_hash = ?").run(tokenHash(token));
+}
+
+export function listOperators(): OperatorRow[] {
+  const rows = yardDb()
+    .prepare("SELECT id, name, created_at FROM operator ORDER BY created_at, name")
+    .all() as { id: string; name: string; created_at: string }[];
+  return rows.map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at }));
+}
+
+export function addOperator(name: string, passphrase: string): { ok: true; operator: OperatorRow } | DoorFail {
+  const fields = validateCredentials(name, passphrase);
+  if (fields) {
+    return { ok: false, error: fields, status: 400 };
+  }
+  const db = yardDb();
+  const exists = db
+    .prepare("SELECT id FROM operator WHERE name = ? COLLATE NOCASE")
+    .get(name.trim()) as { id: string } | undefined;
+  if (exists) {
+    return { ok: false, error: "name already taken", status: 409 };
+  }
+  const operator: OperatorRow = {
+    id: crypto.randomUUID(),
+    name: name.trim(),
+    createdAt: new Date().toISOString(),
+  };
+  const { salt, hash } = hashPassphrase(passphrase);
+  db.prepare("INSERT INTO operator (id, name, pass_salt, pass_hash, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    operator.id,
+    operator.name,
+    salt,
+    hash,
+    operator.createdAt,
+  );
+  return { ok: true, operator };
+}
+
+export function removeOperator(_actorId: string, targetId: string): { ok: true } | DoorFail {
+  const n = operatorCount();
+  if (n <= 1) {
+    return { ok: false, error: "cannot delete the last operator", status: 400 };
+  }
+  const db = yardDb();
+  const hit = db.prepare("SELECT id FROM operator WHERE id = ?").get(targetId) as { id: string } | undefined;
+  if (!hit) {
+    return { ok: false, error: "operator not found", status: 404 };
+  }
+  db.prepare("DELETE FROM operator WHERE id = ?").run(targetId);
+  return { ok: true };
+}
+
+export function changeOwnPassphrase(operatorId: string, current: string, next: string): { ok: true } | DoorFail {
+  if (next.length < MIN_PASSPHRASE) {
+    return { ok: false, error: `passphrase must be at least ${MIN_PASSPHRASE} characters`, status: 400 };
+  }
+  const row = yardDb()
+    .prepare("SELECT pass_salt, pass_hash FROM operator WHERE id = ?")
+    .get(operatorId) as { pass_salt: Uint8Array; pass_hash: Uint8Array } | undefined;
+  if (!row) {
+    return { ok: false, error: "operator not found", status: 404 };
+  }
+  if (!verifyPassphrase(current, row.pass_salt, row.pass_hash)) {
+    dummyHash(next);
+    return { ok: false, error: "current passphrase is wrong", status: 401 };
+  }
+  const { salt, hash } = hashPassphrase(next);
+  yardDb().prepare("UPDATE operator SET pass_salt = ?, pass_hash = ? WHERE id = ?").run(salt, hash, operatorId);
+  return { ok: true };
 }
 
 export function sessionCookieHeader(token: string, req: Request): string {

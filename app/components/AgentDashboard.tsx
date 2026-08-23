@@ -12,11 +12,14 @@ import {
   type SpendBucket,
   type SpendWindow,
 } from "@/lib/yard/observe/spend";
+import { shouldPushTelegram } from "@/lib/yard/host/telegram";
 import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, type McpSample, type McpServer, type StatSample, type TurnSample, type UptimeSample } from "@/lib/yard/types";
 import { CraneAvatar } from "./CraneAvatar";
+import { EventStrip } from "./EventStrip";
 import { LogViewer } from "./LogViewer";
 import { MetricCharts } from "./MetricCharts";
 import { CraneSpend, SpendScope } from "./SpendBoard";
+import { TelegramBot } from "./TelegramBot";
 import { yardFetch } from "../lib/yardFetch";
 
 type EnvRow = { set: boolean; secret: boolean; value: string };
@@ -173,6 +176,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
   }
 
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
+  const telegramOn =
+    shouldPushTelegram(gantry?.channel ?? null) ||
+    shouldPushTelegram(files?.env?.CHANNEL?.value ?? null) ||
+    Boolean(files?.env?.TELEGRAM_BOT_TOKEN?.set);
   const since = windowStart(spendWindow);
   const allowedBuckets = bucketsForWindow(spendWindow);
   const bucket = allowedBuckets.includes(spendBucket) ? spendBucket : "cumulative";
@@ -243,6 +250,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
         </div>
       </section>
 
+      {telegramOn ? (
+        <TelegramBot slug={slug} busy={busy} setBusy={setBusy} onNotice={setNotice} onSaved={refresh} />
+      ) : null}
+
       <section>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-sm font-medium text-zinc-400">Metrics</h2>
@@ -262,6 +273,8 @@ export function AgentDashboard({ slug }: { slug: string }) {
         <h2 className="mb-3 text-sm font-medium text-zinc-400">Logs</h2>
         <LogViewer slug={slug} />
       </section>
+
+      <EventStrip slug={slug} />
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-zinc-400">Doctor</h2>

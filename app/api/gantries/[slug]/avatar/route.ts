@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
 import { withDoor } from "@/lib/yard/door";
-import { acceptJpeg, applyAvatar, findAvatar, resolveChannelAndToken } from "@/lib/yard/host/avatar";
-import { inspectByName } from "@/lib/yard/host/docker";
-import { loadEnvFile } from "@/lib/yard/host/envfile";
+import { acceptJpeg, applyAvatar, findAvatar } from "@/lib/yard/host/avatar";
+import { craneTelegramAuth } from "@/lib/yard/crane/telegram";
 import { getGantry } from "@/lib/yard/crane/inventory";
 
 export const GET = withDoor(async (_req: Request, ctx: { params: Promise<{ slug: string }> }) => {
@@ -49,23 +48,7 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug:
   if (!check.ok) {
     return Response.json({ error: check.detail }, { status: 400 });
   }
-  const env = loadEnvFile(g.envFile);
-  let inspectEnv: string[] | null = null;
-  const haveChannel = Boolean((g.channel || env.CHANNEL || "").trim());
-  const haveToken = Boolean((env.TELEGRAM_BOT_TOKEN || "").trim());
-  if (!haveChannel || !haveToken) {
-    try {
-      const inspected = await inspectByName(g.containerId || g.containerName);
-      inspectEnv = inspected?.info.Config.Env ?? null;
-    } catch {
-      inspectEnv = null;
-    }
-  }
-  const { channel, token } = resolveChannelAndToken({
-    cardChannel: g.channel,
-    file: env,
-    inspectEnv,
-  });
+  const { channel, token } = await craneTelegramAuth(g);
   const result = await applyAvatar({
     personaDir: g.personaDir,
     channel,

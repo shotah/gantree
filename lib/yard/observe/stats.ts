@@ -3,15 +3,18 @@ import { containerLogsBuffer, containerStatsOnce, cpuMemFromStats } from "../hos
 import { decodeDockerLogs, parseLogText, turnFromLog } from "../host/logs";
 import { mcpSnapshot } from "../tools/mcp";
 import type { McpSample, StatSample, TurnSample, UptimeSample, YardSpend } from "../types";
+import { persistHost, persistMcp, persistTurn, persistUptime, recallSamples } from "./memory";
 import { combineSpend, filterSamples, rollupTurns } from "./spend";
 
 const HOST_MAX = 720;
 const TURN_TAIL = 1500;
 const TURN_MAX = 400;
+const MCP_MAX = 200;
 const hostRing = new Map<string, StatSample[]>();
 const turnRing = new Map<string, TurnSample[]>();
 const mcpRing = new Map<string, McpSample[]>();
 const uptimeRing = new Map<string, UptimeSample[]>();
+const hydrated = new Set<string>();
 
 function push<T>(map: Map<string, T[]>, slug: string, sample: T, max: number): T[] {
   const cur = map.get(slug) ?? [];
@@ -23,7 +26,37 @@ function push<T>(map: Map<string, T[]>, slug: string, sample: T, max: number): T
   return cur;
 }
 
+function ensureHydrated(slug: string): void {
+  if (hydrated.has(slug)) {
+    return;
+  }
+  hydrated.add(slug);
+  const mem = recallSamples(slug, { host: HOST_MAX, turns: TURN_MAX, mcp: MCP_MAX, uptime: HOST_MAX });
+  if (!hostRing.has(slug) && mem.host.length) {
+    hostRing.set(slug, mem.host);
+  }
+  if (!turnRing.has(slug) && mem.turns.length) {
+    turnRing.set(slug, mem.turns);
+  }
+  if (!mcpRing.has(slug) && mem.mcp.length) {
+    mcpRing.set(slug, mem.mcp);
+  }
+  if (!uptimeRing.has(slug) && mem.uptime.length) {
+    uptimeRing.set(slug, mem.uptime);
+  }
+}
+
+/** Test helper: drop in-memory rings as if the process bounced. Sqlite stays. */
+export function clearObserveRings(): void {
+  hostRing.clear();
+  turnRing.clear();
+  mcpRing.clear();
+  uptimeRing.clear();
+  hydrated.clear();
+}
+
 export async function sampleHost(slug: string): Promise<StatSample[]> {
+  ensureHydrated(slug);
   const g = await getGantry(slug);
   if (!g?.containerId || g.state !== "running") {
     return hostRing.get(slug) ?? [];
@@ -31,7 +64,9 @@ export async function sampleHost(slug: string): Promise<StatSample[]> {
   try {
     const raw = (await containerStatsOnce(g.containerId)) as Parameters<typeof cpuMemFromStats>[0];
     const { cpuPercent, memBytes, memLimitBytes } = cpuMemFromStats(raw);
-    push(hostRing, slug, { at: Date.now(), cpuPercent, memBytes, memLimitBytes }, HOST_MAX);
+    const sample = { at: Date.now(), cpuPercent, memBytes, memLimitBytes };
+    push(hostRing, slug, sample, HOST_MAX);
+    persistHost(slug, sample);
   } catch {
     /* keep last ring */
   }
@@ -39,6 +74,7 @@ export async function sampleHost(slug: string): Promise<StatSample[]> {
 }
 
 export async function sampleTurns(slug: string): Promise<TurnSample[]> {
+  ensureHydrated(slug);
   const g = await getGantry(slug);
   if (!g?.containerId) {
     return turnRing.get(slug) ?? [];
@@ -61,7 +97,9 @@ export async function sampleTurns(slug: string): Promise<TurnSample[]> {
         continue;
       }
       existing.add(key);
-      push(turnRing, slug, { at, key, ...t }, TURN_MAX);
+      const sample = { at, key, ...t };
+      push(turnRing, slug, sample, TURN_MAX);
+      persistTurn(slug, sample);
     }
   } catch {
     /* keep last ring */
@@ -70,16 +108,20 @@ export async function sampleTurns(slug: string): Promise<TurnSample[]> {
 }
 
 export async function sampleMcp(slug: string): Promise<McpSample[]> {
+  ensureHydrated(slug);
   const g = await getGantry(slug);
   if (!g) {
     return mcpRing.get(slug) ?? [];
   }
   const snap = mcpSnapshot(g);
-  push(mcpRing, slug, { at: Date.now(), published: snap.published, skipped: snap.skipped }, 200);
+  const sample = { at: Date.now(), published: snap.published, skipped: snap.skipped };
+  push(mcpRing, slug, sample, MCP_MAX);
+  persistMcp(slug, sample);
   return mcpRing.get(slug) ?? [];
 }
 
 export async function sampleUptime(slug: string): Promise<UptimeSample[]> {
+  ensureHydrated(slug);
   const g = await getGantry(slug);
   if (!g) {
     return uptimeRing.get(slug) ?? [];
@@ -91,15 +133,19 @@ export async function sampleUptime(slug: string): Promise<UptimeSample[]> {
       uptimeSeconds = Math.max(0, (Date.now() - started) / 1000);
     }
   }
-  push(uptimeRing, slug, { at: Date.now(), uptimeSeconds, restartCount: g.restartCount }, HOST_MAX);
+  const sample = { at: Date.now(), uptimeSeconds, restartCount: g.restartCount };
+  push(uptimeRing, slug, sample, HOST_MAX);
+  persistUptime(slug, sample);
   return uptimeRing.get(slug) ?? [];
 }
 
 export function peekHost(slug: string): StatSample[] {
+  ensureHydrated(slug);
   return hostRing.get(slug) ?? [];
 }
 
 export function peekTurns(slug: string): TurnSample[] {
+  ensureHydrated(slug);
   return turnRing.get(slug) ?? [];
 }
 

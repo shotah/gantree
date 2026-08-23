@@ -154,7 +154,7 @@ next-env.d.ts
 
 # Local yard inventory may contain paths; example is committed
 gantree.toml
-# Yard sqlite (operators + sessions). Never a crane's data/gantry.db.
+# Yard sqlite (operators, sessions, graph samples, audit). Never a crane's data/gantry.db.
 gantree.db
 gantree.db-*
 /var/

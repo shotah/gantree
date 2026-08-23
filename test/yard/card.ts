@@ -19,6 +19,7 @@ export function card(over: Partial<GantryCard> = {}): GantryCard {
     mcpPublished: 1,
     mcpSkipped: 0,
     mcpHint: "1 published",
+    nags: [],
     dataDir: null,
     personaDir: null,
     mcpManifest: null,

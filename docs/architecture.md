@@ -85,10 +85,11 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | --- | --- |
 | Alive, image, restart | Docker inspect / compose |
 | Visual logs (per instance) | `docker logs` stream, structured in the UI |
-| CPU / RAM graphs | sampled `docker stats` / cgroup (ring buffer) |
-| Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`) |
-| Published vs skipped MCP | `mcp.toml` + harness `doctor` / `status` |
+| CPU / RAM graphs | sampled `docker stats` / cgroup (ring + yard sqlite, 7d cap) |
+| Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`) — same sqlite so a bounce keeps last week |
+| Published vs skipped MCP | `mcp.toml` + `gantry status` JSON (`mcp.servers[].reason`: `no_binary` / `no_key` / `no_oauth`) |
 | Persona, secrets | `PERSONA.md`, `avatar.jpg`, `.env`, `data/` on disk |
+| Telegram bot | Bot API `getMe` / `setMy*` after a token exists. Allowlist is `.env`. Never `getUpdates`. |
 
 Files remain the source of truth. The UI is an editor of those files,
 not a second inventory. Secrets never go in git.
@@ -121,10 +122,11 @@ gantree/                    this repo — shipping yard
 ├── assets/yard.png         console.md: board with avatars
 ├── assets/crane-photo.png  console.md: upload photo
 ├── lib/yard/               host I/O (not RSC)
-│   ├── host/               dockerode, files, .env, avatar, logs
+│   ├── door/               operators, session, audit events
+│   ├── host/               dockerode, files, .env, avatar, telegram, logs
 │   ├── crane/              inventory, build, run, doctor
 │   ├── tools/              catalog, grant, mcp, auth
-│   └── observe/            stats samples, spend rollup
+│   └── observe/            stats samples, sqlite memory, spend rollup
 ├── test/yard/              mirrors lib/yard
 └── repos/                  local nested checkouts (gitignored)
     └── ai-gantry/          harness — own remote, own git
@@ -138,9 +140,9 @@ checkout.
 
 `lib/yard` is the host I/O surface: inventory, build, grant/revoke,
 doctor, run (start / stop / recreate), logs, stats, auth hop,
-`tools-fetch`, the operator door (`lib/yard/door`, yard `gantree.db`).
-Tests live in `test/yard/` with the same folders.
-Import dockerode from `lib/yard`, not from `app/`.
+`tools-fetch`, the operator door (`lib/yard/door`, yard `gantree.db` —
+operators, sessions, graph samples, audit). Tests live in `test/yard/`
+with the same folders. Import dockerode from `lib/yard`, not from `app/`.
 
 ---
 
@@ -163,7 +165,7 @@ home-only (mDNS / host network). Custom servers:
 `shotah/gantree` with `docker.sock`. Board, per-crane dashboard,
 build wizard, MCP toggles, auth hop, start / stop / recreate, image pin.
 Telegram + Hub `shotah/ai-gantry`. Bind localhost (LAN publish is a
-home choice). No operator login. `npm run release` tags and publishes
+home choice). `npm run release` tags and publishes
 the console image (same Hub secrets as the harness).
 
 **v2:** a door on that process (setup + login + session on every API

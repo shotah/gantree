@@ -3,7 +3,7 @@ import { findAvatar } from "../host/avatar";
 import { containerLogsBuffer, dockerErrorMessage, inspectByName, listGantryContainers, normalizeName, stateOf } from "../host/docker";
 import { envKeyNames, loadGantreeToml, tomlPath, yardRoot } from "../host/files";
 import { decodeDockerLogs, parseLogText } from "../host/logs";
-import { mcpHint, mcpSnapshot } from "../tools/mcp";
+import { craneNags, mcpHint, mcpSnapshot } from "../tools/mcp";
 import type { GantryCard, YardInventory } from "../types";
 
 function abs(p: string | undefined): string | null {
@@ -137,6 +137,7 @@ async function cardFrom(opts: {
     mcpPublished: snap.published,
     mcpSkipped: snap.skipped,
     mcpHint: mcpHint(snap),
+    nags: craneNags(state, snap),
     dataDir: opts.dataDir,
     personaDir: opts.personaDir,
     mcpManifest: opts.mcpManifest,

@@ -1,5 +1,15 @@
 import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  redactToken,
+  shouldPushTelegram,
+  telegramDetail,
+  telegramOk,
+  telegramPost,
+  type TelegramPoster,
+} from "./telegram";
+
+export { resolveChannelAndToken, shouldPushTelegram, telegramPost, type TelegramPoster } from "./telegram";
 
 export const AVATAR_FILE = "avatar.jpg";
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
@@ -15,42 +25,11 @@ const MIME: Record<string, string> = {
 
 export type AvatarFile = { path: string; name: string; rev: number; type: string };
 
-export type TelegramPoster = (
-  url: string,
-  init: { method: string; body: FormData; signal?: AbortSignal },
-) => Promise<{ status: number; body: string }>;
-
 export type AvatarApply = {
   detail: string;
   telegram: "updated" | "skipped" | "failed";
   rev: number;
 };
-
-export function shouldPushTelegram(channel: string | null): boolean {
-  return (channel ?? "").trim().toLowerCase() === "telegram";
-}
-
-export function envListValue(env: string[] | null | undefined, key: string): string | null {
-  if (!env) {
-    return null;
-  }
-  const row = env.find((e) => e.startsWith(`${key}=`));
-  const v = row ? row.slice(key.length + 1).trim() : "";
-  return v || null;
-}
-
-export function resolveChannelAndToken(opts: {
-  cardChannel: string | null;
-  file: Record<string, string>;
-  inspectEnv?: string[] | null;
-}): { channel: string | null; token: string | null } {
-  let channel = opts.cardChannel?.trim() || opts.file.CHANNEL?.trim() || envListValue(opts.inspectEnv, "CHANNEL");
-  const token = opts.file.TELEGRAM_BOT_TOKEN?.trim() || envListValue(opts.inspectEnv, "TELEGRAM_BOT_TOKEN");
-  if (!channel && token) {
-    channel = "telegram";
-  }
-  return { channel: channel || null, token: token || null };
-}
 
 export function acceptJpeg(bytes: Uint8Array): { ok: true } | { ok: false; detail: string } {
   if (bytes.byteLength < 32) {
@@ -124,7 +103,7 @@ export async function setTelegramProfilePhoto(
     }
     return { ok: false, detail: telegramDetail(t, res.body) };
   } catch (err) {
-    return { ok: false, detail: redact(t, err instanceof Error ? err.message : String(err)) };
+    return { ok: false, detail: redactToken(t, err instanceof Error ? err.message : String(err)) };
   }
 }
 
@@ -148,37 +127,4 @@ export async function applyAvatar(opts: {
     return { detail: "saved avatar.jpg; Telegram profile photo updated", telegram: "updated", rev: saved.rev };
   }
   return { detail: `saved avatar.jpg; Telegram: ${tg.detail}`, telegram: "failed", rev: saved.rev };
-}
-
-export async function telegramPost(
-  url: string,
-  init: { method: string; body: FormData; signal?: AbortSignal },
-): Promise<{ status: number; body: string }> {
-  const res = await fetch(url, init);
-  return { status: res.status, body: await res.text() };
-}
-
-function telegramOk(body: string): boolean {
-  try {
-    return (JSON.parse(body) as { ok?: boolean }).ok === true;
-  } catch {
-    return false;
-  }
-}
-
-function telegramDetail(token: string, body: string): string {
-  let raw = body.trim() || "empty Telegram response";
-  try {
-    const j = JSON.parse(body) as { description?: unknown };
-    if (typeof j.description === "string" && j.description.trim()) {
-      raw = j.description;
-    }
-  } catch {
-    /* keep raw */
-  }
-  return redact(token, raw).slice(0, 240);
-}
-
-function redact(token: string, text: string): string {
-  return token ? text.split(token).join("***") : text;
 }

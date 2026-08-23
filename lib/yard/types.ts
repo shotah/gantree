@@ -1,5 +1,9 @@
 export type GantryState = "running" | "exited" | "created" | "paused" | "restarting" | "dead" | "unknown";
 
+/** Board badge — files + docker state, never a fake-green. */
+export type CraneNagKind = "dead" | "skipped" | "auth";
+export type CraneNag = { kind: CraneNagKind; detail: string };
+
 /** Hub pin for new cranes. Bump when a release is known-good. `:latest` moves. */
 export const DEFAULT_IMAGE = "shotah/ai-gantry:0.1.66";
 
@@ -20,6 +24,8 @@ export type GantryCard = {
   mcpPublished: number;
   mcpSkipped: number;
   mcpHint: string | null;
+  /** Skipped MCP / needs-auth / dead process — visible on the yard home. */
+  nags: CraneNag[];
   dataDir: string | null;
   personaDir: string | null;
   mcpManifest: string | null;
@@ -91,6 +97,16 @@ export type YardSpend = {
   cranes: SpendRollup[];
 };
 
+export type YardEvent = {
+  id: number;
+  at: string;
+  kind: string;
+  slug: string | null;
+  operatorId: string | null;
+  operatorName: string | null;
+  detail: string;
+};
+
 export type McpSample = {
   at: number;
   published: number;
@@ -108,6 +124,8 @@ export type McpSnapshot = {
   published: number;
   skipped: number;
   skippedNames: string[];
+  /** Granted servers whose oauth session file is missing (subset of skipped). */
+  authMissing: string[];
 };
 
 export type DoctorCheck = {

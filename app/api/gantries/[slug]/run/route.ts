@@ -1,4 +1,4 @@
-import { withDoor } from "@/lib/yard/door";
+import { recordFromRequest, withDoor } from "@/lib/yard/door";
 import { run, type RunAction } from "@/lib/yard/crane/run";
 
 const ACTIONS = new Set<RunAction>(["start", "stop", "recreate", "backup", "pin"]);
@@ -11,5 +11,8 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug:
     return Response.json({ error: "action must be start|stop|recreate|backup|pin" }, { status: 400 });
   }
   const result = await run(slug, action, body.image);
+  if (result.ok && (action === "recreate" || action === "pin")) {
+    recordFromRequest(req, action, slug, result.detail);
+  }
   return Response.json(result, { status: result.ok ? 200 : 400 });
 });

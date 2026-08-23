@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { card } from "../card";
 
 vi.mock("@/lib/yard/crane/inventory", () => ({
@@ -21,6 +24,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { containerLogsBuffer, containerStatsOnce } from "@/lib/yard/host/docker";
 import {
+  clearObserveRings,
   kickYardSamples,
   kickYardSpend,
   peekHost,
@@ -31,11 +35,27 @@ import {
   sampleTurns,
   sampleUptime,
 } from "@/lib/yard/observe/stats";
+import { closeYardDb } from "@/lib/yard/door/store";
+
+const dirs: string[] = [];
 
 beforeEach(() => {
   vi.mocked(getGantry).mockReset();
   vi.mocked(containerStatsOnce).mockReset();
   vi.mocked(containerLogsBuffer).mockReset();
+  closeYardDb();
+  clearObserveRings();
+  const root = mkdtempSync(join(tmpdir(), "gantree-stats-"));
+  dirs.push(root);
+  process.env.GANTREE_DB = join(root, "gantree.db");
+});
+
+afterEach(() => {
+  closeYardDb();
+  clearObserveRings();
+  for (const d of dirs.splice(0)) {
+    rmSync(d, { recursive: true, force: true });
+  }
 });
 
 const statsRaw = {

@@ -36,7 +36,8 @@ Chat is Telegram — not this UI.
 
 Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
 That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the
-passphrase: delete it and run `/setup` again.
+passphrase: delete it and run `/setup` again. Add a partner from **Operators**
+in the header after login.
 
 ## Cloud (your GCE / EC2)
 

@@ -31,7 +31,8 @@ Need **Node 22**. `npm start` (or compose) on the Docker host.
 
 Forgot the passphrase: stop, delete that sqlite file, start, run setup
 again. No email reset. Whoever can log in can read logs, edit `.env`, and
-recreate containers.
+recreate containers. Add a partner from **Operators** in the header
+(confirm-scary, like a token push). You cannot delete the last operator.
 
 ![First-boot setup: create the operator who owns the box](../assets/setup.png)
 
@@ -42,12 +43,16 @@ recreate containers.
 ## Board
 
 A handful of named pets, not a Kubernetes dashboard. Each card: name, alive
-or not, model, channel, published vs skipped MCP. Click through. Kit’s page
-is **Kit** — graphs and log, not a mixed fleet dump.
+or not, model, channel, published vs skipped MCP. **Nags** (dead process,
+skipped grant, needs-auth) sit on the card — you do not have to open Tools.
+Click through. Kit’s page is **Kit** — graphs and log, not a mixed fleet dump.
 
 Build a crane from the board (yard type first: home Mini or cloud VM).
 **Upload a photo** on the crane — it lands in `persona/avatar.jpg`, shows on
-the board, and if the channel is Telegram the bot’s face updates too. Grant
+the board, and if the channel is Telegram the bot’s face updates too. On a
+Telegram crane, **Telegram** (below the photo) can `getMe` the token, push
+name / about / the `/` command menu, and edit `TELEGRAM_ALLOWED_USERS` from
+numeric ids (slog `user_id` after someone talks — not `@username`). Grant
 a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 `/tools` is the crane’s mouth; this page is the operator’s.
 
@@ -94,6 +99,9 @@ directory, one `data/`. Delete a tryout = delete that directory.
 The crane does not grow a `/metrics` port. The yard **pulls** (`docker
 inspect`, `docker logs`, sampled stats, JSON slog). Parse what the harness
 already emits. Do not tax parallel tool calls so a chart looks nicer.
+Samples and turns land in yard sqlite (7-day cap) so bouncing `npm start`
+does not wipe Kit’s graphs. Mutations (grant, recreate, env, operators)
+show *who* on a small events strip — not a SIEM.
 
 Doctor says why a tool is skipped (no binary / no key / no OAuth). Recreate
 keeps the host `user` that owns `data/` (never Distroless `65532`),

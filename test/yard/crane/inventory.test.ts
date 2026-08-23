@@ -175,6 +175,7 @@ env_file = "./.env"
     expect(inv.gantries[0]?.model).toBe("dummy");
     expect(inv.gantries[0]?.channel).toBe("stdio");
     expect(inv.gantries[0]?.state).toBe("exited");
+    expect(inv.gantries[0]?.nags.some((n) => n.kind === "dead")).toBe(true);
     expect(inv.gantries[0]?.restartCount).toBeNull();
   });
 

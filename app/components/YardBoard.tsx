@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
+import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
 import { fmtEstTokens, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BuildCrane } from "./BuildCrane";
 import { CraneAvatar } from "./CraneAvatar";
+import { EventStrip } from "./EventStrip";
 import { SpendBoard } from "./SpendBoard";
 import { yardFetch } from "../lib/yardFetch";
+
+function Nag({ nag }: { nag: CraneNag }) {
+  const color =
+    nag.kind === "dead" ? "border-red-900/70 bg-red-950/40 text-red-200" : "border-amber-900/70 bg-amber-950/40 text-amber-200";
+  return <span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${color}`}>{nag.detail}</span>;
+}
 
 function Badge({ state }: { state: GantryCard["state"] }) {
   const on = state === "running";
@@ -159,9 +166,18 @@ export function YardBoard() {
             </dl>
             {g.lastError ? <p className="mt-3 truncate text-xs text-red-300/80">{g.lastError}</p> : null}
             {g.mcpHint ? <p className="mt-2 truncate text-xs text-zinc-500">{g.mcpHint}</p> : null}
+            {g.nags?.length ? (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {g.nags.map((n) => (
+                  <Nag key={`${n.kind}:${n.detail}`} nag={n} />
+                ))}
+              </div>
+            ) : null}
           </Link>
         ))}
       </div>
+
+      <EventStrip />
     </section>
   );
 }

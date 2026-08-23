@@ -4,17 +4,22 @@ import {
   SESSION_ABS_MS,
   SESSION_COOKIE,
   SESSION_IDLE_MS,
+  addOperator,
+  changeOwnPassphrase,
   clearSessionCookieHeader,
   denyUnlessOperator,
   doorStatus,
+  listOperators,
   loginOperator,
   logoutOperator,
   operatorCount,
   operatorFromRequest,
+  removeOperator,
   sessionCookieHeader,
   setupOperator,
   withDoor,
 } from "@/lib/yard/door/gate";
+import { listYardEvents, recordFromRequest, recordYardEvent } from "@/lib/yard/door/events";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -58,7 +63,15 @@ describe("yard sqlite", () => {
     const names = yardDb()
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
       .all() as { name: string }[];
-    expect(names.map((n) => n.name)).toEqual(["operator", "operator_session", "yard_event"]);
+    expect(names.map((n) => n.name)).toEqual([
+      "operator",
+      "operator_session",
+      "sample_host",
+      "sample_mcp",
+      "sample_turn",
+      "sample_uptime",
+      "yard_event",
+    ]);
   });
 
   it("mkdirs the db directory", () => {
@@ -225,5 +238,80 @@ describe("open bind", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(doorStatus(req()).bindOpen).toBe(true);
     warn.mockRestore();
+  });
+});
+
+describe("operators", () => {
+  it("adds a partner, lists names without hashes, and refuses the last delete", () => {
+    const first = setupOperator("kit", "a-long-enough-pass");
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    const added = addOperator("partner", "another-long-pass");
+    expect(added.ok).toBe(true);
+    const listed = listOperators();
+    expect(listed.map((o) => o.name).sort()).toEqual(["kit", "partner"]);
+    const dump = readFileSync(dbPath());
+    expect(dump.includes("another-long-pass")).toBe(false);
+
+    expect(removeOperator(first.operator.id, "missing").ok).toBe(false);
+    expect(addOperator("kit", "a-long-enough-pass")).toMatchObject({ ok: false, status: 409 });
+
+    if (!added.ok) {
+      return;
+    }
+    expect(removeOperator(first.operator.id, added.operator.id).ok).toBe(true);
+    expect(listOperators()).toHaveLength(1);
+    expect(removeOperator(first.operator.id, first.operator.id)).toMatchObject({
+      ok: false,
+      error: "cannot delete the last operator",
+    });
+  });
+
+  it("drops the partner session after remove and changes own passphrase", () => {
+    const first = setupOperator("kit", "a-long-enough-pass");
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    const added = addOperator("partner", "another-long-pass");
+    expect(added.ok).toBe(true);
+    const login = loginOperator("partner", "another-long-pass");
+    expect(login.ok).toBe(true);
+    if (!login.ok || !added.ok) {
+      return;
+    }
+    const partnerReq = req("http://127.0.0.1/api/gantries", login.token);
+    expect(operatorFromRequest(partnerReq)?.name).toBe("partner");
+    expect(removeOperator(first.operator.id, added.operator.id).ok).toBe(true);
+    expect(operatorFromRequest(partnerReq)).toBeNull();
+
+    expect(changeOwnPassphrase(first.operator.id, "wrong-passphrase-here", "brand-new-pass").ok).toBe(false);
+    expect(changeOwnPassphrase(first.operator.id, "a-long-enough-pass", "short").ok).toBe(false);
+    expect(changeOwnPassphrase(first.operator.id, "a-long-enough-pass", "brand-new-pass").ok).toBe(true);
+    expect(loginOperator("kit", "a-long-enough-pass").ok).toBe(false);
+    expect(loginOperator("kit", "brand-new-pass").ok).toBe(true);
+  });
+});
+
+describe("audit", () => {
+  it("records who did what and 401s the events list without a session", async () => {
+    const created = setupOperator("kit", "a-long-enough-pass");
+    expect(created.ok).toBe(true);
+    if (!created.ok) {
+      return;
+    }
+    recordYardEvent({ kind: "setup", operatorId: created.operator.id, detail: "kit" });
+    const authed = req("http://127.0.0.1/api/gantries", created.token);
+    recordFromRequest(authed, "recreate", "kit", "doctor ok");
+    const events = listYardEvents({ slug: "kit", limit: 10 });
+    expect(events[0]?.kind).toBe("recreate");
+    expect(events[0]?.operatorName).toBe("kit");
+    expect(listYardEvents()[1]?.kind).toBe("setup");
+
+    const handler = withDoor(async () => Response.json({ events: listYardEvents() }));
+    expect((await handler(req())).status).toBe(401);
+    expect((await handler(authed)).status).toBe(200);
   });
 });

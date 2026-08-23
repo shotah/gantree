@@ -77,6 +77,9 @@ export function DoorShell({ children }: { children: React.ReactNode }) {
             <p>shipping yard · not the chat</p>
             {door?.operator ? (
               <>
+                <Link href="/operators" className="text-zinc-400 hover:text-amber-200">
+                  operators
+                </Link>
                 <span className="text-zinc-400">{door.operator.name}</span>
                 <button type="button" onClick={() => void logout()} className="text-amber-200/80 hover:text-amber-200">
                   log out

@@ -69,6 +69,44 @@ function migrate(d: DatabaseSync): void {
       detail      TEXT NOT NULL DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS idx_yard_event_at ON yard_event(at);
+    CREATE TABLE IF NOT EXISTS sample_host (
+      slug TEXT NOT NULL,
+      at INTEGER NOT NULL,
+      cpu_percent REAL,
+      mem_bytes INTEGER,
+      mem_limit_bytes INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_sample_host_slug_at ON sample_host(slug, at);
+    CREATE TABLE IF NOT EXISTS sample_turn (
+      slug TEXT NOT NULL,
+      at INTEGER NOT NULL,
+      key TEXT NOT NULL,
+      rounds INTEGER,
+      recoveries INTEGER,
+      est_tokens INTEGER,
+      prompt_est_tokens INTEGER,
+      gen_est_tokens INTEGER,
+      source TEXT,
+      user_id TEXT,
+      session_id TEXT,
+      outcome TEXT,
+      UNIQUE(slug, key)
+    );
+    CREATE INDEX IF NOT EXISTS idx_sample_turn_slug_at ON sample_turn(slug, at);
+    CREATE TABLE IF NOT EXISTS sample_mcp (
+      slug TEXT NOT NULL,
+      at INTEGER NOT NULL,
+      published INTEGER NOT NULL,
+      skipped INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_sample_mcp_slug_at ON sample_mcp(slug, at);
+    CREATE TABLE IF NOT EXISTS sample_uptime (
+      slug TEXT NOT NULL,
+      at INTEGER NOT NULL,
+      uptime_seconds REAL,
+      restart_count INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_sample_uptime_slug_at ON sample_uptime(slug, at);
   `);
 }
 

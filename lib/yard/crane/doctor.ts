@@ -75,12 +75,40 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
   if (g.containerId && running) {
     const status = await execStatus(g.containerId);
     if (status) {
-      const fail = /unhealthy|error|skipped/i.test(status) && !/ok|healthy/i.test(status);
-      checks.push({
-        id: "gantry-status",
-        ok: !fail,
-        detail: status.slice(0, 400),
-      });
+      const parsed = parseGantryStatusJson(status);
+      if (parsed) {
+        const operatorOk = parsed.alive !== false && parsed.ok !== false;
+        const mcp = parsed.mcp;
+        const summary = [
+          parsed.channel,
+          parsed.reason,
+          mcp ? `listed=${mcp.listed ?? "?"} connected=${mcp.connected ?? "?"} skipped=${mcp.skipped ?? "?"}` : null,
+        ]
+          .filter(Boolean)
+          .join(" ");
+        checks.push({
+          id: "gantry-status",
+          ok: operatorOk,
+          detail: summary || status.slice(0, 400),
+        });
+        for (const s of mcp?.servers ?? []) {
+          if (!s?.name || s.state !== "skipped") {
+            continue;
+          }
+          checks.push({
+            id: `skip:${s.name}`,
+            ok: false,
+            detail: `${s.name}: ${s.reason ?? "skipped"}${s.note ? ` — ${s.note}` : ""}`,
+          });
+        }
+      } else {
+        const fail = /unhealthy|error|skipped/i.test(status) && !/ok|healthy/i.test(status);
+        checks.push({
+          id: "gantry-status",
+          ok: !fail,
+          detail: status.slice(0, 400),
+        });
+      }
     } else {
       checks.push({
         id: "gantry-status",
@@ -90,7 +118,50 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
     }
   }
 
-  const hard = checks.filter((c) => c.id === "process" || c.id === "mcp-listed" || c.id.startsWith("env:"));
+  const hard = checks.filter(
+    (c) => c.id === "process" || c.id === "mcp-listed" || c.id === "gantry-status" || c.id.startsWith("env:"),
+  );
   const ok = hard.every((c) => c.ok);
   return { slug, ok, checks };
 }
+
+/** Parse `gantry status` JSON. `"ok":false` must not be regex-matched as healthy. */
+export function parseGantryStatusJson(text: string): GantryStatusJson | null {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) {
+    return null;
+  }
+  try {
+    const j: unknown = JSON.parse(text.slice(start, end + 1));
+    if (!j || typeof j !== "object" || Array.isArray(j)) {
+      return null;
+    }
+    const rec = j as Record<string, unknown>;
+    if (typeof rec.alive !== "boolean" && typeof rec.ok !== "boolean") {
+      return null;
+    }
+    return rec as GantryStatusJson;
+  } catch {
+    return null;
+  }
+}
+
+export type GantryStatusJson = {
+  alive?: boolean;
+  ok?: boolean;
+  reason?: string;
+  channel?: string;
+  mcp?: {
+    listed?: number;
+    connected?: number;
+    skipped?: number;
+    servers?: Array<{
+      name?: string;
+      state?: string;
+      reason?: string;
+      note?: string;
+      auth?: boolean;
+    }>;
+  };
+};

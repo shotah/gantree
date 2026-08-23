@@ -26,7 +26,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
 }));
 
 import { getGantry } from "@/lib/yard/crane/inventory";
-import { doctor } from "@/lib/yard/crane/doctor";
+import { doctor, parseGantryStatusJson } from "@/lib/yard/crane/doctor";
 import { execStatus } from "@/lib/yard/host/docker";
 import { stringifyMcpToml } from "@/lib/yard/host/files";
 
@@ -137,5 +137,40 @@ describe("doctor", () => {
     vi.mocked(execStatus).mockResolvedValue(null);
     const noExec = await doctor("kit");
     expect(noExec?.checks.find((c) => c.id === "gantry-status")?.detail).toMatch(/could not exec/);
+  });
+
+  it("parses gantry status JSON so ok:false is not fake-green", async () => {
+    const files = craneFiles({ oauth: true });
+    vi.mocked(getGantry).mockResolvedValue(card({ ...files }));
+    vi.mocked(execStatus).mockResolvedValue(
+      JSON.stringify({
+        alive: true,
+        ok: false,
+        reason: "mcp_all_skipped",
+        channel: "telegram",
+        mcp: {
+          listed: 2,
+          connected: 0,
+          skipped: 2,
+          servers: [
+            { name: "google", state: "skipped", reason: "no_oauth", note: "no token", auth: true },
+            { name: "math", state: "skipped", reason: "no_binary", auth: false },
+          ],
+        },
+      }),
+    );
+    const report = await doctor("kit");
+    expect(report?.ok).toBe(false);
+    expect(report?.checks.find((c) => c.id === "gantry-status")?.ok).toBe(false);
+    expect(report?.checks.find((c) => c.id === "gantry-status")?.detail).toMatch(/mcp_all_skipped/);
+    expect(report?.checks.find((c) => c.id === "skip:google")?.detail).toMatch(/no_oauth/);
+    expect(report?.checks.find((c) => c.id === "skip:math")?.detail).toMatch(/no_binary/);
+  });
+
+  it("parseGantryStatusJson finds the object among stderr noise", () => {
+    const parsed = parseGantryStatusJson('status: no_heartbeat\n{"alive":false,"ok":false,"reason":"no_heartbeat","channel":"telegram","persona":{},"mcp":{}}\n');
+    expect(parsed?.alive).toBe(false);
+    expect(parsed?.reason).toBe("no_heartbeat");
+    expect(parseGantryStatusJson("ok: channel telegram")).toBeNull();
   });
 });

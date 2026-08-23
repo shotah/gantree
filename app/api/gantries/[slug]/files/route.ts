@@ -1,4 +1,4 @@
-import { withDoor } from "@/lib/yard/door";
+import { recordFromRequest, withDoor } from "@/lib/yard/door";
 import { resolve } from "node:path";
 import { loadEnvFile, maskEnv, mergeEnv, writeEnvFile } from "@/lib/yard/host/envfile";
 import { parseMcpToml, readText, writeText } from "@/lib/yard/host/files";
@@ -54,6 +54,7 @@ export const PUT = withDoor(async (req: Request, ctx: { params: Promise<{ slug: 
       return Response.json({ error: "confirmToken required to write secrets" }, { status: 400 });
     }
     writeEnvFile(g.envFile, mergeEnv(loadEnvFile(g.envFile), body.env));
+    recordFromRequest(req, "env", slug, Object.keys(body.env).join(","));
   }
   return Response.json({ ok: true });
 });

@@ -115,8 +115,10 @@ describe("setTelegramProfilePhoto", () => {
     let hasFile = false;
     const post: TelegramPoster = async (u, init) => {
       url = u;
-      photo = String(init.body.get("photo"));
-      hasFile = init.body.get("avatar") instanceof Blob;
+      if (init.body instanceof FormData) {
+        photo = String(init.body.get("photo"));
+        hasFile = init.body.get("avatar") instanceof Blob;
+      }
       return { status: 200, body: JSON.stringify({ ok: true, result: true }) };
     };
     const r = await setTelegramProfilePhoto(token, fakeJpeg(), post);

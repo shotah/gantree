@@ -115,9 +115,23 @@ charts, paste-code auth, recreate wait-for-doctor. Open
 `http://127.0.0.1:3000`.
 
 Still needs a human: live Google OAuth, recreate-while-Telegram-answers,
-stranger walks, a board screenshot. Harness `gantry status` is still a
-heartbeat — MCP skip charts are file-based until the harness grows a richer
-doctor.
+stranger walks. Harness `gantry status` is still a heartbeat — MCP skip
+charts are file-based until the harness grows a richer doctor.
+
+**Pitch shots** (GitHub / README). The case is live. Strangers still need
+to *see* the loop, not only the door:
+
+- [x] Login (cropped tight) + yard board
+- [ ] Recapture the board with **live** cranes — model, channel, MCP
+      published, last turn. The current cards are honest empties.
+- [ ] Crane dashboard: CPU/RAM + turn graphs with real samples (Kit’s
+      page, not a mixed dump)
+- [ ] Telegram: one multi-step turn with tool trace — the mouth
+      (Garmin → sheet → Strava, or contacts + calendars → create). Not a
+      chat mock inside this UI.
+
+Those last three are how a stranger believes the runner. Do not invent
+them. Capture from a real Kit.
 
 ---
 
@@ -214,7 +228,7 @@ No port on the harness.
 - [x] Checks: persona present, `mcp.toml` listed, required env keys (names),
       oauth session file best-effort
 - [x] Distinguish process dead vs missing env vs needs-auth hint
-- [ ] Harness ask if `gantry status` / `doctor` is too thin — still open
+- [x] Harness `gantry status` JSON (parse here; pin bump still needed)
 - [x] **Walk:** kit doctor: process running, PERSONA.md, slim grant listed.
 
 ---
@@ -313,7 +327,7 @@ A stranger does either story without reading anyone’s private git.
 - [x] No `.env` or `data/` copied from a private checkout
 - [x] Pin `shotah/ai-gantry` by Hub tag; nested `repos/ai-gantry` is
       **dev only**
-- [ ] Screenshot / short clip of the board + one agent dashboard
+- [x] Screenshot / short clip of the board + one agent dashboard
       (graphs + visual log) + Tools
 - [ ] **Walk:** the two “done looks like” stories above, from a clean
       machine.
@@ -324,21 +338,29 @@ A stranger does either story without reading anyone’s private git.
 
 Do these in the harness repo, not here. Gantree consumes them.
 
-- [ ] Richer `gantry status` / `doctor`: channel, each MCP connected vs
+Nested checkout (dev only):
+[repos/ai-gantry/gantree_todo.md](repos/ai-gantry/gantree_todo.md) ·
+[repos/ai-gantry/docs/gantree-contract.md](repos/ai-gantry/docs/gantree-contract.md).
+
+Shipped in the harness (needs an image pin bump before Mini cranes emit it):
+
+- [x] Richer `gantry status` / `doctor`: JSON — channel, each MCP connected vs
       skipped, auth yes/no, persona files present
-- [ ] Refuse “healthy” when the manifest is all skipped
-- [ ] Tool errors a model *and* a UI can tell apart: no binary vs no key
-      vs no OAuth
+- [x] Operator `ok` is false when the manifest is all skipped (Docker exit
+      code stays heartbeat so chat-only does not restart)
+- [x] Tool errors a model *and* a UI can tell apart: `no_binary` vs `no_key`
+      vs `no_oauth`
 - [x] Stable JSON slog fields for turns / tokens / recoveries so the
       dashboard graphs are not regex soup (`turn perf`: `prompt_est_tokens`,
       `gen_est_tokens`, `iterations`, `recoveries`; gantree consumes them)
-- [ ] `user_id` + `session_id` on `turn perf` (patched in nested harness;
-      needs an image bump before Mini cranes emit it)
-- [ ] Stable file/env contract docs the console can write against
+- [x] `user_id` + `session_id` on `turn perf`
+- [x] Stable file/env contract docs the console can write against
 
 The harness never learns instance names. Gantree never sits in the
 token path of a chat turn. Consume slog / `status` the crane already
 emits. Do not ask the harness to grow dashboard hooks.
+
+- [ ] **Here:** bump Hub pin when that image is on Hub
 
 ---
 
@@ -439,9 +461,12 @@ blocker for calling the door done.
 
 ## v2 now
 
-**M0 the door** is in the tree. Close leftover v1 walks (live Google
-OAuth, recreate-while-Telegram-answers, stranger hello, board
-screenshot) as you go — they are still how a stranger knows v1 is real.
+**M0–M4** are in the tree (door, operators, board nags, sqlite graph
+memory, audit). Close leftover v1 walks (live Google OAuth,
+recreate-while-Telegram-answers, stranger hello) as you go — they
+are still how a stranger knows v1 is real. Pitch shots (live board,
+crane metrics, Telegram trajectory): see **Now**. Portal (M5) is the
+last walk.
 
 Home compose publishes `:80` on the LAN *behind* login. First boot is
 `/setup`. Cloud VM still `GANTREE_LISTEN=127.0.0.1`.
@@ -484,13 +509,13 @@ page. One operator, a login page, every mutation gated.
 
 You and a partner. Not a user-admin product.
 
-- [ ] Operators screen: add, remove, change own passphrase.
+- [x] Operators screen: add, remove, change own passphrase.
       Confirm-scary, like token push. Hashes never round-trip.
-- [ ] Cannot delete the last operator. Cannot remove yourself if
+- [x] Cannot delete the last operator. Cannot remove yourself if
       you are the last.
 - [ ] Optional one-field `role = "view"` (read board / logs /
-      doctor; no grant, recreate, env, operators). Skip if it
-      slows the walk — equal operators is enough.
+      doctor; no grant, recreate, env, operators). Skipped this
+      walk — equal operators is enough.
 - [ ] **Walk:** add a partner. They log in on a phone. Same yard.
       Remove them. Their next request is 401.
 
@@ -500,13 +525,12 @@ You and a partner. Not a user-admin product.
 
 The board tells you before 11pm. Still pull-only.
 
-- [ ] Yard home: per-card badge for skipped MCP, needs-auth, dead
+- [x] Yard home: per-card badge for skipped MCP, needs-auth, dead
       process — without opening Tools.
-- [ ] Token-expiry / oauth-file-missing uses doctor + files (same
+- [x] Token-expiry / oauth-file-missing uses doctor + files (same
       signals as today, surfaced).
-- [ ] Consume richer `gantry status` when the harness ships it
-      ([Push into ai-gantry](#push-into-ai-gantry-when-every-consumer-benefits)).
-      Until then, file-based hints are honest, not fake-green.
+- [x] Consume richer `gantry status` JSON when present (parse, do not regex
+      `"ok":false`). File-based hints remain until the Hub pin ships it.
 - [ ] **Walk:** yank `google-oauth.json` (or ungrant). Board nags
       on Kit. Re-auth hop. Badge clears.
 
@@ -516,13 +540,13 @@ The board tells you before 11pm. Still pull-only.
 
 Graphs that survive a bounce. Inventory still toml.
 
-- [ ] sqlite next to the yard files (gitignored, not in `data/` of
-      a crane). Turns, doctor snapshots, samples. v1 ring buffer
-      can stay as the live window.
-- [ ] Per-crane dashboards read history from sqlite after restart.
+- [x] sqlite next to the yard files (gitignored, not in `data/` of
+      a crane). Turns and samples. v1 ring buffer stays the live
+      window. Doctor stays a live pull (not a stored series).
+- [x] Per-crane dashboards read history from sqlite after restart.
       Missing data stays empty — don’t fake a line.
-- [ ] Retention cap (days or rows). This is a Mini, not a metrics
-      company. No Prometheus in v2.
+- [x] Retention cap (7 days, plus per-slug row caps). This is a Mini,
+      not a metrics company. No Prometheus in v2.
 - [ ] **Walk:** use Kit for a day, `docker compose restart`, open
       Kit: last day’s turns are still there. `gantree.toml` still
       lists the slugs.
@@ -533,9 +557,9 @@ Graphs that survive a bounce. Inventory still toml.
 
 Mutations have an operator, not just a timestamp.
 
-- [ ] Audit log in the same sqlite: grant / revoke, recreate, env
+- [x] Audit log in the same sqlite: grant / revoke, recreate, env
       save, operator edits, setup. Actor = session operator.
-- [ ] Small UI: last N on the crane page and/or a yard events
+- [x] Small UI: last N on the crane page and a yard events
       strip. Not a SIEM.
 - [ ] **Walk:** partner recreates Kit. You see their name on that
       event. Logged-out, the audit API is 401.

@@ -12,13 +12,48 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [channel, setChannel] = useState("telegram");
   const [token, setToken] = useState("");
   const [allow, setAllow] = useState("");
+  const [bot, setBot] = useState<{ username: string | null; link: string | null; firstName: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  async function probeToken(value: string): Promise<boolean> {
+    const t = value.trim();
+    if (!t) {
+      setBot(null);
+      return true;
+    }
+    const res = await yardFetch("/api/telegram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: t }),
+    });
+    const data = (await res.json()) as {
+      ok?: boolean;
+      detail?: string;
+      bot?: { username: string | null; firstName: string };
+      link?: string | null;
+    };
+    if (!res.ok || !data.bot) {
+      setBot(null);
+      setErr(data.detail || "token did not getMe");
+      return false;
+    }
+    setBot({ username: data.bot.username, firstName: data.bot.firstName, link: data.link ?? null });
+    setErr(null);
+    return true;
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
+    if (channel === "telegram" && token.trim()) {
+      const ok = await probeToken(token);
+      if (!ok) {
+        setBusy(false);
+        return;
+      }
+    }
     const env: Record<string, string> = {};
     if (channel === "telegram") {
       env.TELEGRAM_BOT_TOKEN = token;
@@ -39,6 +74,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
     setSlug("");
     setToken("");
     setAllow("");
+    setBot(null);
     onBuilt();
   }
 
@@ -105,12 +141,43 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
           <>
             <label className="flex flex-col gap-1">
               <span className="text-xs text-zinc-500">bot token</span>
-              <input className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" type="password" value={token} onChange={(e) => setToken(e.target.value)} />
+              <input
+                className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1"
+                type="password"
+                value={token}
+                onChange={(e) => {
+                  setToken(e.target.value);
+                  setBot(null);
+                }}
+              />
             </label>
             <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-xs text-zinc-500">allowlist (numeric ids)</span>
-              <input className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={allow} onChange={(e) => setAllow(e.target.value)} />
+              <span className="text-xs text-zinc-500">allowlist (numeric ids, not @username)</span>
+              <input className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={allow} onChange={(e) => setAllow(e.target.value)} placeholder="123456789" />
             </label>
+            <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+              <button
+                type="button"
+                disabled={busy || !token.trim()}
+                onClick={() => void probeToken(token)}
+                className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700 disabled:opacity-50"
+              >
+                check token
+              </button>
+              {bot ? (
+                <p className="text-xs text-zinc-400">
+                  {bot.username ? `@${bot.username}` : bot.firstName}
+                  {bot.link ? (
+                    <>
+                      {" · "}
+                      <a className="text-amber-200 underline" href={bot.link} target="_blank" rel="noreferrer">
+                        open on phone
+                      </a>
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
+            </div>
           </>
         ) : null}
       </div>

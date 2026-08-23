@@ -19,6 +19,14 @@
 
 You opened the yard repo. **The product is the runner.**
 
+<p align="center">
+  <img src="assets/login.png" alt="Log in — the door to the yard, not the chat" width="400">
+</p>
+
+<p align="center">
+  <img src="assets/yard.png" alt="The yard — a handful of named cranes, not a fleet dump">
+</p>
+
 ---
 
 ## The case for the runner
@@ -97,16 +105,8 @@ npm run build
 npm start                 # http://127.0.0.1:3000
 ```
 
-<p align="center">
-  <img src="assets/login.png" alt="Log in — the door to the yard, not the chat">
-</p>
-
 Open the board. Build a crane. Grant a tool. Message it on your phone.
 The UI never sits in a chat turn.
-
-<p align="center">
-  <img src="assets/yard.png" alt="The yard — a handful of named cranes, not a fleet dump">
-</p>
 
 Cranes pin `shotah/ai-gantry:0.1.66`. Nested `repos/ai-gantry` is **dev
 only** — do not copy `.env` or `data/` from a private checkout.

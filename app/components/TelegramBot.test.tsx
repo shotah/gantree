@@ -1,0 +1,51 @@
+/** @vitest-environment jsdom */
+
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { TelegramBot } from "./TelegramBot";
+
+vi.mock("../lib/yardFetch", () => ({
+  yardFetch: vi.fn(),
+}));
+
+import { yardFetch } from "../lib/yardFetch";
+
+afterEach(() => {
+  cleanup();
+});
+
+describe("TelegramBot", () => {
+  it("renders nothing when the crane is not telegram", async () => {
+    vi.mocked(yardFetch).mockResolvedValue({
+      json: async () => ({ enabled: false, detail: "not telegram" }),
+    } as Response);
+    const { container } = render(
+      <TelegramBot slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />,
+    );
+    await waitFor(() => expect(vi.mocked(yardFetch)).toHaveBeenCalled());
+    expect(container.textContent).toBe("");
+  });
+
+  it("shows @username and seen ids when telegram is live", async () => {
+    vi.mocked(yardFetch).mockResolvedValue({
+      json: async () => ({
+        enabled: true,
+        tokenSet: true,
+        bot: { id: 99, username: "kit_bot", firstName: "Kit" },
+        name: "Kit",
+        description: "blurb",
+        shortDescription: "about",
+        commands: [{ command: "tools", description: "list granted MCP" }],
+        allowlist: ["1"],
+        seen: [{ id: "9", turns: 2, lastAt: 10 }],
+        link: "https://t.me/kit_bot",
+        detail: "@kit_bot",
+      }),
+    } as Response);
+    render(<TelegramBot slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />);
+    await waitFor(() => expect(screen.getByText("@kit_bot")).toBeTruthy());
+    expect(screen.getByText("open on phone").getAttribute("href")).toBe("https://t.me/kit_bot");
+    expect(screen.getByText(/add 9/)).toBeTruthy();
+    expect((screen.getByPlaceholderText("numeric id") as HTMLInputElement).value).toBe("");
+  });
+});
