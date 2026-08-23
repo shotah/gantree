@@ -155,10 +155,10 @@ describe("kickAuth / exchangeAuth / waitAuth / toolsFetch", () => {
 });
 
 describe("fetchNeedsReload", () => {
-  it("reloads after an install and skips a no-url manifest", () => {
+  it("reloads after fetch even when bins were already on disk", () => {
     expect(fetchNeedsReload("tools-fetch: done installed=2 skipped=0 total=2")).toBe(true);
     expect(fetchNeedsReload("tools-fetch finished")).toBe(true);
     expect(fetchNeedsReload("tools-fetch: no download_url servers in manifest")).toBe(false);
-    expect(fetchNeedsReload("tools-fetch: done installed=0 skipped=3 total=3")).toBe(false);
+    expect(fetchNeedsReload("tools-fetch: done installed=0 skipped=3 total=3")).toBe(true);
   });
 });

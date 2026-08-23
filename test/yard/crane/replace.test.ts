@@ -82,7 +82,7 @@ describe("createOrReplaceContainer", () => {
     expect(host.Binds).not.toContain("/opt/agents/kit/data:/data");
     const env = created?.Env as string[];
     expect(env).toContain("HOME=/data");
-    expect(env.some((e) => e.startsWith("PATH=/data/bin:"))).toBe(true);
+    expect(env).toContain("PATH=/data/bin:/usr/local/bin:/usr/bin:/bin");
     expect((created?.Labels as Record<string, string>)["gantree.slug"]).toBe("kit");
     expect((created?.Labels as Record<string, string>).house).toBe("1");
   });
@@ -112,5 +112,35 @@ describe("createOrReplaceContainer", () => {
     expect(stop).toHaveBeenCalled();
     expect(created?.OpenStdin).toBe(true);
     expect(created?.Tty).toBe(true);
+  });
+
+  it("keeps /tools on PATH when the old crane had a fleet bin bind", async () => {
+    let created: Record<string, unknown> | undefined;
+    vi.mocked(inspectByName).mockResolvedValue({
+      listed: {} as never,
+      info: {
+        Id: "old-id",
+        Config: { User: "1000:1000", Env: ["PATH=/usr/local/bin:/tools", "CHANNEL=telegram"] },
+        HostConfig: {
+          NetworkMode: "bridge",
+          Binds: ["/opt/agents/kit/bin:/tools:ro"],
+        },
+      },
+    } as never);
+    dockerStub({ onCreate: (body) => (created = body) });
+
+    await createOrReplaceContainer({
+      slug: "kit",
+      image: DEFAULT_IMAGE,
+      env: { CHANNEL: "telegram" },
+      personaDir: "/p",
+      dataDir: "/d",
+      mcpManifest: "/m.toml",
+    });
+
+    const env = created?.Env as string[];
+    expect(env).toContain("PATH=/data/bin:/usr/local/bin:/tools");
+    const host = created?.HostConfig as Record<string, unknown>;
+    expect(host.Binds).toEqual(expect.arrayContaining(["/opt/agents/kit/bin:/tools:ro"]));
   });
 });

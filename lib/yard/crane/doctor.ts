@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { execStatus } from "../host/docker";
 import { envKeyNames, parseMcpToml, readText } from "../host/files";
 import { loadCatalog } from "../tools/catalog";
+import { oauthSessionPresent } from "../tools/mcp";
 import type { DoctorCheck, DoctorReport } from "../types";
 import { getGantry } from "./inventory";
 
@@ -172,7 +173,7 @@ function pushFileMcpChecks(
       detail: missing.length ? `${s.name}: missing env ${missing.join(", ")}` : `${s.name}: required env keys present (or none)`,
     });
     if (cat?.auth_args?.length) {
-      const oauthFile = dataDir ? existsSync(resolve(dataDir, `${s.name}-oauth.json`)) : false;
+      const oauthFile = oauthSessionPresent(dataDir, s.name, cat.command ?? s.command);
       checks.push({
         id: `oauth:${s.name}`,
         ok: true,

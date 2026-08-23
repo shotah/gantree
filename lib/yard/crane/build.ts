@@ -1,7 +1,7 @@
 import { chmodSync, mkdirSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog } from "../tools/catalog";
-import { craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
+import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
 import { writeEnvFile } from "../host/envfile";
 import { stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
 import { DEFAULT_IMAGE, type McpServer } from "../types";
@@ -151,6 +151,7 @@ export async function createOrReplaceContainer(opts: {
     `${hostBindPath(opts.dataDir)}:/data`,
     `${hostBindPath(opts.mcpManifest)}:/etc/gantry/mcp.toml`,
   ];
+  const binds = mergeBinds(requiredBinds, runtime.binds);
   const created = await docker().createContainer({
     name: opts.slug,
     Image: opts.image,
@@ -162,10 +163,14 @@ export async function createOrReplaceContainer(opts: {
       MCP_MANIFEST: "/etc/gantry/mcp.toml",
       ...opts.env,
       HOME: "/data",
-      PATH: `/data/bin:${opts.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
+      PATH: cranePath({
+        envPath: opts.env.PATH,
+        existingEnv: existing?.info.Config?.Env,
+        binds,
+      }),
     }).map(([k, v]) => `${k}=${v}`),
     HostConfig: {
-      Binds: mergeBinds(requiredBinds, runtime.binds),
+      Binds: binds,
       RestartPolicy: { Name: "unless-stopped" },
       NetworkMode: runtime.networkMode,
       GroupAdd: runtime.groupAdd,

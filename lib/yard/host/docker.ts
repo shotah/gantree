@@ -155,6 +155,35 @@ export function mergeBinds(required: string[], existing?: string[] | null): stri
   return [...required, ...extra];
 }
 
+const DEFAULT_CRANE_PATH = "/usr/local/bin:/usr/bin:/bin";
+
+function envValue(env: string[] | null | undefined, key: string): string | undefined {
+  const prefix = `${key}=`;
+  const hit = (env ?? []).find((e) => e.startsWith(prefix));
+  return hit ? hit.slice(prefix.length).trim() || undefined : undefined;
+}
+
+/**
+ * MCP bins live in /data/bin (tools-fetch) and sometimes /tools (fleet compose).
+ * Recreate must keep the old PATH (and /tools when that bind survives) instead of
+ * replacing it with a distroless default that drops /tools.
+ */
+export function cranePath(opts: {
+  envPath?: string;
+  existingEnv?: string[] | null;
+  binds: string[];
+}): string {
+  const parts = (opts.envPath?.trim() || envValue(opts.existingEnv, "PATH") || DEFAULT_CRANE_PATH)
+    .split(":")
+    .map((p) => p.trim())
+    .filter((p) => p && p !== "/data/bin");
+  if (opts.binds.some((b) => bindDest(b) === "/tools") && !parts.includes("/tools")) {
+    parts.push("/tools");
+  }
+  parts.unshift("/data/bin");
+  return parts.join(":");
+}
+
 export type CraneRuntime = {
   user?: string;
   networkMode?: string;

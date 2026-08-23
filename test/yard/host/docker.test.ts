@@ -8,6 +8,7 @@ import {
   hostBindPath,
   looksLikeGantry,
   mergeBinds,
+  cranePath,
   normalizeName,
   ownerUserSpec,
   stateOf,
@@ -105,6 +106,21 @@ describe("mergeBinds", () => {
         ["/old/data:/data", "/dev/snd:/dev/snd"],
       ),
     ).toEqual(["/opt/agents/kit/data:/data", "/opt/agents/kit/persona:/persona", "/dev/snd:/dev/snd"]);
+  });
+});
+
+describe("cranePath", () => {
+  it("prepends /data/bin, keeps inspect PATH, and restores /tools when that bind survives", () => {
+    expect(
+      cranePath({
+        existingEnv: ["PATH=/usr/local/bin:/tools", "CHANNEL=telegram"],
+        binds: ["/opt/agents/kit/bin:/tools:ro"],
+      }),
+    ).toBe("/data/bin:/usr/local/bin:/tools");
+    expect(cranePath({ binds: ["/opt/agents/kit/bin:/tools:ro"] })).toBe(
+      "/data/bin:/usr/local/bin:/usr/bin:/bin:/tools",
+    );
+    expect(cranePath({ envPath: "/custom", binds: ["/data:/data"] })).toBe("/data/bin:/custom");
   });
 });
 

@@ -1,8 +1,60 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { readdirSync, statSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { envKeyNames, parseMcpToml, readText } from "../host/files";
 import type { CraneNag, GantryCard, McpSnapshot } from "../types";
 import { loadCatalog } from "./catalog";
+
+function dirHasFile(dir: string, depth = 2): boolean {
+  if (depth < 0) {
+    return false;
+  }
+  let names: string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return false;
+  }
+  for (const name of names) {
+    const p = join(dir, name);
+    try {
+      const st = statSync(p);
+      if (st.isFile() && st.size > 0) {
+        return true;
+      }
+      if (st.isDirectory() && dirHasFile(p, depth - 1)) {
+        return true;
+      }
+    } catch {
+      /* skip */
+    }
+  }
+  return false;
+}
+
+/** Flat `{name}-oauth.json` or MCP token dirs under `data/.config/`. */
+export function oauthSessionPresent(dataDir: string | null | undefined, name: string, command?: string): boolean {
+  if (!dataDir) {
+    return false;
+  }
+  const roots = [resolve(dataDir, `${name}-oauth.json`), resolve(dataDir, ".config", name), resolve(dataDir, ".config", `${name}-mcp`)];
+  if (command && command !== name && command !== `${name}-mcp`) {
+    roots.push(resolve(dataDir, ".config", command));
+  }
+  for (const p of roots) {
+    try {
+      const st = statSync(p);
+      if (st.isFile() && st.size > 0) {
+        return true;
+      }
+      if (st.isDirectory() && dirHasFile(p)) {
+        return true;
+      }
+    } catch {
+      /* missing */
+    }
+  }
+  return false;
+}
 
 /** Listed vs likely-skipped from files only — no docker exec, no invented series. */
 export function mcpSnapshot(g: Pick<GantryCard, "mcpManifest" | "envFile" | "dataDir">): McpSnapshot {
@@ -18,11 +70,9 @@ export function mcpSnapshot(g: Pick<GantryCard, "mcpManifest" | "envFile" | "dat
       continue;
     }
     const needsAuth = Boolean(s.auth_args?.length || cat?.auth_args?.length);
-    if (needsAuth && g.dataDir) {
-      if (!existsSync(resolve(g.dataDir, `${s.name}-oauth.json`))) {
-        skippedNames.push(s.name);
-        authMissing.push(s.name);
-      }
+    if (needsAuth && !oauthSessionPresent(g.dataDir, s.name, s.command ?? cat?.command)) {
+      skippedNames.push(s.name);
+      authMissing.push(s.name);
     }
   }
   const listed = servers.length;

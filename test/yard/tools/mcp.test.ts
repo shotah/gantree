@@ -45,6 +45,23 @@ describe("mcpSnapshot", () => {
     expect(after).toMatchObject({ listed: 2, published: 2, skipped: 0 });
   });
 
+  it("treats data/.config token dirs as an oauth session", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const env = join(root, ".env");
+    const data = join(root, "data");
+    mkdirSync(join(data, ".config", "google-mcp", "credentials"), { recursive: true });
+    writeFileSync(
+      mcp,
+      stringifyMcpToml([{ name: "math", command: "mcp-go-math" }, { name: "google", command: "google-mcp", auth_args: ["auth"] }]),
+    );
+    writeFileSync(env, "CHANNEL=telegram\n");
+    writeFileSync(join(data, ".config", "google-mcp", "credentials", "session.json"), "{}");
+    const snap = mcpSnapshot({ mcpManifest: mcp, envFile: env, dataDir: data });
+    expect(snap).toMatchObject({ listed: 2, published: 2, skipped: 0, authMissing: [] });
+  });
+
   it("counts a missing env key as skipped, not needs-auth", () => {
     const root = mkdtempSync(join(process.cwd(), ".tmp-"));
     dirs.push(root);

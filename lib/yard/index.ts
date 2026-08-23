@@ -15,7 +15,7 @@ export { parseMcpToml, readText, writeText } from "./host/files";
 export { grant, revoke, enrichDownloadUrls } from "./tools/grant";
 export { getGantry, listYard } from "./crane/inventory";
 export { decodeDockerLogs, groupLogsByTurn, parseLogLine, parseLogText } from "./host/logs";
-export { craneNags, mcpHint, mcpSnapshot } from "./tools/mcp";
+export { craneNags, mcpHint, mcpSnapshot, oauthSessionPresent } from "./tools/mcp";
 export { buildCrane, writeCraneFiles } from "./crane/build";
 export { run, waitUntilDoctorSettled, fetchBinsAndReload } from "./crane/run";
 export {

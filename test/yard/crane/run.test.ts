@@ -217,6 +217,29 @@ describe("run", () => {
     expect(restart).toHaveBeenCalledWith({ t: 5 });
   });
 
+  it("reloads after recreate even when tools-fetch skipped already-on-disk bins", async () => {
+    const restart = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(docker).mockReturnValue({ getContainer: () => ({ restart }) } as never);
+    vi.mocked(getGantry).mockResolvedValue(
+      card({ personaDir: "/p", dataDir: "/d", mcpManifest: "/m", envFile: "/e" }),
+    );
+    vi.mocked(createOrReplaceContainer).mockResolvedValue({ id: "n", detail: "built crane kit" });
+    vi.mocked(doctor).mockResolvedValue({
+      slug: "kit",
+      ok: true,
+      checks: [{ id: "process", ok: true, detail: "running" }],
+    });
+    vi.mocked(toolsFetch).mockResolvedValue({
+      ok: true,
+      detail: "tools-fetch: done installed=0 skipped=3 total=3",
+    });
+
+    const out = await run("kit", "recreate");
+    expect(out.ok).toBe(true);
+    expect(out.detail).toMatch(/reloaded/);
+    expect(restart).toHaveBeenCalled();
+  });
+
   it("starts and stops an attached container", async () => {
     const start = vi.fn().mockResolvedValue(undefined);
     const stop = vi.fn().mockResolvedValue(undefined);

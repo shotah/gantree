@@ -84,16 +84,12 @@ export async function waitAuth(slug: string, server: string): Promise<AuthResult
   return runAuth(slug, authCmd(server, "wait"));
 }
 
-/** True when fetch put (or confirmed) bins that the running process has not loaded. */
+/** True when fetch finished — even installed=0, the boot snapshot may still say no_binary. */
 export function fetchNeedsReload(detail: string): boolean {
   if (/no download_url servers/i.test(detail)) {
     return false;
   }
-  const installed = detail.match(/installed=(\d+)/);
-  if (installed) {
-    return Number(installed[1]) > 0;
-  }
-  return /tools-fetch: done/i.test(detail) || detail === "tools-fetch finished";
+  return /tools-fetch: done/i.test(detail) || detail === "tools-fetch finished" || /installed=\d+/i.test(detail);
 }
 
 const FETCH_MANIFEST = ".gantree-fetch.toml";
