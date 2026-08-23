@@ -116,7 +116,7 @@ export function MetricCharts({
   const tokenLine = bucket === "cumulative" ? "stepAfter" : "monotone";
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid gap-3 md:grid-cols-2" data-shot="metrics">
       <ChartFrame title="CPU %" empty={hostRows.length === 0}>
         <ResponsiveContainer>
           <AreaChart data={hostRows}>

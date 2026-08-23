@@ -52,6 +52,27 @@ export type TelegramSnapshot = {
 const COMMAND_RE = /^[a-z0-9_]{1,32}$/;
 const ID_RE = /^-?\d+$/;
 
+export const BOTFATHER_URL = "https://t.me/BotFather";
+
+export type BotIdentity = { name: string; username: string };
+
+/** Display name + @username for a /newbot walk. Username always ends in bot, 5–32 chars. */
+export function suggestBotIdentity(slug: string): BotIdentity {
+  const cleaned = (slug || "kit")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+  const name = (cleaned || "kit").slice(0, 64);
+  if (name.endsWith("bot") && name.length >= 5 && name.length <= 32) {
+    return { name, username: name };
+  }
+  const base = name.slice(0, 28).replace(/_+$/g, "") || "kit";
+  return { name, username: `${base}_bot`.slice(0, 32) };
+}
+
 export function shouldPushTelegram(channel: string | null): boolean {
   return (channel ?? "").trim().toLowerCase() === "telegram";
 }

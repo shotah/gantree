@@ -8,6 +8,7 @@ import {
   parseSpendWindow,
   rollupTurns,
   tokenChartSeries,
+  windowStart,
 } from "@/lib/yard/observe/spend";
 import type { TurnSample } from "@/lib/yard/types";
 
@@ -33,18 +34,20 @@ describe("rollupTurns", () => {
       turn({ at: 2, key: "b", estTokens: 50, promptEstTokens: 40, genEstTokens: 10, source: "user", userId: "2" }),
       turn({ at: 3, key: "c", estTokens: 200, promptEstTokens: 180, genEstTokens: 20, source: "cron", userId: "1" }),
       turn({ at: 4, key: "d", estTokens: 10, promptEstTokens: 10, genEstTokens: 0, source: "user" }),
+      turn({ at: 5, key: "e", estTokens: 1, promptEstTokens: 1, genEstTokens: 0 }),
     ];
     const r = rollupTurns("ada", rows);
-    expect(r.turns).toBe(4);
-    expect(r.estTokens).toBe(360);
-    expect(r.promptEst).toBe(310);
+    expect(r.turns).toBe(5);
+    expect(r.estTokens).toBe(361);
+    expect(r.promptEst).toBe(311);
     expect(r.genEst).toBe(50);
-    expect(r.unattributedTurns).toBe(1);
+    expect(r.unattributedTurns).toBe(2);
     expect(r.byUser.map((s) => [s.id, s.estTokens, s.turns])).toEqual([
       ["1", 300, 2],
       ["2", 50, 1],
     ]);
     expect(r.bySource[0]).toMatchObject({ id: "cron", estTokens: 200, turns: 1 });
+    expect(r.bySource.find((s) => s.id === "unknown")?.turns).toBe(1);
   });
 });
 
@@ -74,6 +77,8 @@ describe("spend window", () => {
     expect(parseSpendWindow(null)).toBe("24h");
     expect(parseSpendWindow("nope")).toBe("24h");
     expect(parseSpendWindow("6h")).toBe("6h");
+    expect(windowStart("all")).toBeNull();
+    expect(windowStart("1h", 10_000)).toBe(10_000 - 3600_000);
   });
 
   it("filters turns to the window", () => {

@@ -46,11 +46,17 @@ function migrate(d: DatabaseSync): void {
   d.exec("PRAGMA busy_timeout=5000;");
   d.exec(`
     CREATE TABLE IF NOT EXISTS operator (
-      id         TEXT PRIMARY KEY,
-      name       TEXT NOT NULL UNIQUE COLLATE NOCASE,
-      pass_salt  BLOB NOT NULL,
-      pass_hash  BLOB NOT NULL,
-      created_at TEXT NOT NULL
+      id           TEXT PRIMARY KEY,
+      name         TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      pass_salt    BLOB NOT NULL,
+      pass_hash    BLOB NOT NULL,
+      created_at   TEXT NOT NULL,
+      display_name TEXT,
+      email        TEXT NOT NULL DEFAULT '',
+      description  TEXT NOT NULL DEFAULT '',
+      role         TEXT NOT NULL DEFAULT 'admin',
+      crane_slug   TEXT,
+      channels     TEXT NOT NULL DEFAULT '{}'
     );
     CREATE TABLE IF NOT EXISTS operator_session (
       token_hash   TEXT PRIMARY KEY,
@@ -108,6 +114,20 @@ function migrate(d: DatabaseSync): void {
     );
     CREATE INDEX IF NOT EXISTS idx_sample_uptime_slug_at ON sample_uptime(slug, at);
   `);
+  ensureColumn(d, "operator", "display_name", "TEXT");
+  ensureColumn(d, "operator", "email", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(d, "operator", "description", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(d, "operator", "role", "TEXT NOT NULL DEFAULT 'admin'");
+  ensureColumn(d, "operator", "crane_slug", "TEXT");
+  ensureColumn(d, "operator", "channels", "TEXT NOT NULL DEFAULT '{}'");
+}
+
+function ensureColumn(d: DatabaseSync, table: string, name: string, ddl: string): void {
+  const cols = d.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (cols.some((c) => c.name === name)) {
+    return;
+  }
+  d.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${ddl}`);
 }
 
 export function warnOpenBindIfEmpty(empty: boolean): void {

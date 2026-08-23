@@ -1,14 +1,23 @@
-import { recordFromRequest, withDoor } from "@/lib/yard/door";
+import { denyUnlessCraneMutate, denyUnlessCraneRead, recordFromRequest, withDoor } from "@/lib/yard/door";
 import { toolsFetch } from "@/lib/yard/tools/auth";
 import { loadCatalog } from "@/lib/yard/tools/catalog";
 import { grant, revoke } from "@/lib/yard/tools/grant";
 
-export const GET = withDoor(async (_req: Request) => {
+export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
+  const { slug } = await ctx.params;
+  const denied = denyUnlessCraneRead(req, slug);
+  if (denied) {
+    return denied;
+  }
   return Response.json({ catalog: loadCatalog() });
 });
 
 export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
+  const denied = denyUnlessCraneMutate(req, slug);
+  if (denied) {
+    return denied;
+  }
   const body = (await req.json()) as { name?: string; op?: "grant" | "revoke" | "fetch" };
   if (body.op === "fetch") {
     const result = await toolsFetch(slug);

@@ -43,6 +43,8 @@ describe("writeCraneFiles", () => {
     const compose = readFileSync(join(out.dir, "compose.yml"), "utf8");
     expect(compose).toContain("HOME: /data");
     expect(compose).toContain(`image: ${DEFAULT_IMAGE}`);
+    expect(compose).not.toMatch(/^\s+ports:/m);
+    expect(compose).toContain("# No ports — outbound chat only.");
     const uid = process.getuid?.();
     const gid = process.getgid?.();
     if (uid != null && gid != null && uid !== 0) {
@@ -67,6 +69,29 @@ describe("writeCraneFiles", () => {
     const mcp = readFileSync(out.mcpManifest, "utf8");
     expect(mcp).toContain("cast");
     expect(mcp).toContain("youtube");
+    delete process.env.GANTREE_ROOT;
+    delete process.env.GANTREE_TOML;
+  });
+
+  it("keeps two slugs in isolated directories and omits cast on a cloud life-cast seed", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    process.env.GANTREE_TOML = join(root, "gantree.toml");
+    const kit = writeCraneFiles({ slug: "kit", profile: "slim" });
+    const jules = writeCraneFiles({ slug: "jules", profile: "life" });
+    expect(kit.dir).not.toBe(jules.dir);
+    expect(readFileSync(join(kit.personaDir, "PERSONA.md"), "utf8")).toContain("# kit");
+    expect(readFileSync(join(jules.personaDir, "PERSONA.md"), "utf8")).toContain("# jules");
+    expect(readFileSync(kit.mcpManifest, "utf8")).not.toContain("google-mcp");
+    expect(readFileSync(jules.mcpManifest, "utf8")).toContain("google-mcp");
+    expect(readFileSync(jules.mcpManifest, "utf8")).toContain("maps");
+
+    const cloud = writeCraneFiles({ slug: "tryout", yard: "cloud", profile: "life-cast" });
+    const cloudMcp = readFileSync(cloud.mcpManifest, "utf8");
+    expect(cloudMcp).toContain("google-mcp");
+    expect(cloudMcp).not.toContain("mcp-beam");
+    expect(cloudMcp).not.toContain("youtube");
     delete process.env.GANTREE_ROOT;
     delete process.env.GANTREE_TOML;
   });

@@ -129,6 +129,42 @@ env_file = "./gantries/kit/.env"
     expect(await getGantry("nope")).toBeNull();
   });
 
+  it("keeps Kit's last error off Jules", async () => {
+    yard(`
+[[gantry]]
+slug = "kit"
+container = "kit"
+[[gantry]]
+slug = "jules"
+container = "jules"
+`);
+    vi.mocked(listGantryContainers).mockResolvedValue([
+      listed({ id: "kit-id", name: "kit", labels: { "gantree.slug": "kit" } }),
+      listed({ id: "jules-id", name: "jules", labels: { "gantree.slug": "jules" } }),
+    ]);
+    vi.mocked(inspectByName).mockResolvedValue({
+      listed: {} as never,
+      info: {
+        Config: { Image: DEFAULT_IMAGE, Env: [] },
+        State: { Status: "running", StartedAt: "2026-08-22T18:00:00.000Z" },
+        RestartCount: 0,
+      },
+    } as never);
+    vi.mocked(containerLogsBuffer).mockImplementation(async (id: string) => {
+      if (id === "kit-id") {
+        return Buffer.from('{"time":"2026-08-22T18:00:00Z","level":"ERROR","msg":"kit boom"}\n');
+      }
+      return Buffer.from('{"time":"2026-08-22T18:01:00Z","level":"ERROR","msg":"jules boom"}\n');
+    });
+
+    const inv = await listYard();
+    const kit = inv.gantries.find((g) => g.slug === "kit");
+    const jules = inv.gantries.find((g) => g.slug === "jules");
+    expect(kit?.lastError).toMatch(/kit boom/);
+    expect(jules?.lastError).toMatch(/jules boom/);
+    expect(kit?.lastError).not.toMatch(/jules/);
+  });
+
   it("picks discord/slack from env keys and survives inspect/log failures", async () => {
     const root = yard(`
 [[gantry]]

@@ -7,6 +7,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
   loadCatalog: () => [
     { name: "math", command: "mcp-go-math", envKeys: [], blurb: "Math." },
     { name: "google", command: "google-mcp", auth_args: ["auth"], envKeys: [], blurb: "Gmail." },
+    { name: "maps", command: "google-maps-mcp", envKeys: ["GOOGLE_MAPS_API_KEY"], blurb: "Places." },
   ],
 }));
 
@@ -42,6 +43,20 @@ describe("mcpSnapshot", () => {
     writeFileSync(join(data, "google-oauth.json"), "{}");
     const after = mcpSnapshot({ mcpManifest: mcp, envFile: env, dataDir: data });
     expect(after).toMatchObject({ listed: 2, published: 2, skipped: 0 });
+  });
+
+  it("counts a missing env key as skipped, not needs-auth", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const env = join(root, ".env");
+    const data = join(root, "data");
+    mkdirSync(data);
+    writeFileSync(mcp, stringifyMcpToml([{ name: "maps", command: "google-maps-mcp" }]));
+    writeFileSync(env, "CHANNEL=telegram\n");
+    const snap = mcpSnapshot({ mcpManifest: mcp, envFile: env, dataDir: data });
+    expect(snap).toMatchObject({ listed: 1, published: 0, skipped: 1, skippedNames: ["maps"], authMissing: [] });
+    expect(craneNags("running", snap)).toEqual([{ kind: "skipped", detail: "skipped maps" }]);
   });
 });
 

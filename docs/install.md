@@ -41,8 +41,9 @@ in `.env` ([.env.example](../.env.example)). Loopback only — compose
 
 Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
 That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the
-passphrase: delete it and run `/setup` again. Add a partner from **Operators**
-in the header after login. What the door checks: [security.md](security.md).
+passphrase: delete it and run `/setup` again. Add a partner from **Settings**
+(the cog) after login (admin / user on one crane / readonly). Your photo and
+passphrase are **Profile**. What the door checks: [security.md](security.md).
 
 ## Cloud (your GCE / EC2)
 

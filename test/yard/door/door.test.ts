@@ -9,6 +9,9 @@ import {
   addOperator,
   changeOwnPassphrase,
   clearSessionCookieHeader,
+  denyUnlessAdmin,
+  denyUnlessCraneMutate,
+  denyUnlessCraneRead,
   denyUnlessOperator,
   devAutoLoginEnabled,
   doorAuthBody,
@@ -18,17 +21,22 @@ import {
   logoutOperator,
   operatorCount,
   operatorFromRequest,
+  getOperator,
   removeOperator,
   resetLoginThrottle,
   sessionCookieHeader,
+  setOperatorAccess,
   setupOperator,
+  updateOwnProfile,
   withDevSessionCookie,
   withDoor,
 } from "@/lib/yard/door/gate";
 import { listYardEvents, recordFromRequest, recordYardEvent } from "@/lib/yard/door/events";
+import { readOperatorAvatar, saveOperatorAvatar } from "@/lib/yard/door/profile";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const dirs: string[] = [];
@@ -105,6 +113,9 @@ describe("setup and login", () => {
       return;
     }
     expect(out.operator.name).toBe("kit");
+    expect(out.operator.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
     expect(operatorCount()).toBe(1);
     expect(operatorFromRequest(req("/api/door", out.token))?.name).toBe("kit");
     const dump = readFileSync(dbPath());
@@ -248,6 +259,10 @@ describe("the door", () => {
     expect(doorStatus(req("http://127.0.0.1/api/door", created.token)).operator).toEqual({
       id: created.operator.id,
       name: "kit",
+      displayName: "kit",
+      role: "admin",
+      crane: null,
+      avatarRev: null,
     });
   });
 
@@ -379,10 +394,12 @@ describe("audit", () => {
     recordYardEvent({ kind: "setup", operatorId: created.operator.id, detail: "kit" });
     const authed = req("http://127.0.0.1/api/gantries", created.token);
     recordFromRequest(authed, "recreate", "kit", "doctor ok");
+    recordYardEvent({ kind: "grant", slug: "jules", operatorId: created.operator.id, detail: "math" });
     const events = listYardEvents({ slug: "kit", limit: 10 });
-    expect(events[0]?.kind).toBe("recreate");
+    expect(events.map((e) => e.kind)).toEqual(["recreate"]);
     expect(events[0]?.operatorName).toBe("kit");
-    expect(listYardEvents()[1]?.kind).toBe("setup");
+    expect(listYardEvents({ slug: "jules" }).map((e) => e.kind)).toEqual(["grant"]);
+    expect(listYardEvents().map((e) => e.kind)).toEqual(["grant", "recreate", "setup"]);
 
     const handler = withDoor(async () => Response.json({ events: listYardEvents() }));
     expect((await handler(req())).status).toBe(401);
@@ -444,5 +461,165 @@ describe("dev auto-login", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ me: "bob" });
     warn.mockRestore();
+  });
+});
+
+describe("roles", () => {
+  const pass = "a-long-enough-pass";
+
+  it("setup is admin, user needs a crane, readonly cannot mutate", () => {
+    const first = setupOperator("kit", pass);
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    expect(first.operator.role).toBe("admin");
+    expect(addOperator("ada", pass, "user")).toMatchObject({ ok: false, status: 400 });
+    const user = addOperator("ada", pass, "user", "kit");
+    expect(user.ok).toBe(true);
+    if (!user.ok) {
+      return;
+    }
+    expect(user.operator).toMatchObject({ role: "user", crane: "kit" });
+    const reader = addOperator("look", pass, "readonly");
+    expect(reader.ok).toBe(true);
+    if (!reader.ok) {
+      return;
+    }
+    expect(reader.operator).toMatchObject({ role: "readonly", crane: null });
+
+    const ada = loginOperator("ada", pass);
+    const look = loginOperator("look", pass);
+    expect(ada.ok && look.ok).toBe(true);
+    if (!ada.ok || !look.ok) {
+      return;
+    }
+    const adaReq = req("http://127.0.0.1/api/gantries/kit", ada.token);
+    const lookReq = req("http://127.0.0.1/api/gantries/kit", look.token);
+    expect(denyUnlessCraneRead(adaReq, "kit")).toBeNull();
+    expect(denyUnlessCraneMutate(adaReq, "kit")).toBeNull();
+    expect(denyUnlessCraneRead(adaReq, "tryout")?.status).toBe(404);
+    expect(denyUnlessCraneMutate(lookReq, "kit")?.status).toBe(403);
+    expect(denyUnlessCraneRead(lookReq, "tryout")).toBeNull();
+    expect(denyUnlessAdmin(adaReq)?.status).toBe(403);
+    expect(denyUnlessAdmin(req("http://127.0.0.1/api/operators", first.token))).toBeNull();
+  });
+
+  it("refuses to demote or delete the last admin, and profile cannot self-promote", () => {
+    const first = setupOperator("kit", pass);
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    expect(updateOwnProfile(first.operator.id, { role: "user" }).ok).toBe(true);
+    expect(getOperator(first.operator.id)?.role).toBe("admin");
+    expect(setOperatorAccess(first.operator.id, "user", "kit")).toMatchObject({
+      ok: false,
+      error: "cannot demote the last admin",
+    });
+    const partner = addOperator("partner", pass, "admin");
+    expect(partner.ok).toBe(true);
+    if (!partner.ok) {
+      return;
+    }
+    expect(setOperatorAccess(first.operator.id, "readonly", null).ok).toBe(true);
+    expect(getOperator(first.operator.id)?.role).toBe("readonly");
+    expect(removeOperator(partner.operator.id, partner.operator.id)).toMatchObject({
+      ok: false,
+      error: "cannot delete the last admin",
+    });
+    expect(removeOperator(partner.operator.id, first.operator.id).ok).toBe(true);
+    expect(removeOperator(partner.operator.id, partner.operator.id)).toMatchObject({
+      ok: false,
+      error: "cannot delete the last operator",
+    });
+  });
+});
+
+describe("operator profile", () => {
+  const pass = "a-long-enough-pass";
+
+  it("keeps the UUID when display name, email, chat ids, and login name change", () => {
+    const first = setupOperator("bob", pass);
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    const id = first.operator.id;
+    const updated = updateOwnProfile(id, {
+      displayName: "Robert",
+      email: "bob@example.com",
+      description: "owns the mini",
+      channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"] },
+    });
+    expect(updated.ok).toBe(true);
+    if (!updated.ok) {
+      return;
+    }
+    expect(updated.operator.id).toBe(id);
+    expect(updated.operator).toMatchObject({
+      name: "bob",
+      displayName: "Robert",
+      email: "bob@example.com",
+      description: "owns the mini",
+      channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"] },
+    });
+
+    const renamed = updateOwnProfile(id, { name: "robert" });
+    expect(renamed.ok).toBe(true);
+    if (!renamed.ok) {
+      return;
+    }
+    expect(renamed.operator.id).toBe(id);
+    expect(renamed.operator.name).toBe("robert");
+    expect(loginOperator("bob", pass).ok).toBe(false);
+    expect(loginOperator("robert", pass).ok).toBe(true);
+    expect(operatorFromRequest(req("http://127.0.0.1/api/door", first.token))?.displayName).toBe("Robert");
+  });
+
+  it("rejects @usernames and stores a jpeg next to the db", () => {
+    const first = setupOperator("bob", pass);
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    expect(updateOwnProfile(first.operator.id, { channels: { telegram: ["@bob"], slack: [], discord: [] } })).toMatchObject({
+      ok: false,
+      status: 400,
+    });
+    expect(updateOwnProfile(first.operator.id, { email: "not-an-email" })).toMatchObject({ ok: false, status: 400 });
+
+    const jpeg = new Uint8Array(128);
+    jpeg[0] = 0xff;
+    jpeg[1] = 0xd8;
+    jpeg[2] = 0xff;
+    jpeg[127] = 0xd9;
+    const saved = saveOperatorAvatar(first.operator.id, jpeg);
+    expect(saved.ok).toBe(true);
+    const hit = readOperatorAvatar(first.operator.id);
+    expect(hit?.type).toBe("image/jpeg");
+    expect(getOperator(first.operator.id)?.avatarRev).toBeGreaterThan(0);
+  });
+
+  it("adds profile columns onto an existing operator table", () => {
+    closeYardDb();
+    const d = new DatabaseSync(dbPath());
+    d.exec(`
+      CREATE TABLE operator (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        pass_salt BLOB NOT NULL,
+        pass_hash BLOB NOT NULL,
+        created_at TEXT NOT NULL
+      );
+    `);
+    d.close();
+    const cols = yardDb()
+      .prepare("PRAGMA table_info(operator)")
+      .all() as { name: string }[];
+    expect(cols.map((c) => c.name)).toEqual(
+      expect.arrayContaining(["display_name", "email", "description", "role", "crane_slug", "channels"]),
+    );
+    expect(setupOperator("kit", pass).ok).toBe(true);
   });
 });

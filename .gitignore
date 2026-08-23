@@ -158,6 +158,8 @@ gantree.toml
 gantree.db
 gantree.db-*
 /var/
+# Operator profile photos (next to gantree.db). Never a crane persona/avatar.jpg.
+/operators/
 # Runtime crane dirs at repo root only — do not ignore app/api/gantries or app/gantries
 /gantries/
 backups/

@@ -20,6 +20,7 @@ import { LogViewer } from "./LogViewer";
 import { MetricCharts } from "./MetricCharts";
 import { CraneSpend, SpendScope } from "./SpendBoard";
 import { TelegramBot } from "./TelegramBot";
+import { jpegFromFile } from "../lib/jpegFromFile";
 import { yardFetch } from "../lib/yardFetch";
 
 type EnvRow = { set: boolean; secret: boolean; value: string };
@@ -34,6 +35,7 @@ type Files = {
 
 export function AgentDashboard({ slug }: { slug: string }) {
   const [gantry, setGantry] = useState<GantryCard | null>(null);
+  const [denied, setDenied] = useState(false);
   const [doctor, setDoctor] = useState<DoctorReport | null>(null);
   const [host, setHost] = useState<StatSample[]>([]);
   const [turns, setTurns] = useState<TurnSample[]>([]);
@@ -56,9 +58,14 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
   const refresh = useCallback(() => {
     yardFetch(`/api/gantries/${slug}`)
-      .then((r) => r.json())
-      .then((g: GantryCard & { error?: string }) => {
+      .then(async (r) => {
+        if (r.status === 403 || r.status === 404) {
+          setDenied(true);
+          return;
+        }
+        const g = (await r.json()) as GantryCard & { error?: string };
         if (!g.error) {
+          setDenied(false);
           setGantry(g);
           if (g.image) {
             setPin(g.image);
@@ -176,6 +183,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   }
 
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
+  const mutate = Boolean(gantry?.canMutate || files?.writable);
   const telegramOn =
     shouldPushTelegram(gantry?.channel ?? null) ||
     shouldPushTelegram(files?.env?.CHANNEL?.value ?? null) ||
@@ -184,6 +192,17 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const allowedBuckets = bucketsForWindow(spendWindow);
   const bucket = allowedBuckets.includes(spendBucket) ? spendBucket : "cumulative";
   const turnsInWindow = filterSamples(turns, since);
+
+  if (denied) {
+    return (
+      <section className="flex flex-col gap-3">
+        <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500">
+          ← shipping yard
+        </Link>
+        <p className="text-sm text-amber-200">No crane here, or it is not in your access.</p>
+      </section>
+    );
+  }
 
   return (
     <section className="flex flex-col gap-8">
@@ -200,20 +219,28 @@ export function AgentDashboard({ slug }: { slug: string }) {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {(["start", "stop", "recreate", "backup"] as const).map((a) => (
-            <button
-              key={a}
-              type="button"
-              disabled={busy}
-              onClick={() => act(a)}
-              className="rounded border border-zinc-700 px-3 py-1.5 text-xs capitalize text-stone-200 hover:border-amber-700 disabled:opacity-50"
-            >
-              {a}
-            </button>
-          ))}
-        </div>
+        {mutate ? (
+          <div className="flex flex-wrap gap-2">
+            {(["start", "stop", "recreate", "backup"] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                disabled={busy}
+                onClick={() => act(a)}
+                className="rounded border border-zinc-700 px-3 py-1.5 text-xs capitalize text-stone-200 hover:border-amber-700 disabled:opacity-50"
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
+
+      {!mutate ? (
+        <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400">
+          read only — you can look, not grant or recreate.
+        </p>
+      ) : null}
 
       {notice ? <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300">{notice}</p> : null}
 
@@ -224,37 +251,39 @@ export function AgentDashboard({ slug }: { slug: string }) {
         </p>
         <div className="flex flex-wrap items-center gap-4">
           <CraneAvatar slug={slug} rev={gantry?.avatarRev ?? null} size="xl" />
-          <div className="flex flex-col gap-2">
-            <label
-              className={`inline-flex w-fit rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 ${
-                busy || !gantry?.personaDir ? "opacity-50" : "cursor-pointer"
-              }`}
-            >
-              Choose photo
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                disabled={busy || !gantry?.personaDir}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (f) {
-                    void uploadPhoto(f);
-                  }
-                }}
-              />
-            </label>
-            <p className="text-[11px] text-zinc-600">JPEG, PNG, WebP, or GIF. PNG/WebP are converted on upload.</p>
-          </div>
+          {mutate ? (
+            <div className="flex flex-col gap-2">
+              <label
+                className={`inline-flex w-fit rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 ${
+                  busy || !gantry?.personaDir ? "opacity-50" : "cursor-pointer"
+                }`}
+              >
+                Choose photo
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  disabled={busy || !gantry?.personaDir}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (f) {
+                      void uploadPhoto(f);
+                    }
+                  }}
+                />
+              </label>
+              <p className="text-[11px] text-zinc-600">JPEG, PNG, WebP, or GIF. PNG/WebP are converted on upload.</p>
+            </div>
+          ) : null}
         </div>
       </section>
 
       {telegramOn ? (
-        <TelegramBot slug={slug} busy={busy} setBusy={setBusy} onNotice={setNotice} onSaved={refresh} />
+        <TelegramBot slug={slug} busy={busy} setBusy={setBusy} onNotice={setNotice} onSaved={refresh} readOnly={!mutate} />
       ) : null}
 
-      <section data-shot="metrics">
+      <section>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-sm font-medium text-zinc-400">Metrics</h2>
           <SpendScope
@@ -296,7 +325,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
         <div className="mb-3 flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || !mutate}
             onClick={async () => {
               setBusy(true);
               const res = await yardFetch(`/api/gantries/${slug}/grant`, {
@@ -322,12 +351,12 @@ export function AgentDashboard({ slug }: { slug: string }) {
             return (
               <div key={c.name} className="flex flex-col gap-2 rounded border border-zinc-800 px-3 py-2 text-sm">
                 <div className="flex items-start gap-3">
-                  <input type="checkbox" checked={on} disabled={busy || !files?.writable} onChange={() => toggleGrant(c.name, !on)} />
+                  <input type="checkbox" checked={on} disabled={busy || !mutate || !files?.writable} onChange={() => toggleGrant(c.name, !on)} />
                   <span className="flex-1">
                     <span className="font-medium text-stone-100">{c.name}</span>
                     <span className="block text-xs text-zinc-500">{c.blurb}</span>
                   </span>
-                  {needsAuth ? (
+                  {needsAuth && mutate ? (
                     <button
                       type="button"
                       disabled={busy}
@@ -416,8 +445,8 @@ export function AgentDashboard({ slug }: { slug: string }) {
           className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
-          placeholder="PERSONA.md — set persona_dir in gantree.toml to edit"
           disabled={!files?.writable}
+          placeholder="PERSONA.md — set persona_dir in gantree.toml to edit"
         />
         <button
           type="button"
@@ -450,6 +479,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
                 type={row.secret ? "password" : "text"}
                 placeholder={row.secret ? "unchanged if blank" : row.value}
                 value={secretDraft[k] ?? ""}
+                disabled={!files?.writable}
                 onChange={(e) => setSecretDraft((s) => ({ ...s, [k]: e.target.value }))}
               />
             </label>
@@ -457,7 +487,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
           })}
         </div>
         <label className="mt-3 flex items-center gap-2 text-xs text-amber-200">
-          <input type="checkbox" checked={confirmToken} onChange={(e) => setConfirmToken(e.target.checked)} />
+          <input type="checkbox" checked={confirmToken} onChange={(e) => setConfirmToken(e.target.checked)} disabled={!files?.writable} />
           I am overwriting secrets / bot tokens
         </label>
         <button
@@ -489,10 +519,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
           waits for doctor. Recreate without pull does the same uid keep — it does not docker pull.
         </p>
         <div className="flex flex-wrap gap-2">
-          <input className="min-w-64 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs" value={pin} onChange={(e) => setPin(e.target.value)} />
+          <input className="min-w-64 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs" value={pin} onChange={(e) => setPin(e.target.value)} disabled={!mutate} />
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || !mutate}
             onClick={() => act("pin")}
             className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
           >
@@ -502,38 +532,4 @@ export function AgentDashboard({ slug }: { slug: string }) {
       </section>
     </section>
   );
-}
-
-const AVATAR_EDGE = 1280;
-
-async function jpegFromFile(file: File): Promise<Blob> {
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(file);
-  } catch {
-    throw new Error("could not read that image");
-  }
-  try {
-    const scale = Math.min(1, AVATAR_EDGE / Math.max(bitmap.width, bitmap.height));
-    if (file.type === "image/jpeg" && scale === 1 && file.size <= 5 * 1024 * 1024) {
-      return file;
-    }
-    const w = Math.max(1, Math.round(bitmap.width * scale));
-    const h = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("could not encode jpeg");
-    }
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
-    if (!blob) {
-      throw new Error("could not encode jpeg");
-    }
-    return blob;
-  } finally {
-    bitmap.close();
-  }
 }

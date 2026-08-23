@@ -1,11 +1,15 @@
 import { readFileSync } from "node:fs";
-import { withDoor } from "@/lib/yard/door";
+import { denyUnlessCraneMutate, denyUnlessCraneRead, withDoor } from "@/lib/yard/door";
 import { acceptJpeg, applyAvatar, findAvatar } from "@/lib/yard/host/avatar";
 import { craneTelegramAuth } from "@/lib/yard/crane/telegram";
 import { getGantry } from "@/lib/yard/crane/inventory";
 
-export const GET = withDoor(async (_req: Request, ctx: { params: Promise<{ slug: string }> }) => {
+export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
+  const denied = denyUnlessCraneRead(req, slug);
+  if (denied) {
+    return denied;
+  }
   const g = await getGantry(slug);
   if (!g) {
     return Response.json({ error: "not found" }, { status: 404 });
@@ -25,6 +29,10 @@ export const GET = withDoor(async (_req: Request, ctx: { params: Promise<{ slug:
 
 export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
+  const denied = denyUnlessCraneMutate(req, slug);
+  if (denied) {
+    return denied;
+  }
   const g = await getGantry(slug);
   if (!g) {
     return Response.json({ error: "not found" }, { status: 404 });

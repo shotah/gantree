@@ -94,4 +94,56 @@ describe("yard memory", () => {
     clearObserveRings();
     expect(peekTurns("kit").some((t) => t.estTokens === 12)).toBe(true);
   });
+
+  it("keeps Kit's samples off Jules and ignores a duplicate turn key", () => {
+    const now = Date.now();
+    persistTurn("kit", {
+      at: now,
+      key: "turn-kit",
+      rounds: 1,
+      recoveries: 0,
+      estTokens: 10,
+      promptEstTokens: 8,
+      genEstTokens: 2,
+      source: "user",
+      userId: "1",
+      sessionId: null,
+      outcome: "ok",
+    });
+    persistTurn("kit", {
+      at: now + 1,
+      key: "turn-kit",
+      rounds: 9,
+      recoveries: 9,
+      estTokens: 999,
+      promptEstTokens: 900,
+      genEstTokens: 99,
+      source: "user",
+      userId: "1",
+      sessionId: null,
+      outcome: "ok",
+    });
+    persistTurn("jules", {
+      at: now,
+      key: "turn-jules",
+      rounds: 1,
+      recoveries: 0,
+      estTokens: 50,
+      promptEstTokens: 40,
+      genEstTokens: 10,
+      source: "cron",
+      userId: null,
+      sessionId: null,
+      outcome: "ok",
+    });
+    persistHost("jules", { at: now, cpuPercent: 90, memBytes: 1, memLimitBytes: 2 });
+
+    const kit = recallSamples("kit", { host: 720, turns: 400, mcp: 200, uptime: 720 });
+    const jules = recallSamples("jules", { host: 720, turns: 400, mcp: 200, uptime: 720 });
+    expect(kit.turns).toHaveLength(1);
+    expect(kit.turns[0]).toMatchObject({ key: "turn-kit", estTokens: 10 });
+    expect(jules.turns.map((t) => t.key)).toEqual(["turn-jules"]);
+    expect(jules.host).toHaveLength(1);
+    expect(kit.host).toEqual([]);
+  });
 });

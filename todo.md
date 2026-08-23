@@ -126,7 +126,8 @@ to *see* the loop, not only the door:
       published (`assets/yard.png`). last turn stays empty until a chat.
 - [x] Crane dashboard: CPU/RAM + MCP + uptime from live Ada
       (`assets/crane-metrics.png`, `assets/metrics.png`). Token / completer
-      charts stay empty until a chat — not invented.
+      charts stay empty until a chat — not invented. `metrics.png` is a tight
+      crop of the six tiles, validated (not a letterboxed blank page).
 - [ ] Telegram: one multi-step turn with tool trace — the mouth
       (Garmin → sheet → Strava, or contacts + calendars → create). Not a
       chat mock inside this UI.
@@ -424,8 +425,8 @@ v1 gates still hold. Deltas:
    login, setup, static assets. Cookie: httpOnly, SameSite — not a
    JWT in localStorage.
 4. **Equal operators, tiny yard.** A handful of people who own the
-   box. No teams, no orgs, no SSO. A `view` role is allowed if it is
-   one field; twelve-role RBAC is not v2.
+   box. No teams, no orgs, no SSO. Three named roles (`admin` / `user`
+   on one crane / `readonly`) — not twelve-role RBAC.
 5. **Open bind needs a door.** `HOST=0.0.0.0` / compose LAN publish
    without at least one operator (or a live setup that *only* accepts
    that first create) is dishonest. Login does **not** make
@@ -445,7 +446,7 @@ v1 gates still hold. Deltas:
 | Surface | What “done” means |
 | --- | --- |
 | Login | Setup first operator; login; logout; session on every API + SSE |
-| Operators | Add / remove / change passphrase. Cannot delete the last one. |
+| Operators | Add / remove / roles (`admin` / `user` on one crane / `readonly`). Cannot delete the last operator or last admin. |
 | Bind | LAN `:3000` is an explicit choice *behind* login; cloud still loopback |
 | Board nags | Skipped MCP / needs-auth / dead token visible on the yard home |
 | Yard memory | sqlite event log; graphs survive restart; inventory still toml |
@@ -512,15 +513,17 @@ page. One operator, a login page, every mutation gated.
 
 You and a partner. Not a user-admin product.
 
-- [x] Operators screen: add, remove, change own passphrase.
-      Confirm-scary, like token push. Hashes never round-trip.
+- [x] Profile (name, photo, passphrase) and Settings (operators, roles)
+      are separate pages. Cog in the header. Confirm-scary, like token
+      push. Hashes never round-trip.
 - [x] Cannot delete the last operator. Cannot remove yourself if
       you are the last.
-- [ ] Optional one-field `role = "view"` (read board / logs /
-      doctor; no grant, recreate, env, operators). Skipped this
-      walk — equal operators is enough.
+- [x] Three roles: `admin` (everything), `user` (one crane), `readonly`
+      (look, not touch). Settings (cog) assigns them. Last admin cannot
+      be demoted or deleted.
 - [ ] **Walk:** add a partner. They log in on a phone. Same yard.
-      Remove them. Their next request is 401.
+      Remove them. Their next request is 401. Add a readonly; they see
+      Kit and cannot recreate.
 
 ---
 

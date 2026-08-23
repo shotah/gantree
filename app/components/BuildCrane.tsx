@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BotFatherHint } from "./BotFatherHint";
 import { yardFetch } from "../lib/yardFetch";
 
 export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
@@ -151,6 +152,9 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
                 }}
               />
             </label>
+            <div className="sm:col-span-2">
+              <BotFatherHint slug={slug} />
+            </div>
             <label className="flex flex-col gap-1 sm:col-span-2">
               <span className="text-xs text-zinc-500">allowlist (numeric ids, not @username)</span>
               <input className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={allow} onChange={(e) => setAllow(e.target.value)} placeholder="123456789" />

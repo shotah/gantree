@@ -68,6 +68,24 @@ describe("grant", () => {
     expect(custom.servers[1]).toEqual({ name: "mycustom", command: "mycustom" });
     expect(readFileSync(mcp, "utf8")).toContain("mycustom");
   });
+
+  it("writes only that crane's mcp.toml", async () => {
+    const kit = mcpFile(stringifyMcpToml([]));
+    const jules = mcpFile(stringifyMcpToml([]));
+    vi.mocked(getGantry).mockImplementation(async (slug: string) => {
+      if (slug === "kit") {
+        return card({ slug: "kit", mcpManifest: kit });
+      }
+      if (slug === "jules") {
+        return card({ slug: "jules", mcpManifest: jules });
+      }
+      return null;
+    });
+    const out = await grant("kit", "google");
+    expect(out.ok).toBe(true);
+    expect(readFileSync(kit, "utf8")).toContain("google");
+    expect(readFileSync(jules, "utf8")).not.toContain("google");
+  });
 });
 
 describe("revoke", () => {

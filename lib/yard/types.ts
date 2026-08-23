@@ -32,6 +32,8 @@ export type GantryCard = {
   envFile: string | null;
   /** mtime of persona/avatar.jpg (or png/webp). Null if none. */
   avatarRev: number | null;
+  /** True when this session may mutate the crane — filled by the get API. */
+  canMutate?: boolean;
 };
 
 export type LogLine = {
@@ -176,4 +178,6 @@ export type YardInventory = {
   sparks?: Record<string, StatSample[]>;
   /** Est. token spend from JSON slog — filled by the list API, not listYard. */
   spend?: YardSpend;
+  /** True when this session may build a crane — filled by the list API. */
+  canBuild?: boolean;
 };

@@ -11,6 +11,7 @@ import {
   parseCommandLines,
   redactToken,
   seenUsers,
+  suggestBotIdentity,
   shouldPushTelegram,
   telegramMethod,
   type TelegramPoster,
@@ -71,13 +72,24 @@ describe("seenUsers", () => {
   });
 });
 
-describe("shouldPushTelegram / botLink", () => {
+describe("shouldPushTelegram / botLink / suggestBotIdentity", () => {
   it("is only telegram and builds t.me links", () => {
     expect(shouldPushTelegram("Telegram")).toBe(true);
     expect(shouldPushTelegram("discord")).toBe(false);
     expect(botLink("@kit_bot")).toBe("https://t.me/kit_bot");
     expect(botLink("")).toBeNull();
     expect(emptySnapshot({ enabled: true }).tokenSet).toBe(false);
+  });
+
+  it("turns a crane slug into a BotFather username", () => {
+    expect(suggestBotIdentity("kit")).toEqual({ name: "kit", username: "kit_bot" });
+    expect(suggestBotIdentity("Kit-Tryout")).toEqual({ name: "kit_tryout", username: "kit_tryout_bot" });
+    expect(suggestBotIdentity("kitbot")).toEqual({ name: "kitbot", username: "kitbot" });
+    expect(suggestBotIdentity("")).toEqual({ name: "kit", username: "kit_bot" });
+    expect(suggestBotIdentity("ibot")).toEqual({ name: "ibot", username: "ibot_bot" });
+    const long = suggestBotIdentity("a".repeat(40));
+    expect(long.username.endsWith("_bot")).toBe(true);
+    expect(long.username.length).toBeLessThanOrEqual(32);
   });
 });
 

@@ -7,6 +7,7 @@ import {
   parseCommandLines,
   type TelegramSnapshot,
 } from "@/lib/yard/host/telegram";
+import { BotFatherHint } from "./BotFatherHint";
 import { yardFetch } from "../lib/yardFetch";
 
 export function TelegramBot({
@@ -15,12 +16,14 @@ export function TelegramBot({
   setBusy,
   onNotice,
   onSaved,
+  readOnly = false,
 }: {
   slug: string;
   busy: boolean;
   setBusy: (v: boolean) => void;
   onNotice: (msg: string) => void;
   onSaved: () => void;
+  readOnly?: boolean;
 }) {
   const [snap, setSnap] = useState<TelegramSnapshot | null>(null);
   const [name, setName] = useState("");
@@ -59,6 +62,7 @@ export function TelegramBot({
 
   const allowSet = new Set(allow);
   const seenNew = (snap.seen ?? []).filter((s) => !allowSet.has(s.id));
+  const locked = busy || readOnly;
 
   function addNumeric(raw: string) {
     const id = raw.trim();
@@ -119,7 +123,10 @@ export function TelegramBot({
       </div>
 
       {!snap.tokenSet ? (
-        <p className="text-sm text-amber-200">Paste TELEGRAM_BOT_TOKEN in Secrets, then refresh.</p>
+        <div className="space-y-3">
+          <p className="text-sm text-amber-200">Paste TELEGRAM_BOT_TOKEN in Secrets, then refresh.</p>
+          {readOnly ? null : <BotFatherHint slug={slug} />}
+        </div>
       ) : (
         <>
           <p className="mb-3 text-sm text-zinc-300">
@@ -148,6 +155,7 @@ export function TelegramBot({
                 className="rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100"
                 maxLength={64}
                 value={name}
+                disabled={readOnly}
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
@@ -157,6 +165,7 @@ export function TelegramBot({
                 className="rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100"
                 maxLength={120}
                 value={about}
+                disabled={readOnly}
                 onChange={(e) => setAbout(e.target.value)}
               />
             </label>
@@ -166,6 +175,7 @@ export function TelegramBot({
                 className="min-h-16 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100"
                 maxLength={512}
                 value={description}
+                disabled={readOnly}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </label>
@@ -174,6 +184,7 @@ export function TelegramBot({
               <textarea
                 className="min-h-20 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 font-mono text-sm text-stone-100"
                 value={commands}
+                disabled={readOnly}
                 onChange={(e) => setCommands(e.target.value)}
                 placeholder={"tools - list granted MCP\nnew - distill memory\nauth - start OAuth"}
               />
@@ -181,7 +192,7 @@ export function TelegramBot({
           </div>
           <button
             type="button"
-            disabled={busy}
+            disabled={locked}
             onClick={() =>
               void post({
                 op: "profile",
@@ -211,7 +222,7 @@ export function TelegramBot({
             <li key={id}>
               <button
                 type="button"
-                disabled={busy}
+                disabled={locked}
                 onClick={() => setAllow((cur) => cur.filter((x) => x !== id))}
                 className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-stone-100 hover:border-red-800 hover:text-red-200 disabled:opacity-50"
                 title="remove"
@@ -229,7 +240,7 @@ export function TelegramBot({
                 <li key={s.id}>
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={locked}
                     onClick={() => addNumeric(s.id)}
                     className="rounded border border-amber-900/70 bg-amber-950/30 px-2 py-0.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
                   >
@@ -246,6 +257,7 @@ export function TelegramBot({
             className="min-w-40 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm"
             placeholder="numeric id"
             value={addId}
+            disabled={readOnly}
             onChange={(e) => {
               setAddId(e.target.value);
               setAddErr(null);
@@ -259,7 +271,7 @@ export function TelegramBot({
           />
           <button
             type="button"
-            disabled={busy || !addId.trim()}
+            disabled={locked || !addId.trim()}
             onClick={() => addNumeric(addId)}
             className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700 disabled:opacity-50"
           >
@@ -267,7 +279,7 @@ export function TelegramBot({
           </button>
           <button
             type="button"
-            disabled={busy}
+            disabled={locked}
             onClick={() => void post({ op: "allowlist", ids: allow })}
             className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700 disabled:opacity-50"
           >

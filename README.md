@@ -1,6 +1,10 @@
 # gantree
 
 <p align="center">
+  <img src="assets/logo.svg" alt="gantree" width="96" height="96">
+</p>
+
+<p align="center">
   <img src="assets/banner.svg" alt="Shipping yard for personal agents - operator plane, not the chat" width="100%">
 </p>
 
@@ -28,7 +32,7 @@ You opened the yard repo. **The product is the runner.**
 </p>
 
 <p align="center">
-  <img src="assets/metrics.png" alt="Ada’s metrics — CPU and RAM from docker stats. Token charts wait for a chat.">
+  <img src="assets/metrics.png" alt="Ada’s metrics — live CPU, RAM, MCP, and uptime from Docker. Token charts wait for a chat.">
 </p>
 
 ---

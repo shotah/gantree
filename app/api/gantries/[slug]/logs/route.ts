@@ -1,4 +1,4 @@
-import { withDoor } from "@/lib/yard/door";
+import { denyUnlessCraneRead, withDoor } from "@/lib/yard/door";
 import { containerLogsBuffer, containerLogsFollow, dockerErrorMessage } from "@/lib/yard/host/docker";
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { createLogDemuxer, decodeDockerLogs, parseLogLine, parseLogText, splitLogLines } from "@/lib/yard/host/logs";
@@ -7,6 +7,10 @@ export const dynamic = "force-dynamic";
 
 export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
+  const denied = denyUnlessCraneRead(req, slug);
+  if (denied) {
+    return denied;
+  }
   const g = await getGantry(slug);
   if (!g?.containerId) {
     return Response.json({ error: g ? "no container attached" : "not found" }, { status: 404 });

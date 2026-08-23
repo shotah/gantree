@@ -4,6 +4,7 @@ export {
   getMe,
   parseAllowlist,
   shouldPushTelegram,
+  suggestBotIdentity,
 } from "./host/telegram";
 export { craneTelegramAuth, saveGantryAllowlist, telegramSnapshot } from "./crane/telegram";
 export { kickAuth, exchangeAuth, waitAuth, toolsFetch } from "./tools/auth";

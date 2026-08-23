@@ -22,9 +22,19 @@ A volumetric flood can still knock the process over. That is not the bar.
 The bar is: they do not get logs, `.env`, or recreate without a real
 passphrase.
 
-Whoever *can* log in is an equal owner: read logs, edit `.env`, grant
-MCP, recreate containers. There is no `view` role. Do not share a login
-the way you would share a read-only dashboard.
+Whoever *can* log in is not automatically an owner. Three roles, one field
+each — not a permission matrix:
+
+| Role | Access |
+| --- | --- |
+| **admin** | Every crane. Operators. Build. |
+| **user** | One crane (grant, recreate, env). Not operators, not other cranes. |
+| **readonly** | Look at the yard (board, logs, doctor). Not touch. |
+
+Setup always creates an **admin**. Assign the rest from **Settings** (the
+cog). Profile (name, photo, passphrase) is a different page — click your
+name. A user without a crane is a misconfig — the add form requires one.
+Do not share an admin login the way you would share a read-only dashboard.
 
 ---
 
@@ -154,13 +164,20 @@ JWT in `localStorage`.
 
 ## Operators
 
-A handful of equal owners in yard sqlite. Confirm-scary on add / remove
-/ passphrase change (checkbox must be JSON `true`, not `"true"`).
+A handful of people in yard sqlite. Confirm-scary on add / remove /
+access change / passphrase change (checkbox must be JSON `true`, not
+`"true"`).
 
-- Cannot delete the last operator.
+- Each row is a UUID. `bob` is the login name. Display name, email, description, photo, and Telegram/Slack/Discord ids live on that row. Email is a label — still no reset link. Photos: `operators/<uuid>/avatar.jpg` next to yard sqlite.
+- Cannot delete the last operator. Cannot demote or delete the last admin.
 - Add uses the same passphrase rules as setup.
 - Names are unique ignoring case.
 - Hashes never round-trip on `GET /api/operators`.
+- Role lives on the operator row (`admin` / `user` / `readonly`). User also
+  has `crane_slug`. Profile edits (name, email) cannot change role — that
+  is Settings.
+- Non-admins `GET /api/operators` see only themselves. Mutations other
+  than own passphrase / profile are 403.
 
 ---
 
@@ -216,7 +233,7 @@ console does not become the IdP.
 - CSRF tokens. Cookie is `SameSite=Lax`, APIs are same-origin.
 - Hiding `/login` and `/setup` HTML. Those pages are public; the data is
   not.
-- A `view` role. Skipped on purpose.
+- A twelve-role RBAC product. Three named roles is the door.
 
 ---
 
@@ -229,7 +246,7 @@ console does not become the IdP.
 3. Never set `GANTREE_DEV` in compose.
 4. Forgot passphrase → delete yard sqlite → setup. There is no other
    recovery.
-5. Partner leaves → **Operators** → remove them. Their sessions die.
+5. Partner leaves → **Settings** (cog) → remove them. Their sessions die.
 6. Agents: still no inbound ports. Do not add any.
 
 Tests for the door live in `test/yard/door/door.test.ts` (setup, login

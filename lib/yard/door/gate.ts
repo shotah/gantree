@@ -1,4 +1,24 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import {
+  accessForRole,
+  canManageOperators,
+  canMutateCrane,
+  canReadCrane,
+  parseCraneSlug,
+  parseStoredRole,
+} from "./access";
+import {
+  parseChannelsPatch,
+  parseOperatorChannels,
+  parseRole,
+  serializeOperatorChannels,
+  validateDescription,
+  validateDisplayName,
+  validateEmail,
+  type OperatorChannels,
+  type OperatorRole,
+} from "./channels";
+import { operatorAvatarRev, removeOperatorAvatar } from "./profile";
 import { bindIsOpen, warnOpenBindIfEmpty, yardDb } from "./store";
 
 export const SESSION_COOKIE = "gantree_session";
@@ -23,9 +43,31 @@ type FailBucket = { n: number; start: number; lockedUntil: number };
 const loginFails = new Map<string, FailBucket>();
 let loginFailsGlobal: FailBucket = { n: 0, start: 0, lockedUntil: 0 };
 
-export type Operator = { id: string; name: string };
+export type Operator = {
+  id: string;
+  name: string;
+  displayName: string;
+  role: OperatorRole;
+  crane: string | null;
+  avatarRev: number | null;
+};
 
-export type OperatorRow = Operator & { createdAt: string };
+export type OperatorRow = Operator & {
+  email: string;
+  description: string;
+  channels: OperatorChannels;
+  createdAt: string;
+};
+
+export type OperatorProfilePatch = {
+  name?: string;
+  displayName?: string;
+  email?: string;
+  description?: string;
+  role?: OperatorRole;
+  crane?: string | null;
+  channels?: OperatorChannels;
+};
 
 export type DoorStatus = {
   ready: boolean;
@@ -168,6 +210,42 @@ export function withDoor<T extends unknown[]>(
   };
 }
 
+export function denyUnlessAdmin(req: Request): Response | null {
+  const you = operatorFromRequest(req);
+  if (!you) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (!canManageOperators(you)) {
+    return Response.json({ error: "forbidden" }, { status: 403 });
+  }
+  return null;
+}
+
+export function denyUnlessCraneRead(req: Request, slug: string): Response | null {
+  const you = operatorFromRequest(req);
+  if (!you) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (!canReadCrane(you, slug)) {
+    return Response.json({ error: "not found" }, { status: 404 });
+  }
+  return null;
+}
+
+export function denyUnlessCraneMutate(req: Request, slug: string): Response | null {
+  const you = operatorFromRequest(req);
+  if (!you) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (!canReadCrane(you, slug)) {
+    return Response.json({ error: "not found" }, { status: 404 });
+  }
+  if (!canMutateCrane(you, slug)) {
+    return Response.json({ error: "forbidden" }, { status: 403 });
+  }
+  return null;
+}
+
 export function operatorFromRequest(req: Request, opts?: { touch?: boolean }): Operator | null {
   const token = readCookie(req, SESSION_COOKIE);
   if (token) {
@@ -195,16 +273,19 @@ export function setupOperator(name: string, passphrase: string): { ok: true; ope
       db.exec("ROLLBACK");
       return { ok: false, error: "already set up", status: 409 };
     }
-    const operator: Operator = { id: crypto.randomUUID(), name: name.trim() };
+    const operator: Operator = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      displayName: name.trim(),
+      role: "admin",
+      crane: null,
+      avatarRev: null,
+    };
     const { salt, hash } = hashPassphrase(passphrase);
     const now = new Date().toISOString();
-    db.prepare("INSERT INTO operator (id, name, pass_salt, pass_hash, created_at) VALUES (?, ?, ?, ?, ?)").run(
-      operator.id,
-      operator.name,
-      salt,
-      hash,
-      now,
-    );
+    db.prepare(
+      "INSERT INTO operator (id, name, pass_salt, pass_hash, created_at, display_name, email, description, role, crane_slug, channels) VALUES (?, ?, ?, ?, ?, ?, '', '', 'admin', NULL, '{}')",
+    ).run(operator.id, operator.name, salt, hash, now, operator.displayName);
     const token = createSession(operator.id, now);
     db.exec("COMMIT");
     return { ok: true, operator, token };
@@ -235,8 +316,20 @@ export function loginOperator(
     return finishLoginFail(label);
   }
   const row = yardDb()
-    .prepare("SELECT id, name, pass_salt, pass_hash FROM operator WHERE name = ? COLLATE NOCASE")
-    .get(name.trim()) as { id: string; name: string; pass_salt: Uint8Array; pass_hash: Uint8Array } | undefined;
+    .prepare(
+      "SELECT id, name, display_name, role, crane_slug, pass_salt, pass_hash FROM operator WHERE name = ? COLLATE NOCASE",
+    )
+    .get(name.trim()) as
+    | {
+        id: string;
+        name: string;
+        display_name: string | null;
+        role: string | null;
+        crane_slug: string | null;
+        pass_salt: Uint8Array;
+        pass_hash: Uint8Array;
+      }
+    | undefined;
   if (!row) {
     dummyHash(passphrase);
     return finishLoginFail(label);
@@ -246,7 +339,7 @@ export function loginOperator(
   }
   clearLoginFails(label);
   const token = createSession(row.id, new Date().toISOString());
-  return { ok: true, operator: { id: row.id, name: row.name }, token };
+  return { ok: true, operator: publicOperator(row), token };
 }
 
 export function logoutOperator(req: Request): void {
@@ -259,18 +352,46 @@ export function logoutOperator(req: Request): void {
 
 export function listOperators(): OperatorRow[] {
   const rows = yardDb()
-    .prepare("SELECT id, name, created_at FROM operator ORDER BY created_at, name")
-    .all() as { id: string; name: string; created_at: string }[];
-  return rows.map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at }));
+    .prepare(
+      "SELECT id, name, display_name, email, description, role, crane_slug, channels, created_at FROM operator ORDER BY created_at, name",
+    )
+    .all() as OperatorDb[];
+  return rows.map(operatorRow);
 }
 
-export function addOperator(name: string, passphrase: string): { ok: true; operator: OperatorRow } | DoorFail {
+export function getOperator(id: string): OperatorRow | null {
+  const row = yardDb()
+    .prepare(
+      "SELECT id, name, display_name, email, description, role, crane_slug, channels, created_at FROM operator WHERE id = ?",
+    )
+    .get(id) as OperatorDb | undefined;
+  return row ? operatorRow(row) : null;
+}
+
+export function addOperator(
+  name: string,
+  passphrase: string,
+  role: OperatorRole = "admin",
+  crane: string | null = null,
+): { ok: true; operator: OperatorRow } | DoorFail {
   if (typeof name !== "string" || typeof passphrase !== "string") {
     return { ok: false, error: "name and passphrase required", status: 400 };
   }
   const fields = validateCredentials(name, passphrase);
   if (fields) {
     return { ok: false, error: fields, status: 400 };
+  }
+  const parsed = parseRole(role);
+  if (!parsed) {
+    return { ok: false, error: "role must be admin, user, or readonly", status: 400 };
+  }
+  const slug = parseCraneSlug(crane);
+  if (!slug.ok) {
+    return { ok: false, error: slug.error, status: 400 };
+  }
+  const access = accessForRole(parsed, slug.crane);
+  if (!access.ok) {
+    return { ok: false, error: access.error, status: 400 };
   }
   const db = yardDb();
   const exists = db
@@ -279,19 +400,16 @@ export function addOperator(name: string, passphrase: string): { ok: true; opera
   if (exists) {
     return { ok: false, error: "name already taken", status: 409 };
   }
-  const operator: OperatorRow = {
-    id: crypto.randomUUID(),
-    name: name.trim(),
-    createdAt: new Date().toISOString(),
-  };
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
   const { salt, hash } = hashPassphrase(passphrase);
-  db.prepare("INSERT INTO operator (id, name, pass_salt, pass_hash, created_at) VALUES (?, ?, ?, ?, ?)").run(
-    operator.id,
-    operator.name,
-    salt,
-    hash,
-    operator.createdAt,
-  );
+  db.prepare(
+    "INSERT INTO operator (id, name, pass_salt, pass_hash, created_at, display_name, email, description, role, crane_slug, channels) VALUES (?, ?, ?, ?, ?, ?, '', '', ?, ?, '{}')",
+  ).run(id, name.trim(), salt, hash, createdAt, name.trim(), access.role, access.crane);
+  const operator = getOperator(id);
+  if (!operator) {
+    return { ok: false, error: "operator write vanished", status: 500 };
+  }
   return { ok: true, operator };
 }
 
@@ -300,13 +418,53 @@ export function removeOperator(_actorId: string, targetId: string): { ok: true }
   if (n <= 1) {
     return { ok: false, error: "cannot delete the last operator", status: 400 };
   }
-  const db = yardDb();
-  const hit = db.prepare("SELECT id FROM operator WHERE id = ?").get(targetId) as { id: string } | undefined;
-  if (!hit) {
+  const target = getOperator(targetId);
+  if (!target) {
     return { ok: false, error: "operator not found", status: 404 };
   }
-  db.prepare("DELETE FROM operator WHERE id = ?").run(targetId);
+  if (target.role === "admin" && adminCount() <= 1) {
+    return { ok: false, error: "cannot delete the last admin", status: 400 };
+  }
+  yardDb().prepare("DELETE FROM operator WHERE id = ?").run(targetId);
+  removeOperatorAvatar(targetId);
   return { ok: true };
+}
+
+export function setOperatorAccess(
+  targetId: string,
+  role: OperatorRole,
+  crane: string | null,
+): { ok: true; operator: OperatorRow } | DoorFail {
+  const parsed = parseRole(role);
+  if (!parsed) {
+    return { ok: false, error: "role must be admin, user, or readonly", status: 400 };
+  }
+  const slug = parseCraneSlug(crane);
+  if (!slug.ok) {
+    return { ok: false, error: slug.error, status: 400 };
+  }
+  const access = accessForRole(parsed, slug.crane);
+  if (!access.ok) {
+    return { ok: false, error: access.error, status: 400 };
+  }
+  const target = getOperator(targetId);
+  if (!target) {
+    return { ok: false, error: "operator not found", status: 404 };
+  }
+  if (target.role === "admin" && access.role !== "admin" && adminCount() <= 1) {
+    return { ok: false, error: "cannot demote the last admin", status: 400 };
+  }
+  yardDb().prepare("UPDATE operator SET role = ?, crane_slug = ? WHERE id = ?").run(access.role, access.crane, targetId);
+  const next = getOperator(targetId);
+  if (!next) {
+    return { ok: false, error: "operator write vanished", status: 500 };
+  }
+  return { ok: true, operator: next };
+}
+
+function adminCount(): number {
+  const row = yardDb().prepare("SELECT COUNT(*) AS n FROM operator WHERE role = 'admin'").get() as { n: number } | undefined;
+  return Number(row?.n ?? 0);
 }
 
 export function changeOwnPassphrase(
@@ -347,6 +505,84 @@ export function changeOwnPassphrase(
   return { ok: true };
 }
 
+export function updateOwnProfile(
+  operatorId: string,
+  patch: OperatorProfilePatch,
+): { ok: true; operator: OperatorRow } | DoorFail {
+  const db = yardDb();
+  const row = db
+    .prepare(
+      "SELECT id, name, display_name, email, description, role, crane_slug, channels, created_at FROM operator WHERE id = ?",
+    )
+    .get(operatorId) as OperatorDb | undefined;
+  if (!row) {
+    return { ok: false, error: "operator not found", status: 404 };
+  }
+
+  let name = row.name;
+  if (patch.name !== undefined) {
+    if (typeof patch.name !== "string") {
+      return { ok: false, error: "name must be a string", status: 400 };
+    }
+    const next = patch.name.trim();
+    if (!NAME_RE.test(next)) {
+      return { ok: false, error: "name must be 2–32 letters, digits, dot, underscore, or hyphen", status: 400 };
+    }
+    const clash = db
+      .prepare("SELECT id FROM operator WHERE name = ? COLLATE NOCASE AND id != ?")
+      .get(next, operatorId) as { id: string } | undefined;
+    if (clash) {
+      return { ok: false, error: "name already taken", status: 409 };
+    }
+    name = next;
+  }
+
+  let displayName = row.display_name ?? "";
+  if (patch.displayName !== undefined) {
+    const err = validateDisplayName(patch.displayName);
+    if (err) {
+      return { ok: false, error: err, status: 400 };
+    }
+    displayName = patch.displayName.trim();
+  }
+
+  let email = row.email ?? "";
+  if (patch.email !== undefined) {
+    const err = validateEmail(patch.email);
+    if (err) {
+      return { ok: false, error: err, status: 400 };
+    }
+    email = patch.email.trim();
+  }
+
+  let description = row.description ?? "";
+  if (patch.description !== undefined) {
+    const err = validateDescription(patch.description);
+    if (err) {
+      return { ok: false, error: err, status: 400 };
+    }
+    description = patch.description.trim();
+  }
+
+  let channelsJson = row.channels ?? "{}";
+  if (patch.channels !== undefined) {
+    const parsed = parseChannelsPatch(patch.channels);
+    if (!parsed.ok) {
+      return { ok: false, error: parsed.error, status: 400 };
+    }
+    channelsJson = serializeOperatorChannels(parsed.channels);
+  }
+
+  db.prepare(
+    "UPDATE operator SET name = ?, display_name = ?, email = ?, description = ?, channels = ? WHERE id = ?",
+  ).run(name, displayName, email, description, channelsJson, operatorId);
+  const next = getOperator(operatorId);
+  if (!next) {
+    return { ok: false, error: "operator write vanished", status: 500 };
+  }
+  return { ok: true, operator: next };
+}
+
 export function sessionCookieHeader(token: string, req: Request): string {
   return cookieHeader(SESSION_COOKIE, token, req, Math.floor(SESSION_ABS_MS / 1000));
 }
@@ -380,12 +616,22 @@ export function readCookie(req: Request, name: string): string | null {
 function sessionOperator(token: string, touch: boolean): Operator | null {
   const row = yardDb()
     .prepare(
-      `SELECT s.created_at, s.last_seen_at, o.id, o.name
+      `SELECT s.created_at, s.last_seen_at, o.id, o.name, o.display_name, o.role, o.crane_slug
        FROM operator_session s
        JOIN operator o ON o.id = s.operator_id
        WHERE s.token_hash = ?`,
     )
-    .get(tokenHash(token)) as { created_at: string; last_seen_at: string; id: string; name: string } | undefined;
+    .get(tokenHash(token)) as
+    | {
+        created_at: string;
+        last_seen_at: string;
+        id: string;
+        name: string;
+        display_name: string | null;
+        role: string | null;
+        crane_slug: string | null;
+      }
+    | undefined;
   if (!row) {
     return null;
   }
@@ -402,7 +648,47 @@ function sessionOperator(token: string, touch: boolean): Operator | null {
   if (touch && now - seen > 60_000) {
     yardDb().prepare("UPDATE operator_session SET last_seen_at = ? WHERE token_hash = ?").run(new Date().toISOString(), tokenHash(token));
   }
-  return { id: row.id, name: row.name };
+  return publicOperator(row);
+}
+
+type OperatorDb = {
+  id: string;
+  name: string;
+  display_name: string | null;
+  email: string | null;
+  description: string | null;
+  role: string | null;
+  crane_slug: string | null;
+  channels: string | null;
+  created_at: string;
+};
+
+function publicOperator(row: {
+  id: string;
+  name: string;
+  display_name: string | null;
+  role: string | null;
+  crane_slug?: string | null;
+}): Operator {
+  const role = parseStoredRole(row.role);
+  return {
+    id: row.id,
+    name: row.name,
+    displayName: (row.display_name ?? "").trim() || row.name,
+    role,
+    crane: role === "user" ? (row.crane_slug ?? null) : null,
+    avatarRev: operatorAvatarRev(row.id),
+  };
+}
+
+function operatorRow(row: OperatorDb): OperatorRow {
+  return {
+    ...publicOperator(row),
+    email: row.email ?? "",
+    description: row.description ?? "",
+    channels: parseOperatorChannels(row.channels),
+    createdAt: row.created_at,
+  };
 }
 
 function createSession(operatorId: string, now: string): string {

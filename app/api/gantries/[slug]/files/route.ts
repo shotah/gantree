@@ -1,15 +1,20 @@
-import { recordFromRequest, withDoor } from "@/lib/yard/door";
+import { canMutateCrane, denyUnlessCraneMutate, denyUnlessCraneRead, operatorFromRequest, recordFromRequest, withDoor } from "@/lib/yard/door";
 import { resolve } from "node:path";
 import { loadEnvFile, maskEnv, mergeEnv, writeEnvFile } from "@/lib/yard/host/envfile";
 import { parseMcpToml, readText, writeText } from "@/lib/yard/host/files";
 import { getGantry } from "@/lib/yard/crane/inventory";
 
-export const GET = withDoor(async (_req: Request, ctx: { params: Promise<{ slug: string }> }) => {
+export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
+  const denied = denyUnlessCraneRead(req, slug);
+  if (denied) {
+    return denied;
+  }
   const g = await getGantry(slug);
   if (!g) {
     return Response.json({ error: "not found" }, { status: 404 });
   }
+  const you = operatorFromRequest(req);
   const env = loadEnvFile(g.envFile);
   return Response.json({
     persona: readText(g.personaDir ? resolve(g.personaDir, "PERSONA.md") : null),
@@ -17,12 +22,16 @@ export const GET = withDoor(async (_req: Request, ctx: { params: Promise<{ slug:
     mcp: readText(g.mcpManifest),
     servers: parseMcpToml(readText(g.mcpManifest)),
     env: maskEnv(env),
-    writable: Boolean(g.personaDir || g.mcpManifest || g.envFile),
+    writable: Boolean(g.personaDir || g.mcpManifest || g.envFile) && Boolean(you && canMutateCrane(you, slug)),
   });
 });
 
 export const PUT = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
+  const denied = denyUnlessCraneMutate(req, slug);
+  if (denied) {
+    return denied;
+  }
   const g = await getGantry(slug);
   if (!g) {
     return Response.json({ error: "not found" }, { status: 404 });

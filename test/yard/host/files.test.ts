@@ -102,4 +102,22 @@ describe("backupFiles", () => {
     const dest = backupFiles(data, null);
     expect(existsSync(join(dest!, "gantry.db"))).toBe(true);
   });
+
+  it("never copies .env into the backup", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    const data = join(root, "data");
+    const persona = join(root, "persona");
+    mkdirSync(data);
+    mkdirSync(persona);
+    writeFileSync(join(data, "gantry.db"), "db");
+    writeFileSync(join(data, ".env"), "TELEGRAM_BOT_TOKEN=secret\n");
+    writeFileSync(join(persona, ".env"), "LLM_API_KEY=also-secret\n");
+    writeFileSync(join(persona, "SELF.md"), "me\n");
+    const dest = backupFiles(data, persona);
+    expect(existsSync(join(dest!, "gantry.db"))).toBe(true);
+    expect(existsSync(join(dest!, "SELF.md"))).toBe(true);
+    expect(existsSync(join(dest!, ".env"))).toBe(false);
+  });
 });

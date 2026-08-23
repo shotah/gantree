@@ -1,10 +1,14 @@
-import { recordFromRequest, withDoor } from "@/lib/yard/door";
+import { denyUnlessCraneMutate, recordFromRequest, withDoor } from "@/lib/yard/door";
 import { run, type RunAction } from "@/lib/yard/crane/run";
 
 const ACTIONS = new Set<RunAction>(["start", "stop", "recreate", "backup", "pin"]);
 
 export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
+  const denied = denyUnlessCraneMutate(req, slug);
+  if (denied) {
+    return denied;
+  }
   const body = (await req.json().catch(() => ({}))) as { action?: string; image?: string };
   const action = body.action as RunAction | undefined;
   if (!action || !ACTIONS.has(action)) {

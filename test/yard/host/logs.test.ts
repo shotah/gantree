@@ -4,6 +4,7 @@ import { createLogDemuxer, decodeDockerLogs, groupLogsByTurn, parseLogLine, pars
 describe("redact", () => {
   it("hides token-shaped assignments", () => {
     expect(redact("TELEGRAM_BOT_TOKEN=12345 still here")).toBe("TELEGRAM_BOT_TOKEN=*** still here");
+    expect(redact("LLM_API_KEY=sk-live PASSWORD=hunter2")).toBe("LLM_API_KEY=*** PASSWORD=***");
   });
 });
 
@@ -53,6 +54,12 @@ describe("parseLogLine", () => {
   it("strips docker timestamps", () => {
     const line = parseLogLine("2026-08-22T18:00:00.123456789Z hello");
     expect(line.msg).toBe("hello");
+  });
+
+  it("redacts secrets before the visual log keeps the line", () => {
+    const line = parseLogLine("2026-08-22T18:00:00.123456789Z TELEGRAM_BOT_TOKEN=12345 boom");
+    expect(line.msg).toBe("TELEGRAM_BOT_TOKEN=*** boom");
+    expect(line.raw).not.toContain("12345");
   });
 });
 

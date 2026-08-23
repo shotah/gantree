@@ -95,7 +95,7 @@ export function YardBoard() {
             {yard ? `${yard.gantries.length} crane${yard.gantries.length === 1 ? "" : "s"} · ${yard.source} · ${yard.yard}` : "loading…"}
           </p>
         </div>
-        <BuildCrane onBuilt={load} />
+        {yard?.canBuild ? <BuildCrane onBuilt={load} /> : null}
       </div>
 
       {error ? (

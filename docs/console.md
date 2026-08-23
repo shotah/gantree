@@ -30,9 +30,12 @@ Need **Node 22**. `npm start` (or compose) on the Docker host.
 3. Sessions live in yard `gantree.db` — not a crane’s `data/gantry.db`.
 
 Forgot the passphrase: stop, delete that sqlite file, start, run setup
-again. No email reset. Whoever can log in can read logs, edit `.env`, and
-recreate containers. Add a partner from **Operators** in the header
-(confirm-scary, like a token push). You cannot delete the last operator.
+again. No email reset. Whoever logs in has a **role**: admin is full
+access, user is one crane, readonly can look. Your face and passphrase
+are **Profile** (click your name). Operators and roles are **Settings**
+(the cog). Confirm-scary on add / remove, like a token push. You cannot
+delete the last operator, or the last admin. The row is a UUID, so
+renaming bob does not mint a new person.
 
 Local screenshots / `npm run dev`: set `GANTREE_DEV=1` plus operator +
 passphrase in `.env` (see `.env.example`). That mints a real session on
@@ -55,7 +58,8 @@ skipped grant, needs-auth) sit on the card — you do not have to open Tools.
 Click through. Kit’s page is **Kit** — graphs and log, not a mixed fleet dump.
 
 Build a crane from the board (yard type first: home Mini or cloud VM).
-**Upload a photo** on the crane — it lands in `persona/avatar.jpg`, shows on
+Telegram: **Create with BotFather** copies `/newbot`, opens the chat, and
+suggests `{slug}_bot` — paste the token it replies with. **Upload a photo** on the crane — it lands in `persona/avatar.jpg`, shows on
 the board, and if the channel is Telegram the bot’s face updates too. On a
 Telegram crane, **Telegram** (below the photo) can `getMe` the token, push
 name / about / the `/` command menu, and edit `TELEGRAM_ALLOWED_USERS` from
@@ -67,7 +71,7 @@ a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 
 ![Ada’s page — CPU/RAM, MCP, uptime; Kit’s page is only Kit](../assets/crane-metrics.png)
 
-![Metrics on Ada: host graphs from docker stats, token charts empty until a chat](../assets/metrics.png)
+![Metrics on Ada: live CPU, RAM, MCP, uptime; token charts empty until a chat](../assets/metrics.png)
 
 ![Crane page with avatar and upload photo](../assets/crane-photo.png)
 
