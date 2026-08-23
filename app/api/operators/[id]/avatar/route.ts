@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import {
+  canEditOperator,
   getOperator,
   operatorFromRequest,
   readOperatorAvatar,
@@ -32,7 +33,7 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ id: s
   if (!you) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (you.id !== id) {
+  if (!canEditOperator(you, id)) {
     return Response.json({ error: "can only change your own photo" }, { status: 403 });
   }
   if (!getOperator(id)) {
@@ -54,6 +55,7 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ id: s
   if (!result.ok) {
     return Response.json({ error: result.error }, { status: 400 });
   }
-  recordFromRequest(req, "operator-avatar", null, you.name);
+  const target = getOperator(id);
+  recordFromRequest(req, "operator-avatar", null, target?.name ?? you.name);
   return Response.json({ ok: true, rev: result.rev });
 });

@@ -29,6 +29,7 @@ export {
   addOperator,
   changeOwnPassphrase,
   getOperator,
+  resetOperatorPassphrase,
   listOperators,
   operatorCount,
   removeOperator,

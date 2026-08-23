@@ -161,6 +161,11 @@ export function canManageOperators(op: AccessSubject): boolean {
   return op.role === "admin";
 }
 
+/** Own row, or any row if you manage operators. */
+export function canEditOperator(you: AccessSubject & { id: string }, targetId: string): boolean {
+  return you.id === targetId || canManageOperators(you);
+}
+
 export function scopeYard(yard: YardInventory, op: AccessSubject): YardInventory {
   if (op.role === "admin") {
     return yard;

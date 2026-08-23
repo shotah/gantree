@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { yardFetch } from "@/app/lib/yardFetch";
 import { OPERATOR_ROLES, ROLE_BLURB, roleNeedsCrane } from "@/lib/yard/door/access";
@@ -98,6 +99,12 @@ export function PeoplePane({
               {admin
                 ? (
                     <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={you?.id === o.id ? "/profile" : `/profile/${o.id}`}
+                        className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700"
+                      >
+                        edit
+                      </Link>
                       {editId === o.id
                         ? null
                         : (
@@ -190,7 +197,7 @@ export function PeoplePane({
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                     <label className="flex items-center gap-2 text-amber-200">
                       <input type="checkbox" checked={removeConfirm} onChange={(e) => setRemoveConfirm(e.target.checked)} />
-                      I am removing this operator. Their sessions die.
+                      I am removing this operator. Their sessions dies.
                     </label>
                     <button
                       type="button"

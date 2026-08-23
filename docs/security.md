@@ -261,7 +261,7 @@ console does not become the IdP.
 3. Never set `GANTREE_DEV` in compose.
 4. Forgot passphrase → delete yard sqlite → setup. There is no other
    recovery.
-5. Partner leaves → **Settings** (cog) → remove them. Their sessions die.
+5. Partner leaves → **Settings** (cog) → remove them. Their sessions dies.
 6. Agents: still no inbound ports. Do not add any.
 
 Tests for the door live in `test/yard/door/door.test.ts` (setup, login

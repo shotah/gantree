@@ -38,6 +38,29 @@ describe("YardSettings", () => {
     await waitFor(() => expect(screen.getByRole("checkbox", { name: "kit" })).toBeTruthy());
     expect(screen.queryByRole("button", { name: "Save profile" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Update passphrase" })).toBeNull();
+    const edit = await screen.findByRole("link", { name: "edit" });
+    expect(edit.getAttribute("href")).toBe("/profile");
+  });
+
+  it("sends other operators to the same profile page", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/gantries")) {
+        return { json: async () => ({ gantries: [{ slug: "kit" }] }) } as Response;
+      }
+      return {
+        json: async () => ({
+          operators: [
+            { id: "1", name: "kit", displayName: "kit", role: "admin", cranes: [], createdAt: "now" },
+            { id: "2", name: "ada", displayName: "Ada", role: "user", cranes: ["kit"], createdAt: "now" },
+          ],
+          you: { id: "1", name: "kit", displayName: "kit", role: "admin", cranes: [], createdAt: "now" },
+        }),
+      } as Response;
+    });
+    render(<YardSettings />);
+    const edits = await screen.findAllByRole("link", { name: "edit" });
+    expect(edits.map((el) => el.getAttribute("href"))).toEqual(["/profile", "/profile/2"]);
   });
 
   it("hides add/remove for readonly", async () => {
@@ -51,6 +74,7 @@ describe("YardSettings", () => {
     await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
     expect(screen.queryByRole("button", { name: "Add operator" })).toBeNull();
     expect(screen.queryByRole("button", { name: "remove" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "edit" })).toBeNull();
   });
 
   it("opens the Yard pane with retain, timezone, pin, and rates", async () => {

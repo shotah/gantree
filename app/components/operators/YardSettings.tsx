@@ -52,7 +52,7 @@ export function YardSettings() {
           {pane === "yard"
             ? "Retain, timezone, default pin, optional $/1M. Session idle stays in the door — not this table."
             : admin
-              ? "Who is on this yard, and what they can touch. Your photo and passphrase are on Profile."
+              ? "Who is on this yard, and what they can touch. Edit for photo, email, chat ids, and passphrase."
               : "Your role is assigned by an admin. Photo and passphrase are on Profile."}
         </p>
       </div>

@@ -20,6 +20,7 @@ describe("persona seed", () => {
     expect(text).toContain("- **Name:** Your Name");
     expect(text).toContain("## Voice");
     expect(text).toContain("## Directives");
+    expect(text).toContain("Prefer parallel tool calls");
     expect(text).toContain("self_note");
     expect(text).toContain("mcp_enable");
     expect(text).toContain("Review `[mcp prefixes]` on vs off");

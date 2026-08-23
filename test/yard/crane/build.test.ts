@@ -43,6 +43,7 @@ describe("writeCraneFiles", () => {
     expect(persona).toContain("**Name:** Kit");
     expect(persona).toContain("## About you");
     expect(persona).toContain("## Harness tools");
+    expect(persona).toContain("Prefer parallel tool calls");
     expect(persona).toContain("mcp_enable");
     expect(persona).toContain("## Memory hygiene");
     expect(persona).not.toContain("A long-horizon personal agent");

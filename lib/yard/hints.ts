@@ -105,6 +105,9 @@ export const HINTS = {
   newPass: {
     hint: "Replacement door passphrase, ≥10 characters. Same rules as setup.",
   },
+  adminPass: {
+    hint: "Sets their login passphrase. They have to sign in again. Same rules as setup. You do not need the old one.",
+  },
   tgName: {
     hint: "Display name in Telegram (setMyName). Not the @username BotFather minted.",
     example: "Kit",

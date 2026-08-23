@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   MAX_DESCRIPTION,
@@ -41,8 +42,19 @@ function pingDoor() {
   window.dispatchEvent(new Event("gantree-door"));
 }
 
-export function OperatorProfile() {
+function fillRow(row: OperatorRow): Pick<OperatorRow, "displayName" | "name" | "email" | "description" | "channels"> {
+  return {
+    displayName: row.displayName,
+    name: row.name,
+    email: row.email ?? "",
+    description: row.description ?? "",
+    channels: { ...emptyChannels(), ...row.channels },
+  };
+}
+
+export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
   const [you, setYou] = useState<OperatorRow | null>(null);
+  const [subject, setSubject] = useState<OperatorRow | null>(null);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [nextConfirm, setNextConfirm] = useState("");
@@ -56,26 +68,39 @@ export function OperatorProfile() {
   const [description, setDescription] = useState("");
   const [channels, setChannels] = useState<OperatorChannels>(emptyChannels());
 
+  const mine = Boolean(you && subject && you.id === subject.id);
+
   const load = useCallback(() => {
     yardFetch("/api/operators")
       .then((r) => r.json())
-      .then((d: { you?: OperatorRow; error?: string }) => {
+      .then((d: { operators?: OperatorRow[]; you?: OperatorRow; error?: string }) => {
         if (d.error) {
           setErr(d.error);
           return;
         }
         const me = d.you ?? null;
         setYou(me);
-        if (me) {
-          setDisplayName(me.displayName);
-          setLoginName(me.name);
-          setEmail(me.email ?? "");
-          setDescription(me.description ?? "");
-          setChannels({ ...emptyChannels(), ...me.channels });
+        const rows = d.operators ?? [];
+        const target = operatorId
+          ? (rows.find((o) => o.id === operatorId) ?? (me?.id === operatorId ? me : null))
+          : me;
+        if (!target) {
+          setSubject(null);
+          if (operatorId) {
+            setErr("operator not found");
+          }
+          return;
         }
+        setSubject(target);
+        const filled = fillRow(target);
+        setDisplayName(filled.displayName);
+        setLoginName(filled.name);
+        setEmail(filled.email);
+        setDescription(filled.description);
+        setChannels(filled.channels);
       })
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : String(e)));
-  }, []);
+  }, [operatorId]);
 
   useEffect(() => {
     load();
@@ -100,7 +125,7 @@ export function OperatorProfile() {
   }
 
   async function uploadPhoto(file: File) {
-    if (!you) {
+    if (!subject) {
       return;
     }
     setBusy(true);
@@ -110,13 +135,15 @@ export function OperatorProfile() {
       const jpeg = await jpegFromFile(file);
       const body = new FormData();
       body.append("file", jpeg, "avatar.jpg");
-      const res = await yardFetch(`/api/operators/${you.id}/avatar`, { method: "POST", body });
+      const res = await yardFetch(`/api/operators/${subject.id}/avatar`, { method: "POST", body });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
         setErr(data.error || res.statusText);
       } else {
         setNotice("photo updated");
-        pingDoor();
+        if (mine) {
+          pingDoor();
+        }
         load();
       }
     } catch (e: unknown) {
@@ -125,20 +152,33 @@ export function OperatorProfile() {
     setBusy(false);
   }
 
+  const who = subject ? subject.displayName || subject.name : "";
+
   return (
     <section className="flex flex-col gap-8" data-shot="profile">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Profile</h1>
+        {operatorId
+          ? (
+              <Link href="/settings" className="text-xs text-zinc-500 hover:text-amber-500">
+                ← settings
+              </Link>
+            )
+          : null}
+        <h1 className={`text-2xl font-semibold tracking-tight text-stone-100 ${operatorId ? "mt-1" : ""}`}>Profile</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Your face, login name, and passphrase. Roles live under settings
-          {you
+          {mine || !operatorId
+            ? "Your face, login name, and passphrase. Roles live under settings"
+            : `${who}'s face, login name, email, chat ids, and passphrase. Roles live under settings`}
+          {subject
             ? (
                 <>
                   {" "}
-                  — you are
+                  —
                   {" "}
-                  <span className="text-zinc-300">{you.role}</span>
-                  {you.cranes?.length ? ` on ${you.cranes.join(", ")}` : ""}
+                  {mine ? "you are" : `${who} is`}
+                  {" "}
+                  <span className="text-zinc-300">{subject.role}</span>
+                  {subject.cranes?.length ? ` on ${subject.cranes.join(", ")}` : ""}
                   .
                 </>
               )
@@ -150,7 +190,7 @@ export function OperatorProfile() {
       {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
 
       <div className="flex flex-wrap items-start gap-8">
-        {you
+        {subject
           ? (
               <form
                 className="flex max-w-full min-w-[min(100%,28rem)] grow basis-[28rem] flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
@@ -159,6 +199,7 @@ export function OperatorProfile() {
                   if (
                     await post({
                       op: "profile",
+                      id: subject.id,
                       name: loginName,
                       displayName,
                       email,
@@ -167,21 +208,23 @@ export function OperatorProfile() {
                     })
                   ) {
                     setNotice("profile updated");
-                    pingDoor();
+                    if (mine) {
+                      pingDoor();
+                    }
                     load();
                   }
                 }}
               >
-                <h2 className="text-sm font-medium text-zinc-400">You</h2>
+                <h2 className="text-sm font-medium text-zinc-400">{mine ? "You" : who}</h2>
                 <p className="text-[11px] text-zinc-600">
                   UUID
                   {" "}
-                  <code className="text-zinc-500">{you.id}</code>
+                  <code className="text-zinc-500">{subject.id}</code>
                   {" "}
-                  — stable. Display name and photo can change. Chat ids are stored on you; they are not wired into crane allowlists yet. Email is a label, not a reset path.
+                  — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram. Email is a label, not a reset path.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
-                  <OperatorAvatar id={you.id} rev={you.avatarRev} name={displayName || you.displayName} size="xl" />
+                  <OperatorAvatar id={subject.id} rev={subject.avatarRev} name={displayName || subject.displayName} size="xl" />
                   <label
                     className={`inline-flex w-fit rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 ${
                       busy ? "opacity-50" : "cursor-pointer"
@@ -263,70 +306,90 @@ export function OperatorProfile() {
             )
           : null}
 
-        <form
-          className="flex max-w-full min-w-[min(100%,28rem)] grow basis-[28rem] flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (next !== nextConfirm) {
-              setErr("new passphrases do not match");
-              return;
-            }
-            if (await post({ op: "passphrase", current, next, confirm: passConfirm })) {
-              setNotice("passphrase updated");
-              setCurrent("");
-              setNext("");
-              setNextConfirm("");
-              setPassConfirm(false);
-            }
-          }}
-        >
-          <h2 className="text-sm font-medium text-zinc-400">Change your passphrase</h2>
-          <HintField label="current" {...HINTS.currentPass}>
-            <input
-              className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
-              type="password"
-              value={current}
-              onChange={(e) => setCurrent(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </HintField>
-          <HintField label="new" {...HINTS.newPass}>
-            <input
-              className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
-              type="password"
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-              required
-              minLength={10}
-              maxLength={128}
-              autoComplete="new-password"
-            />
-          </HintField>
-          <HintField label="confirm new" {...HINTS.operatorConfirm}>
-            <input
-              className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
-              type="password"
-              value={nextConfirm}
-              onChange={(e) => setNextConfirm(e.target.value)}
-              required
-              minLength={10}
-              maxLength={128}
-              autoComplete="new-password"
-            />
-          </HintField>
-          <label className="flex items-center gap-2 text-xs text-amber-200">
-            <input type="checkbox" checked={passConfirm} onChange={(e) => setPassConfirm(e.target.checked)} />
-            I am changing my passphrase
-          </label>
-          <button
-            type="submit"
-            disabled={busy || !passConfirm}
-            className="rounded border border-zinc-700 px-3 py-2 text-sm hover:border-amber-700 disabled:opacity-50"
-          >
-            Update passphrase
-          </button>
-        </form>
+        {subject
+          ? (
+              <form
+                className="flex max-w-full min-w-[min(100%,28rem)] grow basis-[28rem] flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (next !== nextConfirm) {
+                    setErr("new passphrases do not match");
+                    return;
+                  }
+                  if (
+                    await post(
+                      mine
+                        ? { op: "passphrase", current, next, confirm: passConfirm }
+                        : { op: "passphrase", id: subject.id, next, confirm: passConfirm },
+                    )
+                  ) {
+                    setNotice("passphrase updated");
+                    setCurrent("");
+                    setNext("");
+                    setNextConfirm("");
+                    setPassConfirm(false);
+                  }
+                }}
+              >
+                <h2 className="text-sm font-medium text-zinc-400">
+                  {mine ? "Change your passphrase" : `Set ${who}'s passphrase`}
+                </h2>
+                {mine
+                  ? (
+                      <HintField label="current" {...HINTS.currentPass}>
+                        <input
+                          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                          type="password"
+                          value={current}
+                          onChange={(e) => setCurrent(e.target.value)}
+                          required
+                          autoComplete="current-password"
+                        />
+                      </HintField>
+                    )
+                  : (
+                      <p className="text-[11px] text-zinc-600">
+                        You do not need their current passphrase. Their other sessions die.
+                      </p>
+                    )}
+                <HintField label="new" {...(mine ? HINTS.newPass : HINTS.adminPass)}>
+                  <input
+                    className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    type="password"
+                    value={next}
+                    onChange={(e) => setNext(e.target.value)}
+                    required
+                    minLength={10}
+                    maxLength={128}
+                    autoComplete="new-password"
+                  />
+                </HintField>
+                <HintField label="confirm new" {...HINTS.operatorConfirm}>
+                  <input
+                    className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    type="password"
+                    value={nextConfirm}
+                    onChange={(e) => setNextConfirm(e.target.value)}
+                    required
+                    minLength={10}
+                    maxLength={128}
+                    autoComplete="new-password"
+                  />
+                </HintField>
+                <label className="flex items-center gap-2 text-xs text-amber-200">
+                  <input type="checkbox" checked={passConfirm} onChange={(e) => setPassConfirm(e.target.checked)} />
+                  {mine ? "I am changing my passphrase" : "I am setting this operator's passphrase. Their sessions dies."}
+                </label>
+                <button
+                  type="submit"
+                  disabled={busy || !passConfirm}
+                  className="rounded border border-zinc-700 px-3 py-2 text-sm hover:border-amber-700 disabled:opacity-50"
+                >
+                  Update passphrase
+                </button>
+              </form>
+            )
+          : null}
       </div>
     </section>
   );

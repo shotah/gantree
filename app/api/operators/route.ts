@@ -1,8 +1,10 @@
 import {
   SESSION_COOKIE,
   addOperator,
+  canEditOperator,
   changeOwnPassphrase,
   denyUnlessAdmin,
+  resetOperatorPassphrase,
   getOperator,
   listOperators,
   operatorFromRequest,
@@ -51,7 +53,11 @@ export const POST = withDoor(async (req: Request) => {
     channels?: OperatorChannels;
   };
   if (body.op === "profile") {
-    const result = updateOwnProfile(you.id, {
+    const targetId = typeof body.id === "string" && body.id ? body.id : you.id;
+    if (!canEditOperator(you, targetId)) {
+      return Response.json({ error: "can only change your own profile" }, { status: 403 });
+    }
+    const result = updateOwnProfile(targetId, {
       name: body.name,
       displayName: body.displayName,
       email: body.email,
@@ -68,6 +74,22 @@ export const POST = withDoor(async (req: Request) => {
     return Response.json({ error: "confirm required" }, { status: 400 });
   }
   if (body.op === "passphrase") {
+    const targetId = typeof body.id === "string" && body.id ? body.id : you.id;
+    if (targetId !== you.id) {
+      if (!canEditOperator(you, targetId)) {
+        return Response.json({ error: "can only change your own passphrase" }, { status: 403 });
+      }
+      if (typeof body.next !== "string") {
+        return Response.json({ error: "next passphrase required" }, { status: 400 });
+      }
+      const result = resetOperatorPassphrase(targetId, body.next);
+      if (!result.ok) {
+        return Response.json({ error: result.error }, { status: result.status });
+      }
+      const target = getOperator(targetId);
+      recordFromRequest(req, "passphrase", null, target?.name ?? targetId);
+      return Response.json({ ok: true });
+    }
     if (typeof body.current !== "string" || typeof body.next !== "string") {
       return Response.json({ error: "current and next passphrase required" }, { status: 400 });
     }

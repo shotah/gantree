@@ -184,6 +184,27 @@ export function unassignCrane(slug: string): number {
   return n;
 }
 
+function writePassphrase(
+  operatorId: string,
+  name: string,
+  next: string,
+  keepToken?: string,
+): { ok: true } | DoorFail {
+  const fields = validatePassphrase(next, name);
+  if (fields) {
+    return { ok: false, error: fields, status: 400 };
+  }
+  const { salt, hash } = hashPassphrase(next);
+  const db = yardDb();
+  db.prepare("UPDATE operator SET pass_salt = ?, pass_hash = ? WHERE id = ?").run(salt, hash, operatorId);
+  if (keepToken) {
+    db.prepare("DELETE FROM operator_session WHERE operator_id = ? AND token_hash != ?").run(operatorId, tokenHash(keepToken));
+  } else {
+    db.prepare("DELETE FROM operator_session WHERE operator_id = ?").run(operatorId);
+  }
+  return { ok: true };
+}
+
 export function changeOwnPassphrase(
   operatorId: string,
   current: string,
@@ -199,10 +220,6 @@ export function changeOwnPassphrase(
   if (!row) {
     return { ok: false, error: "operator not found", status: 404 };
   }
-  const fields = validatePassphrase(next, row.name);
-  if (fields) {
-    return { ok: false, error: fields, status: 400 };
-  }
   if (!verifyPassphrase(current, row.pass_salt, row.pass_hash)) {
     dummyHash(next);
     return { ok: false, error: "current passphrase is wrong", status: 401 };
@@ -211,15 +228,21 @@ export function changeOwnPassphrase(
     dummyHash(next);
     return { ok: false, error: "choose a different passphrase", status: 400 };
   }
-  const { salt, hash } = hashPassphrase(next);
-  const db = yardDb();
-  db.prepare("UPDATE operator SET pass_salt = ?, pass_hash = ? WHERE id = ?").run(salt, hash, operatorId);
-  if (keepToken) {
-    db.prepare("DELETE FROM operator_session WHERE operator_id = ? AND token_hash != ?").run(operatorId, tokenHash(keepToken));
-  } else {
-    db.prepare("DELETE FROM operator_session WHERE operator_id = ?").run(operatorId);
+  return writePassphrase(operatorId, row.name, next, keepToken);
+}
+
+/** Admin set. Drops every session for that operator. */
+export function resetOperatorPassphrase(operatorId: string, next: string): { ok: true } | DoorFail {
+  if (typeof next !== "string") {
+    return { ok: false, error: "next passphrase required", status: 400 };
   }
-  return { ok: true };
+  const row = yardDb()
+    .prepare("SELECT name FROM operator WHERE id = ?")
+    .get(operatorId) as { name: string } | undefined;
+  if (!row) {
+    return { ok: false, error: "operator not found", status: 404 };
+  }
+  return writePassphrase(operatorId, row.name, next);
 }
 
 export function updateOwnProfile(

@@ -8,6 +8,7 @@ import {
   SESSION_IDLE_MS,
   addOperator,
   changeOwnPassphrase,
+  resetOperatorPassphrase,
   clearSessionCookieHeader,
   denyUnlessAdmin,
   denyUnlessCraneMutate,
@@ -386,6 +387,31 @@ describe("operators", () => {
     expect(operatorFromRequest(req("http://127.0.0.1/api/gantries", other.token))?.name).toBe("kit");
     expect(loginOperator("kit", "a-long-enough-pass").ok).toBe(false);
     expect(loginOperator("kit", "brand-new-pass").ok).toBe(true);
+  });
+
+  it("lets an admin set another operator's passphrase and drops their session", () => {
+    const first = setupOperator("kit", "a-long-enough-pass");
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    const added = addOperator("ada", "ada-long-enough");
+    expect(added.ok).toBe(true);
+    if (!added.ok) {
+      return;
+    }
+    const login = loginOperator("ada", "ada-long-enough");
+    expect(login.ok).toBe(true);
+    if (!login.ok) {
+      return;
+    }
+    expect(operatorFromRequest(req("http://127.0.0.1/api/gantries", login.token))?.name).toBe("ada");
+    expect(resetOperatorPassphrase(added.operator.id, "short").ok).toBe(false);
+    expect(resetOperatorPassphrase("missing", "brand-new-pass")).toMatchObject({ ok: false, status: 404 });
+    expect(resetOperatorPassphrase(added.operator.id, "brand-new-pass").ok).toBe(true);
+    expect(operatorFromRequest(req("http://127.0.0.1/api/gantries", login.token))).toBeNull();
+    expect(loginOperator("ada", "ada-long-enough").ok).toBe(false);
+    expect(loginOperator("ada", "brand-new-pass").ok).toBe(true);
   });
 });
 

@@ -1,4 +1,4 @@
-import { accessForRole, canBuildCrane, canManageOperators, canMutateCrane, canReadCrane, parseCraneSlug, parseCraneSlugs, parseStoredCranes, parseStoredRole, roleNeedsCrane, scopeYard, serializeCranes } from "@/lib/yard/door/access";
+import { accessForRole, canBuildCrane, canEditOperator, canManageOperators, canMutateCrane, canReadCrane, parseCraneSlug, parseCraneSlugs, parseStoredCranes, parseStoredRole, roleNeedsCrane, scopeYard, serializeCranes } from "@/lib/yard/door/access";
 import type { YardInventory } from "@/lib/yard/types";
 import { describe, expect, it } from "vitest";
 
@@ -39,6 +39,8 @@ describe("access helpers", () => {
     expect(canMutateCrane(admin, "tryout")).toBe(true);
     expect(canBuildCrane(admin)).toBe(true);
     expect(canManageOperators(admin)).toBe(true);
+    expect(canEditOperator({ ...admin, id: "1" }, "1")).toBe(true);
+    expect(canEditOperator({ ...admin, id: "1" }, "2")).toBe(true);
 
     expect(canReadCrane(user, "kit")).toBe(true);
     expect(canMutateCrane(user, "kit")).toBe(true);
@@ -46,6 +48,8 @@ describe("access helpers", () => {
     expect(canMutateCrane(user, "tryout")).toBe(false);
     expect(canBuildCrane(user)).toBe(false);
     expect(canManageOperators(user)).toBe(false);
+    expect(canEditOperator({ ...user, id: "2" }, "2")).toBe(true);
+    expect(canEditOperator({ ...user, id: "2" }, "1")).toBe(false);
 
     expect(canReadCrane(pair, "kit")).toBe(true);
     expect(canReadCrane(pair, "tryout")).toBe(true);
