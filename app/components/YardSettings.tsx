@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { OPERATOR_ROLES, ROLE_BLURB, roleNeedsCrane } from "@/lib/yard/door/access";
 import type { OperatorRole } from "@/lib/yard/door/channels";
+import { HINTS } from "@/lib/yard/hints";
 import type { ObservePrefs } from "@/lib/yard/types";
 import { yardFetch } from "../lib/yardFetch";
+import { HintField, HintLegend } from "./HintField";
 import { OperatorAvatar } from "./OperatorAvatar";
 
 type OperatorRow = {
@@ -299,8 +301,7 @@ export function YardSettings() {
           }}
         >
           <h2 className="text-sm font-medium text-zinc-400">Add an operator</h2>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            name
+          <HintField label="name" {...HINTS.operatorName}>
             <input
               className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
               value={name}
@@ -311,9 +312,8 @@ export function YardSettings() {
               pattern="[a-zA-Z0-9._-]{2,32}"
               autoComplete="off"
             />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            passphrase
+          </HintField>
+          <HintField label="passphrase" {...HINTS.operatorPass}>
             <input
               className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
               type="password"
@@ -324,9 +324,8 @@ export function YardSettings() {
               maxLength={128}
               autoComplete="new-password"
             />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            confirm
+          </HintField>
+          <HintField label="confirm" {...HINTS.operatorConfirm}>
             <input
               className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
               type="password"
@@ -337,7 +336,7 @@ export function YardSettings() {
               maxLength={128}
               autoComplete="new-password"
             />
-          </label>
+          </HintField>
           <RoleSelect value={addRole} onChange={setAddRole} />
           {roleNeedsCrane(addRole) ? <CranePicks slugs={slugs} value={addCranes} onChange={setAddCranes} /> : null}
           <label className="flex items-center gap-2 text-xs text-amber-200">
@@ -433,8 +432,7 @@ function YardPane({ admin }: { admin: boolean }) {
     <form className="flex max-w-lg flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4" onSubmit={save}>
       {err ? <p className="text-sm text-amber-200">{err}</p> : null}
       {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        host retain days
+      <HintField label="host retain days" {...HINTS.hostRetain}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           type="number"
@@ -444,9 +442,8 @@ function YardPane({ admin }: { admin: boolean }) {
           disabled={!admin}
           onChange={(e) => setHostDays(Number(e.target.value))}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        turn retain days
+      </HintField>
+      <HintField label="turn retain days" {...HINTS.turnRetain}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           type="number"
@@ -456,9 +453,8 @@ function YardPane({ admin }: { admin: boolean }) {
           disabled={!admin}
           onChange={(e) => setTurnDays(Number(e.target.value))}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        timezone
+      </HintField>
+      <HintField label="timezone" {...HINTS.timezone}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           value={timezone}
@@ -466,19 +462,17 @@ function YardPane({ admin }: { admin: boolean }) {
           placeholder="America/Los_Angeles — blank = local"
           onChange={(e) => setTimezone(e.target.value)}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        default image pin
+      </HintField>
+      <HintField label="default image pin" {...HINTS.defaultImage}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           value={image}
           disabled={!admin}
           onChange={(e) => setImage(e.target.value)}
         />
-        <span>New cranes only. Existing compose tags stay until you pin/recreate.</span>
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        prompt $/1M
+        <span className="text-xs text-zinc-500">New cranes only. Existing compose tags stay until you pin/recreate.</span>
+      </HintField>
+      <HintField label="prompt $/1M" {...HINTS.promptRate}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           value={prompt}
@@ -487,9 +481,8 @@ function YardPane({ admin }: { admin: boolean }) {
           placeholder="calculator only — not a bill"
           onChange={(e) => setPrompt(e.target.value)}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        gen $/1M
+      </HintField>
+      <HintField label="gen $/1M" {...HINTS.genRate}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           value={gen}
@@ -498,7 +491,7 @@ function YardPane({ admin }: { admin: boolean }) {
           placeholder="optional"
           onChange={(e) => setGen(e.target.value)}
         />
-      </label>
+      </HintField>
       <p className="text-[11px] text-zinc-600">
         Session idle (7 days) and absolute (30 days) stay in the door code — not toml. See docs/security.md.
       </p>
@@ -525,8 +518,7 @@ function YardPane({ admin }: { admin: boolean }) {
 
 function RoleSelect({ value, onChange }: { value: OperatorRole; onChange: (role: OperatorRole) => void }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-zinc-500">
-      role
+    <HintField label="role" {...HINTS.operatorRole}>
       <select
         className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
         value={value}
@@ -538,7 +530,7 @@ function RoleSelect({ value, onChange }: { value: OperatorRole; onChange: (role:
           </option>
         ))}
       </select>
-    </label>
+    </HintField>
   );
 }
 
@@ -548,8 +540,7 @@ function CranePicks({ slugs, value, onChange }: { slugs: string[]; value: string
   }
   if (slugs.length === 0) {
     return (
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        cranes
+      <HintField label="cranes" {...HINTS.operatorCranes}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           value={value.join(", ")}
@@ -564,12 +555,11 @@ function CranePicks({ slugs, value, onChange }: { slugs: string[]; value: string
           required
           placeholder="kit, tryout"
         />
-      </label>
+      </HintField>
     );
   }
   return (
-    <fieldset className="flex flex-col gap-1 text-xs text-zinc-500">
-      <legend>cranes</legend>
+    <HintLegend label="cranes" className="text-xs text-zinc-500" {...HINTS.operatorCranes}>
       <ul className="mt-1 flex flex-wrap gap-1.5">
         {slugs.map((slug) => (
           <li key={slug}>
@@ -580,6 +570,6 @@ function CranePicks({ slugs, value, onChange }: { slugs: string[]; value: string
           </li>
         ))}
       </ul>
-    </fieldset>
+    </HintLegend>
   );
 }

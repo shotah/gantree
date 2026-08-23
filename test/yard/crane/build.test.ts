@@ -36,7 +36,17 @@ describe("writeCraneFiles", () => {
     process.env.GANTREE_ROOT = root;
     process.env.GANTREE_TOML = join(root, "gantree.toml");
     const out = writeCraneFiles({ slug: "kit", profile: "slim", channel: "stdio", model: "dummy" });
-    expect(readFileSync(join(out.personaDir, "PERSONA.md"), "utf8")).toContain("# kit");
+    const persona = readFileSync(join(out.personaDir, "PERSONA.md"), "utf8");
+    const self = readFileSync(join(out.personaDir, "SELF.md"), "utf8");
+    expect(persona).toContain("# PERSONA.md");
+    expect(persona).toContain("**Name:** Kit");
+    expect(persona).toContain("## About you");
+    expect(persona).toContain("## Harness tools");
+    expect(persona).toContain("## Memory hygiene");
+    expect(persona).not.toContain("A long-horizon personal agent");
+    expect(self).toContain("Who You Are Becoming");
+    expect(self).toContain("north-star");
+    expect(persona).not.toBe(self);
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("math");
     expect(readFileSync(out.envFile, "utf8")).toContain("CHANNEL=stdio");
     expect(readFileSync(join(root, "gantree.toml"), "utf8")).toContain("slug = \"kit\"");
@@ -66,6 +76,8 @@ describe("writeCraneFiles", () => {
       env: { TELEGRAM_BOT_TOKEN: "t" },
     });
     expect(readFileSync(join(out.personaDir, "PERSONA.md"), "utf8")).toContain("# house");
+    expect(readFileSync(join(out.personaDir, "SELF.md"), "utf8")).toContain("Who You Are Becoming");
+    expect(readFileSync(join(out.personaDir, "SELF.md"), "utf8")).not.toContain("# house");
     const mcp = readFileSync(out.mcpManifest, "utf8");
     expect(mcp).toContain("cast");
     expect(mcp).toContain("youtube");
@@ -81,8 +93,10 @@ describe("writeCraneFiles", () => {
     const kit = writeCraneFiles({ slug: "kit", profile: "slim" });
     const jules = writeCraneFiles({ slug: "jules", profile: "life" });
     expect(kit.dir).not.toBe(jules.dir);
-    expect(readFileSync(join(kit.personaDir, "PERSONA.md"), "utf8")).toContain("# kit");
-    expect(readFileSync(join(jules.personaDir, "PERSONA.md"), "utf8")).toContain("# jules");
+    expect(readFileSync(join(kit.personaDir, "PERSONA.md"), "utf8")).toContain("**Name:** Kit");
+    expect(existsSync(join(kit.personaDir, "SELF.md"))).toBe(true);
+    expect(readFileSync(join(jules.personaDir, "PERSONA.md"), "utf8")).toContain("**Name:** Jules");
+    expect(existsSync(join(jules.personaDir, "SELF.md"))).toBe(true);
     expect(readFileSync(kit.mcpManifest, "utf8")).not.toContain("google-mcp");
     expect(readFileSync(jules.mcpManifest, "utf8")).toContain("google-mcp");
     expect(readFileSync(jules.mcpManifest, "utf8")).toContain("maps");
@@ -92,6 +106,21 @@ describe("writeCraneFiles", () => {
     expect(cloudMcp).toContain("google-mcp");
     expect(cloudMcp).not.toContain("mcp-beam");
     expect(cloudMcp).not.toContain("youtube");
+    delete process.env.GANTREE_ROOT;
+    delete process.env.GANTREE_TOML;
+  });
+
+  it("does not overwrite PERSONA.md or SELF.md on rebuild", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    process.env.GANTREE_TOML = join(root, "gantree.toml");
+    const first = writeCraneFiles({ slug: "kit" });
+    writeFileSync(join(first.personaDir, "PERSONA.md"), "# kit\n\nA long-horizon personal agent.\n");
+    writeFileSync(join(first.personaDir, "SELF.md"), "kept by /new\n");
+    writeCraneFiles({ slug: "kit", persona: "# rebuilt\n" });
+    expect(readFileSync(join(first.personaDir, "PERSONA.md"), "utf8")).toBe("# kit\n\nA long-horizon personal agent.\n");
+    expect(readFileSync(join(first.personaDir, "SELF.md"), "utf8")).toBe("kept by /new\n");
     delete process.env.GANTREE_ROOT;
     delete process.env.GANTREE_TOML;
   });

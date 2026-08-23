@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { envHint, HINTS } from "@/lib/yard/hints";
 import {
   bucketsForWindow,
   filterSamples,
@@ -20,16 +21,36 @@ import { CraneAvatar } from "./CraneAvatar";
 import { craneFoldKey, DashFold } from "./DashFold";
 import { DoctorPanel } from "./DoctorPanel";
 import { EventStrip } from "./EventStrip";
+import { HintField } from "./HintField";
 import { LogViewer } from "./LogViewer";
 import { CraneSpend, SpendScope } from "./SpendBoard";
 import { TelegramBot } from "./TelegramBot";
 import { ChartSkeleton } from "./WhenVisible";
+import { secretLook, secretNoun } from "@/lib/yard/secretLook";
 import { jpegFromFile } from "../lib/jpegFromFile";
 import { yardFetch } from "../lib/yardFetch";
 
 const MetricCharts = lazy(() => import("./MetricCharts").then((m) => ({ default: m.MetricCharts })));
 
 type EnvRow = { set: boolean; secret: boolean; value: string };
+
+const SECRET_NAME = /TOKEN|KEY|SECRET|PASSWORD/i;
+
+function envRow(k: string, env?: Record<string, EnvRow>): EnvRow {
+  return env?.[k] ?? { set: false, secret: SECRET_NAME.test(k), value: "" };
+}
+
+function fieldValue(k: string, row: EnvRow, draft: Record<string, string>): string {
+  if (k in draft) {
+    return draft[k] ?? "";
+  }
+  return row.secret ? "" : row.value;
+}
+
+function looksLikeUrl(v: string): boolean {
+  return /^https?:\/\//i.test(v.trim());
+}
+
 type Files = {
   persona: string | null;
   self: string | null;
@@ -52,6 +73,11 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [files, setFiles] = useState<Files | null>(null);
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [persona, setPersona] = useState("");
+  const [self, setSelf] = useState("");
+  const [personaFromTemplate, setPersonaFromTemplate] = useState(false);
+  const [selfFromTemplate, setSelfFromTemplate] = useState(false);
+  const [confirmPersonaReplace, setConfirmPersonaReplace] = useState(false);
+  const [confirmSelfReplace, setConfirmSelfReplace] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [pin, setPin] = useState(DEFAULT_IMAGE);
@@ -64,6 +90,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
   const [spendBucket, setSpendBucket] = useState<SpendBucket>("cumulative");
   const [now, setNow] = useState(() => Date.now());
+  const filesHydratedFor = useRef<string | null>(null);
 
   const refresh = useCallback(() => {
     yardFetch(`/api/gantries/${slug}`)
@@ -102,8 +129,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
       .then((r) => r.json())
       .then((f: Files) => {
         setFiles(f);
-        if (f.persona != null) {
-          setPersona(f.persona);
+        if (filesHydratedFor.current !== slug) {
+          filesHydratedFor.current = slug;
+          setPersona(f.persona ?? "");
+          setSelf(f.self ?? "");
         }
       })
       .catch(() => undefined);
@@ -186,19 +215,68 @@ export function AgentDashboard({ slug }: { slug: string }) {
     refresh();
   }
 
-  async function savePersona() {
+  async function loadTemplate(which: "persona" | "self") {
+    setBusy(true);
+    const res = await yardFetch(`/api/gantries/${slug}/files?templates=1`);
+    const data = (await res.json().catch(() => ({}))) as {
+      personaTemplate?: string;
+      selfTemplate?: string;
+      error?: string;
+    };
+    if (!res.ok) {
+      setNotice(data.error || "could not load template");
+      setBusy(false);
+      return;
+    }
+    if (which === "persona") {
+      setPersona(data.personaTemplate ?? "");
+      setPersonaFromTemplate(true);
+      setConfirmPersonaReplace(false);
+      setNotice("PERSONA.md template loaded in the editor — not written until you confirm and Save");
+    } else {
+      setSelf(data.selfTemplate ?? "");
+      setSelfFromTemplate(true);
+      setConfirmSelfReplace(false);
+      setNotice("SELF.md template loaded in the editor — not written until you confirm and Save");
+    }
+    setBusy(false);
+  }
+
+  async function saveMarkdown(which: "persona" | "self") {
+    if (which === "persona" && personaFromTemplate && !confirmPersonaReplace) {
+      return;
+    }
+    if (which === "self" && selfFromTemplate && !confirmSelfReplace) {
+      return;
+    }
     setBusy(true);
     const res = await yardFetch(`/api/gantries/${slug}/files`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ persona }),
+      body: JSON.stringify(which === "persona" ? { persona } : { self }),
     });
-    setNotice(res.ok ? "PERSONA.md written — recreate to reload" : "could not write PERSONA.md");
+    const name = which === "persona" ? "PERSONA.md" : "SELF.md";
+    setNotice(res.ok ? `${name} written — recreate to reload` : `could not write ${name}`);
+    if (res.ok && which === "persona") {
+      setPersonaFromTemplate(false);
+      setConfirmPersonaReplace(false);
+    }
+    if (res.ok && which === "self") {
+      setSelfFromTemplate(false);
+      setConfirmSelfReplace(false);
+    }
     setBusy(false);
     refresh();
   }
 
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
+  const secretKeys = secretKeysForGrant([...granted], catalog);
+  const missingSecrets = files
+    ? secretKeys.filter((k) => {
+        const row = envRow(k, files.env);
+        return row.secret && !row.set;
+      }).length
+    : 0;
   const mutate = Boolean(gantry?.canMutate || files?.writable);
   const telegramOn =
     shouldPushTelegram(gantry?.channel ?? null) ||
@@ -429,13 +507,15 @@ export function AgentDashboard({ slug }: { slug: string }) {
                     ) : null}
                     {authDetail ? <p className="whitespace-pre-wrap text-zinc-500">{authDetail}</p> : null}
                     {c.authFlow === "device" ? null : (
-                      <div className="flex flex-wrap gap-2">
-                        <input
-                          className="min-w-40 flex-1 rounded border border-zinc-800 bg-zinc-900 px-2 py-1"
-                          placeholder={c.authFlow === "mfa" ? "MFA code from email" : "paste code"}
-                          value={authCode}
-                          onChange={(e) => setAuthCode(e.target.value)}
-                        />
+                      <div className="flex flex-wrap items-end gap-2">
+                        <HintField label="auth code" className="min-w-40 flex-1" {...HINTS.authCode}>
+                          <input
+                            className="w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1"
+                            placeholder={c.authFlow === "mfa" ? "MFA code from email" : "paste code"}
+                            value={authCode}
+                            onChange={(e) => setAuthCode(e.target.value)}
+                          />
+                        </HintField>
                         <button
                           type="button"
                           disabled={busy || !authCode.trim()}
@@ -454,52 +534,140 @@ export function AgentDashboard({ slug }: { slug: string }) {
         </div>
       </DashFold>
 
-      <DashFold title="Persona" persistKey={craneFoldKey(slug, "persona")} hint="PERSONA.md — SELF.md is harness-written">
-        <p className="mb-2 text-xs text-zinc-600">
-          SELF.md is harness-written — prune, don’t treat it as config.
-        </p>
-        {files?.self ? <pre className="mb-3 max-h-40 overflow-auto rounded border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-400">{files.self}</pre> : null}
-        <textarea
-          className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"
-          value={persona}
-          onChange={(e) => setPersona(e.target.value)}
-          disabled={!files?.writable}
-          placeholder="PERSONA.md — set persona_dir in gantree.toml to edit"
-        />
-        <button
-          type="button"
-          disabled={busy || !files?.writable}
-          onClick={savePersona}
-          className="mt-2 rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
-        >
-          Save PERSONA.md
-        </button>
+      <DashFold title="Persona" persistKey={craneFoldKey(slug, "persona")} hint="PERSONA.md and SELF.md">
+        <HintField label="PERSONA.md" {...HINTS.persona}>
+          <textarea
+            className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"
+            value={persona}
+            onChange={(e) => setPersona(e.target.value)}
+            disabled={!files?.writable}
+            placeholder="PERSONA.md — set persona_dir in gantree.toml to edit"
+          />
+        </HintField>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={busy || !files?.writable}
+            onClick={() => loadTemplate("persona")}
+            aria-label="Replace PERSONA.md from template"
+            className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          >
+            Replace from template
+          </button>
+          <button
+            type="button"
+            disabled={busy || !files?.writable || (personaFromTemplate && !confirmPersonaReplace)}
+            onClick={() => saveMarkdown("persona")}
+            className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          >
+            Save PERSONA.md
+          </button>
+        </div>
+        {personaFromTemplate ? (
+          <label className="mt-2 flex items-center gap-2 text-xs text-amber-200">
+            <input
+              type="checkbox"
+              checked={confirmPersonaReplace}
+              onChange={(e) => setConfirmPersonaReplace(e.target.checked)}
+              disabled={!files?.writable}
+            />
+            I know this will overwrite PERSONA.md when I save
+          </label>
+        ) : null}
+        <HintField label="SELF.md" className="mt-5" {...HINTS.self}>
+          <textarea
+            className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"
+            value={self}
+            onChange={(e) => setSelf(e.target.value)}
+            disabled={!files?.writable}
+            placeholder="SELF.md — prune harness memory; recreate to reload"
+          />
+        </HintField>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={busy || !files?.writable}
+            onClick={() => loadTemplate("self")}
+            aria-label="Replace SELF.md from template"
+            className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          >
+            Replace from template
+          </button>
+          <button
+            type="button"
+            disabled={busy || !files?.writable || (selfFromTemplate && !confirmSelfReplace)}
+            onClick={() => saveMarkdown("self")}
+            className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          >
+            Save SELF.md
+          </button>
+        </div>
+        {selfFromTemplate ? (
+          <label className="mt-2 flex items-center gap-2 text-xs text-amber-200">
+            <input
+              type="checkbox"
+              checked={confirmSelfReplace}
+              onChange={(e) => setConfirmSelfReplace(e.target.checked)}
+              disabled={!files?.writable}
+            />
+            I know this will overwrite SELF.md when I save
+          </label>
+        ) : null}
       </DashFold>
 
-      <DashFold title="Secrets" persistKey={craneFoldKey(slug, "secrets")} hint="crane mouth plus keys for granted tools">
+      <DashFold
+        title="Secrets"
+        persistKey={craneFoldKey(slug, "secrets")}
+        hint="crane mouth plus keys for granted tools"
+        summary={
+          missingSecrets === 1 ? (
+            <span className="text-amber-200">needs a key</span>
+          ) : missingSecrets ? (
+            <span className="text-amber-200">{missingSecrets} need a key</span>
+          ) : undefined
+        }
+      >
         <p className="mb-2 text-xs text-zinc-600">
           Only the crane mouth plus keys for <em>granted</em> tools. Toggle a server
-          first. Never paste a whole fleet .env. Values are never shown after save.
-          Recreate after env change.
+          first. Never paste a whole fleet .env. Keys and tokens stay hidden after
+          save. Recreate after env change.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
-          {secretKeysForGrant([...granted], catalog).map((k) => {
-            const row = files?.env?.[k] ?? { set: false, secret: /TOKEN|KEY|SECRET|PASSWORD/i.test(k), value: "" };
+          {secretKeys.map((k) => {
+            const row = envRow(k, files?.env);
+            const shown = fieldValue(k, row, secretDraft);
+            const look = secretLook(row, shown, secretNoun(k));
+            const badUrl = k === "LLM_BASE_URL" && shown.trim() !== "" && !looksLikeUrl(shown);
+            const warn = look.missing || badUrl;
+            const tip = envHint(k);
             return (
-            <label key={k} className="flex flex-col gap-1 text-xs">
-              <span className="text-zinc-500">
-                {k}
-                {row.set ? " · set" : " · empty"}
-              </span>
+            <HintField
+              key={k}
+              label={k}
+              hint={tip.hint}
+              example={tip.example}
+              aside={
+                <span className={`text-[11px] ${warn ? "text-amber-200" : "text-zinc-600"}`}>
+                  {badUrl ? "not a URL" : look.status}
+                </span>
+              }
+            >
               <input
-                className="rounded border border-zinc-800 bg-zinc-950 px-2 py-1"
-                type={row.secret ? "password" : "text"}
-                placeholder={row.secret ? "unchanged if blank" : row.value}
-                value={secretDraft[k] ?? ""}
+                className={`rounded border bg-zinc-950 px-2 py-1 ${
+                  warn ? "border-amber-800/80 placeholder:text-amber-200/90" : "border-zinc-800"
+                }`}
+                type={look.type}
+                name={`gantree-env-${k}`}
+                autoComplete={row.secret ? "new-password" : "off"}
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder={look.placeholder}
+                value={shown}
                 disabled={!files?.writable}
                 onChange={(e) => setSecretDraft((s) => ({ ...s, [k]: e.target.value }))}
               />
-            </label>
+            </HintField>
           );
           })}
         </div>
@@ -512,15 +680,29 @@ export function AgentDashboard({ slug }: { slug: string }) {
           disabled={busy || !files?.writable}
           onClick={async () => {
             setBusy(true);
+            const env: Record<string, string> = {};
+            for (const [k, v] of Object.entries(secretDraft)) {
+              if (SECRET_NAME.test(k) && v === "") {
+                continue;
+              }
+              env[k] = v;
+            }
             const res = await yardFetch(`/api/gantries/${slug}/files`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ env: secretDraft, confirmToken }),
+              body: JSON.stringify({ env, confirmToken }),
             });
-            setNotice(res.ok ? "env written — recreate (do not just restart)" : "env write refused (confirm token?)");
+            const data = (await res.json().catch(() => ({}))) as { error?: string; saved?: string[] };
+            if (res.ok) {
+              setNotice("env written — recreate (do not just restart)");
+              setSecretDraft({});
+              setConfirmToken(false);
+            } else if (data.saved?.length) {
+              setNotice(`${data.saved.join(", ")} saved — check overwrite to write keys and tokens`);
+            } else {
+              setNotice(data.error || "env write refused");
+            }
             setBusy(false);
-            setSecretDraft({});
-            setConfirmToken(false);
             refresh();
           }}
           className="mt-2 rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
@@ -534,8 +716,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
           pull + recreate uses this tag, keeps the host uid that owns <code className="text-zinc-500">data/</code>, and
           waits for doctor. Recreate without pull does the same uid keep — it does not docker pull.
         </p>
-        <div className="flex flex-wrap gap-2">
-          <input className="min-w-64 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs max-sm:min-w-0 max-sm:w-full max-sm:text-sm" value={pin} onChange={(e) => setPin(e.target.value)} disabled={!mutate} />
+        <div className="flex flex-wrap items-end gap-2">
+          <HintField label="image" className="min-w-64 flex-1 max-sm:min-w-0 max-sm:w-full" {...HINTS.imagePin}>
+            <input className="w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs max-sm:text-sm" value={pin} onChange={(e) => setPin(e.target.value)} disabled={!mutate} />
+          </HintField>
           <button
             type="button"
             disabled={busy || !mutate}

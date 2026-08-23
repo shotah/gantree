@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { HINTS } from "@/lib/yard/hints";
 import { GantreeMark } from "./GantreeMark";
+import { HintField } from "./HintField";
 
 export function SetupForm() {
   return <AuthForm kind="setup" />;
@@ -59,8 +61,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
           </p>
         </div>
       </div>
-      <label className="flex flex-col gap-1.5 text-xs text-zinc-500 max-sm:text-sm">
-        name
+      <HintField label="name" {...HINTS.operatorName}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           autoComplete="username"
@@ -71,9 +72,8 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
           maxLength={32}
           pattern="[a-zA-Z0-9._-]{2,32}"
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-zinc-500 max-sm:text-sm">
-        passphrase
+      </HintField>
+      <HintField label="passphrase" {...HINTS.operatorPass}>
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
           type="password"
@@ -84,10 +84,9 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
           minLength={10}
           maxLength={128}
         />
-      </label>
+      </HintField>
       {setup ? (
-        <label className="flex flex-col gap-1.5 text-xs text-zinc-500 max-sm:text-sm">
-          confirm
+        <HintField label="confirm" {...HINTS.operatorConfirm}>
           <input
             className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
             type="password"
@@ -98,7 +97,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
             minLength={10}
             maxLength={128}
           />
-        </label>
+        </HintField>
       ) : null}
       {err ? <p className="text-sm text-amber-200">{err}</p> : null}
       <button

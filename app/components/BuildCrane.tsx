@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { HINTS } from "@/lib/yard/hints";
+import { secretLook } from "@/lib/yard/secretLook";
 import { BotFatherHint } from "./BotFatherHint";
+import { HintField } from "./HintField";
 import { yardFetch } from "../lib/yardFetch";
 
 export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
@@ -91,6 +94,8 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
     );
   }
 
+  const tokenLook = secretLook({ set: false, secret: true }, token, "token");
+
   return (
     <form onSubmit={submit} className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-4 text-sm">
       <div className="mb-3 flex items-center justify-between">
@@ -100,19 +105,16 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
         </button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">Yard first</span>
+        <HintField label="Yard first" {...HINTS.buildYard}>
           <select className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={yard} onChange={(e) => setYard(e.target.value as "home" | "cloud")}>
             <option value="home">home Mini</option>
             <option value="cloud">cloud VM</option>
           </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">slug</span>
+        </HintField>
+        <HintField label="slug" {...HINTS.buildSlug}>
           <input required className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="kit" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">profile</span>
+        </HintField>
+        <HintField label="profile" {...HINTS.buildProfile}>
           <select
             className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1"
             value={profile}
@@ -124,41 +126,42 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
               life-cast (home only)
             </option>
           </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">model</span>
+        </HintField>
+        <HintField label="model" {...HINTS.buildModel}>
           <input className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={model} onChange={(e) => setModel(e.target.value)} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">channel</span>
+        </HintField>
+        <HintField label="channel" {...HINTS.buildChannel}>
           <select className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={channel} onChange={(e) => setChannel(e.target.value)}>
             <option value="telegram">telegram</option>
             <option value="discord">discord</option>
             <option value="slack">slack</option>
             <option value="stdio">stdio (dev)</option>
           </select>
-        </label>
+        </HintField>
         {channel === "telegram" ? (
           <>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-zinc-500">bot token</span>
+            <HintField label="bot token" {...HINTS.botToken}>
               <input
-                className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1"
-                type="password"
+                className={`rounded border bg-zinc-950 px-2 py-1 ${
+                  tokenLook.missing ? "border-amber-800/80 placeholder:text-amber-200/90" : "border-zinc-700"
+                }`}
+                type={tokenLook.type}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={tokenLook.placeholder}
                 value={token}
                 onChange={(e) => {
                   setToken(e.target.value);
                   setBot(null);
                 }}
               />
-            </label>
+            </HintField>
             <div className="sm:col-span-2">
               <BotFatherHint slug={slug} />
             </div>
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-xs text-zinc-500">allowlist (numeric ids, not @username)</span>
+            <HintField label="allowlist" className="sm:col-span-2" {...HINTS.allowlist}>
               <input className="rounded border border-zinc-700 bg-zinc-950 px-2 py-1" value={allow} onChange={(e) => setAllow(e.target.value)} placeholder="123456789" />
-            </label>
+            </HintField>
             <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
               <button
                 type="button"

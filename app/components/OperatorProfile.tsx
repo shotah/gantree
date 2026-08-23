@@ -12,8 +12,10 @@ import {
   type OperatorChannels,
   type OperatorRole,
 } from "@/lib/yard/door/channels";
+import { HINTS } from "@/lib/yard/hints";
 import { jpegFromFile } from "../lib/jpegFromFile";
 import { yardFetch } from "../lib/yardFetch";
+import { HintField, HintLegend } from "./HintField";
 import { OperatorAvatar } from "./OperatorAvatar";
 
 type OperatorRow = {
@@ -29,10 +31,10 @@ type OperatorRow = {
   createdAt: string;
 };
 
-const CHANNEL_HINT: Record<OperatorChannelKind, { label: string; placeholder: string }> = {
-  telegram: { label: "Telegram", placeholder: "numeric id" },
-  slack: { label: "Slack", placeholder: "U012ABCDEF" },
-  discord: { label: "Discord", placeholder: "snowflake id" },
+const CHANNEL_HINT: Record<OperatorChannelKind, { label: string; placeholder: string; hint: string; example?: string }> = {
+  telegram: { label: "Telegram", placeholder: "numeric id", hint: HINTS.chatTelegram.hint, example: HINTS.chatTelegram.example },
+  slack: { label: "Slack", placeholder: "U012ABCDEF", hint: HINTS.chatSlack.hint, example: HINTS.chatSlack.example },
+  discord: { label: "Discord", placeholder: "snowflake id", hint: HINTS.chatDiscord.hint, example: HINTS.chatDiscord.example },
 };
 
 function pingDoor() {
@@ -191,17 +193,15 @@ export function OperatorProfile() {
               />
             </label>
           </div>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            display name
+          <HintField label="display name" {...HINTS.displayName}>
             <input
               className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               maxLength={MAX_DISPLAY_NAME}
             />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            login name
+          </HintField>
+          <HintField label="login name" {...HINTS.loginName}>
             <input
               className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
               value={loginName}
@@ -212,9 +212,8 @@ export function OperatorProfile() {
               pattern="[a-zA-Z0-9._-]{2,32}"
               autoComplete="username"
             />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            email
+          </HintField>
+          <HintField label="email" {...HINTS.email}>
             <input
               className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
               type="email"
@@ -223,16 +222,15 @@ export function OperatorProfile() {
               maxLength={MAX_EMAIL}
               autoComplete="email"
             />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            description
+          </HintField>
+          <HintField label="description" {...HINTS.profileBlurb}>
             <textarea
               className="min-h-16 rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={MAX_DESCRIPTION}
             />
-          </label>
+          </HintField>
           <div className="flex flex-col gap-4 border-t border-zinc-800 pt-3">
             <p className="text-xs font-medium text-zinc-500">Chat ids</p>
             {OPERATOR_CHANNEL_KINDS.map((kind) => (
@@ -272,8 +270,7 @@ export function OperatorProfile() {
         }}
       >
         <h2 className="text-sm font-medium text-zinc-400">Change your passphrase</h2>
-        <label className="flex flex-col gap-1 text-xs text-zinc-500">
-          current
+        <HintField label="current" {...HINTS.currentPass}>
           <input
             className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
             type="password"
@@ -282,9 +279,8 @@ export function OperatorProfile() {
             required
             autoComplete="current-password"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-zinc-500">
-          new
+        </HintField>
+        <HintField label="new" {...HINTS.newPass}>
           <input
             className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
             type="password"
@@ -295,9 +291,8 @@ export function OperatorProfile() {
             maxLength={128}
             autoComplete="new-password"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-zinc-500">
-          confirm new
+        </HintField>
+        <HintField label="confirm new" {...HINTS.operatorConfirm}>
           <input
             className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
             type="password"
@@ -308,7 +303,7 @@ export function OperatorProfile() {
             maxLength={128}
             autoComplete="new-password"
           />
-        </label>
+        </HintField>
         <label className="flex items-center gap-2 text-xs text-amber-200">
           <input type="checkbox" checked={passConfirm} onChange={(e) => setPassConfirm(e.target.checked)} />
           I am changing my passphrase
@@ -351,8 +346,7 @@ function IdList({
   }
 
   return (
-    <div>
-      <h3 className="text-xs text-zinc-500">{meta.label}</h3>
+    <HintLegend label={meta.label} hint={meta.hint} example={meta.example}>
       <ul className="mt-1 flex flex-wrap gap-1.5">
         {ids.length === 0 ? <li className="text-xs text-zinc-600">none yet</li> : null}
         {ids.map((id) => (
@@ -394,6 +388,6 @@ function IdList({
         </button>
       </div>
       {addErr ? <p className="mt-1 text-xs text-amber-200">{addErr}</p> : null}
-    </div>
+    </HintLegend>
   );
 }

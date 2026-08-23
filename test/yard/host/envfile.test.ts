@@ -28,6 +28,9 @@ describe("envfile", () => {
       GARMIN_PASSWORD: "x",
     });
     expect(mergeEnv({ CHANNEL: "a" }, { CHANNEL: "b" })).toEqual({ CHANNEL: "b" });
+    expect(mergeEnv({ LLM_BASE_URL: "nura-assaf" }, { LLM_BASE_URL: "https://example.test/v1" })).toEqual({
+      LLM_BASE_URL: "https://example.test/v1",
+    });
   });
 
   it("loads and writes a file, skipping junk lines", () => {

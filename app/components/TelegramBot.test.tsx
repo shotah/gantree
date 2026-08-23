@@ -120,4 +120,30 @@ describe("TelegramBot", () => {
       expect(calls.some((c) => c.url.includes("/telegram") && c.body?.includes('"op":"new"') && c.body?.includes('"id":"9"'))).toBe(true),
     );
   });
+
+  it("calls out a missing bot token instead of looking set", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (url) => {
+      if (String(url).includes("/api/operators")) {
+        return { json: async () => ({ operators: [] }) } as Response;
+      }
+      return {
+        json: async () => ({
+          enabled: true,
+          tokenSet: false,
+          bot: null,
+          name: "",
+          description: "",
+          shortDescription: "",
+          commands: [],
+          allowlist: [],
+          seen: [],
+          detail: "no TELEGRAM_BOT_TOKEN",
+        }),
+      } as Response;
+    });
+    render(<TelegramBot slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />);
+    await waitFor(() => expect(screen.getByText("no token")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
+    expect(screen.getByText(/Paste TELEGRAM_BOT_TOKEN in Secrets/)).toBeTruthy();
+  });
 });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_SPEND_WINDOW, fmtBytes, fmtSpendWindow, type SpendWindow, windowStart } from "@/lib/yard/observe/spend";
 import type { HostLive, HostRuntime, ObservePrefs, YardDbInspect } from "@/lib/yard/types";
+import { secretBadge } from "@/lib/yard/secretLook";
 import { craneFoldKey, DashFold } from "./DashFold";
 import { EventStrip } from "./EventStrip";
 import { HostAvatar, HostMeters } from "./HostCard";
@@ -279,12 +280,15 @@ export function HostDashboard() {
           </dl>
           <p className="mt-3 text-[10px] uppercase tracking-wide text-zinc-600">process env</p>
           <ul className="mt-1 space-y-1 font-mono text-xs text-zinc-400">
-            {Object.entries(runtime.env).map(([k, row]) => (
-              <li key={k} className="flex justify-between gap-2">
-                <span>{k}</span>
-                <span className="truncate text-zinc-300">{row.secret ? (row.set ? "set" : "empty") : row.value || "—"}</span>
-              </li>
-            ))}
+            {Object.entries(runtime.env).map(([k, row]) => {
+              const badge = secretBadge(row, row.value);
+              return (
+                <li key={k} className="flex justify-between gap-2">
+                  <span>{k}</span>
+                  <span className={`truncate ${badge.missing ? "text-amber-200" : "text-zinc-300"}`}>{badge.text}</span>
+                </li>
+              );
+            })}
           </ul>
           {files?.compose ? (
             <>

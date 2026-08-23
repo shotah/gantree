@@ -4,6 +4,7 @@ import { LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog } from "../tools/c
 import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
 import { writeEnvFile } from "../host/envfile";
 import { stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
+import { seedPersonaFiles } from "./seed";
 import { DEFAULT_IMAGE, type McpServer } from "../types";
 import { loadObservePrefs } from "../observe/prefs";
 
@@ -72,10 +73,7 @@ export function writeCraneFiles(input: BuildInput): {
       : { name, command: name };
   });
   writeText(mcpManifest, stringifyMcpToml(servers));
-  writeText(
-    resolve(personaDir, "PERSONA.md"),
-    input.persona?.trim() || `# ${slug}\n\nA long-horizon personal agent.\n`,
-  );
+  seedPersonaFiles(personaDir, slug, { persona: input.persona });
   writeEnvFile(envFile, {
     LLM_MODEL: input.model || "gemini-3.5-flash",
     CHANNEL: input.channel || "telegram",

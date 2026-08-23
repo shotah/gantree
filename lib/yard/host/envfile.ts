@@ -10,7 +10,7 @@ const SECRET_KEYS = new Set([
   "SLACK_APP_TOKEN",
 ]);
 
-function isSecretKey(k: string): boolean {
+export function isSecretKey(k: string): boolean {
   return SECRET_KEYS.has(k) || /TOKEN|KEY|SECRET|PASSWORD/i.test(k);
 }
 

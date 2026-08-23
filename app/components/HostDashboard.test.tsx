@@ -79,7 +79,11 @@ beforeEach(() => {
           tomlPath: "/tmp/gantree.toml",
           dbPath: "/tmp/gantree.db",
           craneUser: null,
-          env: { HOST: { set: true, secret: false, value: "127.0.0.1" } },
+          env: {
+            HOST: { set: true, secret: false, value: "127.0.0.1" },
+            LLM_API_KEY: { set: true, secret: true, value: "" },
+            TELEGRAM_BOT_TOKEN: { set: false, secret: true, value: "" },
+          },
         },
       });
     }
@@ -138,5 +142,15 @@ describe("HostDashboard", () => {
     await waitFor(() => expect(screen.getByText(/read only/)).toBeTruthy());
     expect(screen.queryByRole("button", { name: /Inventory/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Sqlite/ })).toBeNull();
+  });
+
+  it("dots set process secrets and highlights empty ones", async () => {
+    render(<HostDashboard />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "paddleboy" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Runtime/ }));
+    await waitFor(() => expect(screen.getByText("HOST")).toBeTruthy());
+    expect(screen.getByText("127.0.0.1")).toBeTruthy();
+    expect(screen.getByText("••••••••")).toBeTruthy();
+    expect(screen.getByText("needs a key")).toBeTruthy();
   });
 });

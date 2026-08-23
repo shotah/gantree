@@ -8,8 +8,10 @@ import {
   parseCommandLines,
   type TelegramSnapshot,
 } from "@/lib/yard/host/telegram";
+import { HINTS } from "@/lib/yard/hints";
 import { BotFatherHint } from "./BotFatherHint";
 import { craneFoldKey, DashFold } from "./DashFold";
+import { HintField } from "./HintField";
 import { yardFetch } from "../lib/yardFetch";
 
 export function TelegramBot({
@@ -127,7 +129,15 @@ export function TelegramBot({
       title="Telegram"
       persistKey={craneFoldKey(slug, "telegram")}
       shot="telegram"
-      summary={snap.bot?.username ? `@${snap.bot.username}` : snap.tokenSet ? "token set" : "no token"}
+      summary={
+        snap.bot?.username ? (
+          `@${snap.bot.username}`
+        ) : snap.tokenSet ? (
+          "token set"
+        ) : (
+          <span className="text-amber-200">no token</span>
+        )
+      }
       hint="profile, /new, allowlist"
       aside={
         <button
@@ -172,8 +182,7 @@ export function TelegramBot({
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs text-zinc-500">
-              name
+            <HintField label="name" {...HINTS.tgName}>
               <input
                 className="rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100"
                 maxLength={64}
@@ -181,9 +190,8 @@ export function TelegramBot({
                 disabled={readOnly}
                 onChange={(e) => setName(e.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-zinc-500">
-              about (profile)
+            </HintField>
+            <HintField label="about (profile)" {...HINTS.tgAbout}>
               <input
                 className="rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100"
                 maxLength={120}
@@ -191,9 +199,8 @@ export function TelegramBot({
                 disabled={readOnly}
                 onChange={(e) => setAbout(e.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-zinc-500 sm:col-span-2">
-              description (empty chat)
+            </HintField>
+            <HintField label="description (empty chat)" className="sm:col-span-2" {...HINTS.tgDescription}>
               <textarea
                 className="min-h-16 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100"
                 maxLength={512}
@@ -201,9 +208,8 @@ export function TelegramBot({
                 disabled={readOnly}
                 onChange={(e) => setDescription(e.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-zinc-500 sm:col-span-2">
-              commands (one per line: tools - list granted MCP)
+            </HintField>
+            <HintField label="commands" className="sm:col-span-2" {...HINTS.tgCommands}>
               <textarea
                 className="min-h-20 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 font-mono text-sm text-stone-100"
                 value={commands}
@@ -211,7 +217,7 @@ export function TelegramBot({
                 onChange={(e) => setCommands(e.target.value)}
                 placeholder={"new - Distill this thread and start fresh\ntools - list granted MCP\nauth - start OAuth"}
               />
-            </label>
+            </HintField>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
