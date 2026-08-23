@@ -98,7 +98,10 @@ Distroless default uid `65532` cannot open a `gantry.db` written by your
 login — that is `session store open failed`. Recreate without pull keeps that
 uid too; it does not fetch a new image. Do not delete `data/` or re-import.
 
-Console-in-Docker (sock + same-path binds): [headless.md](headless.md#8-console-in-docker).
+Console-in-Docker (sock + same-path binds for attached agents):
+[headless.md](headless.md#8-console-in-docker). Uncomment the volume in
+`compose.yml` when `gantree.toml` uses absolute host paths.
+
 Hub image: `shotah/gantree` (`latest` / `edge` / `0.x.y`). Same secrets as
 ai-gantry on this GitHub repo: `DOCKER_HUB_USERNAME`, `DOCKER_HUB_ACCESS_TOKEN`.
 

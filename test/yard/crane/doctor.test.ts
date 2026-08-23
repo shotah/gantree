@@ -95,6 +95,24 @@ describe("doctor", () => {
     expect(report?.checks.find((c) => c.id === "mcp-listed")?.detail).toMatch(/discover mode/);
   });
 
+  it("does not fail process during a docker reload, or health while starting", async () => {
+    const files = craneFiles();
+    vi.mocked(getGantry).mockResolvedValue(
+      card({
+        state: "restarting",
+        health: "starting",
+        containerName: "ada",
+        ...files,
+      }),
+    );
+    const report = await doctor("kit");
+    expect(report?.checks.find((c) => c.id === "process")).toMatchObject({
+      ok: true,
+      detail: expect.stringMatching(/restarting \(reload\)/),
+    });
+    expect(report?.checks.find((c) => c.id === "docker-health")?.ok).toBe(true);
+  });
+
   it("flags missing PERSONA.md, empty mcp.toml, and missing env", async () => {
     const files = craneFiles({
       persona: false,
@@ -163,8 +181,65 @@ describe("doctor", () => {
     expect(report?.ok).toBe(false);
     expect(report?.checks.find((c) => c.id === "gantry-status")?.ok).toBe(false);
     expect(report?.checks.find((c) => c.id === "gantry-status")?.detail).toMatch(/mcp_all_skipped/);
-    expect(report?.checks.find((c) => c.id === "skip:google")?.detail).toMatch(/no_oauth/);
-    expect(report?.checks.find((c) => c.id === "skip:math")?.detail).toMatch(/no_binary/);
+    expect(report?.checks.find((c) => c.id === "mcp:google")?.detail).toMatch(/no_oauth/);
+    expect(report?.checks.find((c) => c.id === "mcp:math")?.detail).toMatch(/no_binary/);
+    expect(report?.checks.find((c) => c.id === "env:google")).toBeUndefined();
+    expect(report?.checks.find((c) => c.id === "skip:google")).toBeUndefined();
+  });
+
+  it("shows connected servers once from gantry status, not a second env list", async () => {
+    const files = craneFiles({ oauth: true });
+    vi.mocked(getGantry).mockResolvedValue(card({ ...files }));
+    vi.mocked(execStatus).mockResolvedValue(
+      JSON.stringify({
+        alive: true,
+        ok: true,
+        channel: "telegram",
+        mcp: {
+          listed: 2,
+          connected: 2,
+          skipped: 0,
+          servers: [
+            { name: "google", state: "connected", auth: true },
+            { name: "math", state: "connected", auth: false },
+          ],
+        },
+      }),
+    );
+    const report = await doctor("kit");
+    expect(report?.ok).toBe(true);
+    expect(report?.checks.find((c) => c.id === "mcp:google")?.detail).toMatch(/connected/);
+    expect(report?.checks.find((c) => c.id === "mcp:math")?.detail).toMatch(/connected/);
+    expect(report?.checks.filter((c) => c.id.startsWith("env:") || c.id.startsWith("mcp:")).map((c) => c.id)).toEqual([
+      "mcp:google",
+      "mcp:math",
+    ]);
+  });
+
+  it("keeps one row when status lists the same server twice", async () => {
+    const files = craneFiles();
+    vi.mocked(getGantry).mockResolvedValue(card({ ...files }));
+    vi.mocked(execStatus).mockResolvedValue(
+      JSON.stringify({
+        alive: true,
+        ok: true,
+        channel: "telegram",
+        mcp: {
+          listed: 2,
+          connected: 1,
+          skipped: 1,
+          servers: [
+            { name: "google", state: "skipped", reason: "no_binary" },
+            { name: "google", state: "connected", auth: true },
+          ],
+        },
+      }),
+    );
+    const report = await doctor("kit");
+    const google = report?.checks.filter((c) => c.id === "mcp:google");
+    expect(google).toHaveLength(1);
+    expect(google?.[0]?.ok).toBe(true);
+    expect(google?.[0]?.detail).toMatch(/connected/);
   });
 
   it("parseGantryStatusJson finds the object among stderr noise", () => {

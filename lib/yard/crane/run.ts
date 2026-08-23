@@ -1,6 +1,7 @@
 import { docker, pullImage } from "../host/docker";
 import { loadEnvFile } from "../host/envfile";
 import { backupFiles } from "../host/files";
+import { fetchNeedsReload, toolsFetch } from "../tools/auth";
 import type { DoctorReport } from "../types";
 import { DEFAULT_IMAGE, createOrReplaceContainer } from "./build";
 import { doctor } from "./doctor";
@@ -34,10 +35,12 @@ export async function waitUntilDoctorSettled(slug: string, deps: DoctorWaitDeps 
   while (now() - start < timeoutMs) {
     last = await inspect(slug);
     if (last) {
-      const processOk = last.checks.find((c) => c.id === "process")?.ok === true;
+      const processCheck = last.checks.find((c) => c.id === "process");
+      const processOk = processCheck?.ok === true;
       const health = last.checks.find((c) => c.id === "docker-health");
       const starting = Boolean(health && /starting/i.test(health.detail));
-      if (processOk && !starting) {
+      const bouncing = /restarting/i.test(processCheck?.detail ?? "");
+      if (processOk && !starting && !bouncing) {
         return { ok: true, detail: last.ok ? "doctor ok" : `doctor: ${fails(last)}` };
       }
     }
@@ -48,6 +51,31 @@ export async function waitUntilDoctorSettled(slug: string, deps: DoctorWaitDeps 
     return { ok: true, detail: `doctor still settling: ${fails(last)}` };
   }
   return { ok: false, detail: last ? `timed out: ${fails(last)}` : "timed out waiting for container to come up" };
+}
+
+/** After recreate: download MCP bins into /data/bin, then reload so they publish. */
+export async function fetchBinsAndReload(slug: string): Promise<{ ok: boolean; detail: string }> {
+  const fetched = await toolsFetch(slug);
+  if (!fetched.ok) {
+    if (/could not exec/i.test(fetched.detail) || /must be running/i.test(fetched.detail)) {
+      return { ok: true, detail: fetched.detail };
+    }
+    return fetched;
+  }
+  if (!fetchNeedsReload(fetched.detail)) {
+    return fetched;
+  }
+  const g = await getGantry(slug);
+  if (!g?.containerId) {
+    return { ok: false, detail: `${fetched.detail}; reload skipped (no container)` };
+  }
+  try {
+    await docker().getContainer(g.containerId).restart({ t: 5 });
+  } catch (err) {
+    return { ok: false, detail: `${fetched.detail}; reload failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+  const settled = await waitUntilDoctorSettled(slug);
+  return { ok: settled.ok, detail: `${fetched.detail}; reloaded; ${settled.detail}` };
 }
 
 export async function run(slug: string, action: RunAction, image?: string): Promise<{ ok: boolean; detail: string }> {
@@ -83,7 +111,11 @@ export async function run(slug: string, action: RunAction, image?: string): Prom
         mcpManifest: g.mcpManifest,
       });
       const settled = await waitUntilDoctorSettled(slug);
-      return { ok: settled.ok, detail: `${created.detail}; ${settled.detail}` };
+      if (!settled.ok) {
+        return { ok: false, detail: `${created.detail}; ${settled.detail}` };
+      }
+      const fetched = await fetchBinsAndReload(slug);
+      return { ok: fetched.ok, detail: `${created.detail}; ${settled.detail}; ${fetched.detail}` };
     } catch (err) {
       return { ok: false, detail: err instanceof Error ? err.message : String(err) };
     }

@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TelegramBot } from "./TelegramBot";
 
@@ -12,6 +12,7 @@ import { yardFetch } from "../lib/yardFetch";
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
 });
 
 describe("TelegramBot", () => {
@@ -44,6 +45,7 @@ describe("TelegramBot", () => {
     } as Response);
     render(<TelegramBot slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />);
     await waitFor(() => expect(screen.getByText("@kit_bot")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
     expect(screen.getByText("open on phone").getAttribute("href")).toBe("https://t.me/kit_bot");
     expect(screen.getByText(/add 9/)).toBeTruthy();
     expect((screen.getByPlaceholderText("numeric id") as HTMLInputElement).value).toBe("");

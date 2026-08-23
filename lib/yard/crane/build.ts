@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync } from "node:fs";
+import { chmodSync, mkdirSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog } from "../tools/catalog";
 import { craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
@@ -145,6 +145,7 @@ export async function createOrReplaceContainer(opts: {
     }
     await c.remove({ force: true });
   }
+  dropStaleDoctorSnapshot(opts.dataDir);
   const requiredBinds = [
     `${hostBindPath(opts.personaDir)}:/persona`,
     `${hostBindPath(opts.dataDir)}:/data`,
@@ -175,6 +176,15 @@ export async function createOrReplaceContainer(opts: {
   await created.start();
   const who = runtime.user ? ` as ${runtime.user}` : "";
   return { id: created.id, detail: `built crane ${normalizeName(opts.slug)} from ${opts.image}${who}` };
+}
+
+/** Boot snapshot from the previous container — recreate must not keep its skip list. */
+export function dropStaleDoctorSnapshot(dataDir: string): void {
+  try {
+    unlinkSync(resolve(dataDir, "doctor.json"));
+  } catch {
+    /* missing is fine */
+  }
 }
 
 export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; detail: string; slug: string }> {

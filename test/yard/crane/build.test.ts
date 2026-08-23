@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -18,7 +18,7 @@ vi.mock("@/lib/yard/tools/catalog", async (importOriginal) => {
   };
 });
 
-import { buildCrane, writeCraneFiles } from "@/lib/yard/crane/build";
+import { buildCrane, dropStaleDoctorSnapshot, writeCraneFiles } from "@/lib/yard/crane/build";
 import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
 const dirs: string[] = [];
@@ -94,6 +94,18 @@ describe("writeCraneFiles", () => {
     expect(cloudMcp).not.toContain("youtube");
     delete process.env.GANTREE_ROOT;
     delete process.env.GANTREE_TOML;
+  });
+});
+
+describe("dropStaleDoctorSnapshot", () => {
+  it("removes a previous boot skip list and ignores a missing file", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const snap = join(root, "doctor.json");
+    writeFileSync(snap, '{"skipped":2}\n');
+    dropStaleDoctorSnapshot(root);
+    expect(existsSync(snap)).toBe(false);
+    expect(() => dropStaleDoctorSnapshot(root)).not.toThrow();
   });
 });
 

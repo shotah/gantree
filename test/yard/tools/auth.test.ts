@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { card } from "../card";
 
 vi.mock("@/lib/yard/crane/inventory", () => ({
@@ -10,9 +12,22 @@ vi.mock("@/lib/yard/host/docker", async (importOriginal) => {
   return { ...actual, execGantry: vi.fn() };
 });
 
+vi.mock("@/lib/yard/tools/catalog", () => ({
+  loadCatalog: () => [
+    {
+      name: "google",
+      command: "google-mcp",
+      download_url: "https://example.com/google.tgz",
+      download_tag: "latest",
+      envKeys: [],
+      blurb: "",
+    },
+  ],
+}));
+
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { execGantry } from "@/lib/yard/host/docker";
-import { authCmd, exchangeAuth, extractAuthUrl, kickAuth, toolsFetch, waitAuth } from "@/lib/yard/tools/auth";
+import { authCmd, exchangeAuth, extractAuthUrl, fetchNeedsReload, kickAuth, toolsFetch, waitAuth } from "@/lib/yard/tools/auth";
 
 beforeEach(() => {
   vi.mocked(getGantry).mockReset();
@@ -101,7 +116,49 @@ describe("kickAuth / exchangeAuth / waitAuth / toolsFetch", () => {
     vi.mocked(getGantry).mockResolvedValue(card());
     vi.mocked(execGantry).mockResolvedValue({ text: "", exitCode: 0 });
     expect(await toolsFetch("kit")).toEqual({ ok: true, detail: "tools-fetch finished" });
+    expect(vi.mocked(execGantry).mock.calls.at(-1)?.[1]).toEqual([
+      "tools-fetch",
+      "--outdir",
+      "/data/bin",
+      "--prune",
+      "--manifest",
+      "/etc/gantry/mcp.toml",
+    ]);
     vi.mocked(execGantry).mockResolvedValue(null);
     expect(await toolsFetch("kit")).toMatchObject({ ok: false, detail: expect.stringMatching(/could not exec/) });
+  });
+
+  it("writes a fetch manifest when mcp.toml has no download_url", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    const dataDir = join(root, "data");
+    mkdirSync(dataDir);
+    const mcp = join(root, "mcp.toml");
+    writeFileSync(mcp, '[[server]]\nname = "google"\ncommand = "google-mcp"\n');
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, dataDir }));
+    vi.mocked(execGantry).mockResolvedValue({
+      text: "tools-fetch: done installed=1 skipped=0 total=1",
+      exitCode: 0,
+    });
+    const out = await toolsFetch("kit");
+    expect(out.ok).toBe(true);
+    expect(vi.mocked(execGantry).mock.calls.at(-1)?.[1]).toEqual([
+      "tools-fetch",
+      "--outdir",
+      "/data/bin",
+      "--prune",
+      "--manifest",
+      "/data/.gantree-fetch.toml",
+    ]);
+    expect(readFileSync(join(dataDir, ".gantree-fetch.toml"), "utf8")).toContain("download_url");
+    rmSync(root, { recursive: true, force: true });
+  });
+});
+
+describe("fetchNeedsReload", () => {
+  it("reloads after an install and skips a no-url manifest", () => {
+    expect(fetchNeedsReload("tools-fetch: done installed=2 skipped=0 total=2")).toBe(true);
+    expect(fetchNeedsReload("tools-fetch finished")).toBe(true);
+    expect(fetchNeedsReload("tools-fetch: no download_url servers in manifest")).toBe(false);
+    expect(fetchNeedsReload("tools-fetch: done installed=0 skipped=3 total=3")).toBe(false);
   });
 });

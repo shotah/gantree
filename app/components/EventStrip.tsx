@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { YardEvent } from "@/lib/yard/types";
+import { craneFoldKey, DashFold } from "./DashFold";
 import { yardFetch } from "../lib/yardFetch";
 
 export function EventStrip({ slug }: { slug?: string }) {
@@ -28,20 +29,36 @@ export function EventStrip({ slug }: { slug?: string }) {
     return null;
   }
 
+  const list = (
+    <ul className="space-y-1 text-xs text-zinc-500">
+      {events.map((e) => (
+        <li key={e.id} className="flex flex-wrap gap-x-2 gap-y-0.5">
+          <span className="text-zinc-600">{new Date(e.at).toLocaleString()}</span>
+          <span className="text-amber-200/80">{e.operatorName ?? "—"}</span>
+          <span className="text-zinc-300">{e.kind}</span>
+          {e.slug && !slug ? <span>{e.slug}</span> : null}
+          {e.detail ? <span className="truncate text-zinc-500">{e.detail}</span> : null}
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (slug) {
+    return (
+      <DashFold
+        title="Recent on this crane"
+        persistKey={craneFoldKey(slug, "events")}
+        summary={`${events.length} event${events.length === 1 ? "" : "s"}`}
+      >
+        {list}
+      </DashFold>
+    );
+  }
+
   return (
     <section>
-      <h2 className="mb-2 text-sm font-medium text-zinc-400">{slug ? "Recent on this crane" : "Yard events"}</h2>
-      <ul className="space-y-1 text-xs text-zinc-500">
-        {events.map((e) => (
-          <li key={e.id} className="flex flex-wrap gap-x-2 gap-y-0.5">
-            <span className="text-zinc-600">{new Date(e.at).toLocaleString()}</span>
-            <span className="text-amber-200/80">{e.operatorName ?? "—"}</span>
-            <span className="text-zinc-300">{e.kind}</span>
-            {e.slug && !slug ? <span>{e.slug}</span> : null}
-            {e.detail ? <span className="truncate text-zinc-500">{e.detail}</span> : null}
-          </li>
-        ))}
-      </ul>
+      <h2 className="mb-2 text-sm font-medium text-zinc-400">Yard events</h2>
+      {list}
     </section>
   );
 }

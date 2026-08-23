@@ -75,6 +75,7 @@ describe("craneNags", () => {
 
   it("badges dead process, needs-auth, and env-skipped without fake-green", () => {
     expect(craneNags("running", empty)).toEqual([]);
+    expect(craneNags("restarting", empty)).toEqual([]);
     expect(craneNags("exited", empty)).toEqual([{ kind: "dead", detail: "process exited" }]);
     expect(
       craneNags("running", {

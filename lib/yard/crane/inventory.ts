@@ -91,7 +91,8 @@ async function cardFrom(opts: {
       const inspected = await inspectByName(opts.listed.id);
       if (inspected) {
         image = inspected.info.Config.Image || image;
-        state = stateOf(inspected.info.State.Status);
+        const st = inspected.info.State;
+        state = stateOf(st.Status, { running: st.Running, paused: st.Paused });
         health = inspected.info.State.Health?.Status ?? null;
         startedAt = saneStarted(inspected.info.State.StartedAt);
         restartCount = typeof inspected.info.RestartCount === "number" ? inspected.info.RestartCount : null;

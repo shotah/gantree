@@ -35,6 +35,9 @@ describe("stateOf", () => {
   it("maps known states", () => {
     expect(stateOf("running")).toBe("running");
     expect(stateOf("weird")).toBe("unknown");
+    expect(stateOf("restarting")).toBe("restarting");
+    expect(stateOf("restarting", { running: true })).toBe("running");
+    expect(stateOf("running", { paused: true })).toBe("paused");
   });
 });
 

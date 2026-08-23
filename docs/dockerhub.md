@@ -25,9 +25,12 @@ docker compose up -d
 
 Compose must mount `docker.sock` and the yard files (`gantree.toml`, `gantries/`).
 Run it from the checkout so `GANTREE_HOST_ROOT` is that directory (recreate
-bind-mounts are host paths). Home LAN: host `:80` on all interfaces *behind*
-login (`/setup` first boot). Cloud VM: `GANTREE_LISTEN=127.0.0.1` and do not
-open a WAN firewall port. Mount `./var` for yard `gantree.db`.
+bind-mounts are host paths). Attach existing agents at absolute paths:
+uncomment the same-path volume in `compose.yml` (`/opt/agents:/opt/agents`)
+or the board will see Docker but not persona / `mcp.toml`. Home LAN: host
+`:80` on all interfaces *behind* login (`/setup` first boot). Cloud VM:
+`GANTREE_LISTEN=127.0.0.1` and do not open a WAN firewall port. Mount `./var`
+for yard `gantree.db`.
 
 Cranes run as the host user that owns `data/`. Compose picks that up from
 your shell `UID` (or the files on disk). Distroless default uid `65532`

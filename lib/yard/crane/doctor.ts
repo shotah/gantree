@@ -13,18 +13,24 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
   }
   const checks: DoctorCheck[] = [];
 
+  const bouncing = g.state === "restarting";
   const running = g.state === "running";
   checks.push({
     id: "process",
-    ok: running,
-    detail: running ? `container ${g.containerName} is running` : `container ${g.containerName} is ${g.state}`,
+    ok: running || bouncing,
+    detail: running
+      ? `container ${g.containerName} is running`
+      : bouncing
+        ? `container ${g.containerName} is restarting (reload)`
+        : `container ${g.containerName} is ${g.state}`,
   });
 
   if (g.health) {
+    const starting = g.health === "starting";
     const healthy = g.health === "healthy";
     checks.push({
       id: "docker-health",
-      ok: healthy,
+      ok: healthy || starting,
       detail: `docker health: ${g.health}${g.mcpListed === 0 && healthy ? " (healthy, but no MCP listed)" : ""}`,
     });
   }
@@ -51,27 +57,7 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
     checks.push({ id: "mcp-listed", ok: true, detail: "mcp.toml path unknown (discover mode) — skipped" });
   }
 
-  const env = envKeyNames(g.envFile);
-  for (const s of servers) {
-    const cat = loadCatalog().find((c) => c.name === s.name);
-    const missing = (cat?.envKeys ?? []).filter((k) => !env.valuesPresent[k]);
-    checks.push({
-      id: `env:${s.name}`,
-      ok: missing.length === 0,
-      detail: missing.length ? `${s.name}: missing env ${missing.join(", ")}` : `${s.name}: required env keys present (or none)`,
-    });
-    if (cat?.auth_args?.length) {
-      const oauthFile = g.dataDir ? existsSync(resolve(g.dataDir, `${s.name}-oauth.json`)) : false;
-      checks.push({
-        id: `oauth:${s.name}`,
-        ok: true,
-        detail: oauthFile
-          ? `${s.name}: oauth session file present`
-          : `${s.name}: needs auth (no session file spotted; confirm in chat /auth)`,
-      });
-    }
-  }
-
+  let statusServers: NonNullable<NonNullable<GantryStatusJson["mcp"]>["servers"]> = [];
   if (g.containerId && running) {
     const status = await execStatus(g.containerId);
     if (status) {
@@ -79,6 +65,7 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
       if (parsed) {
         const operatorOk = parsed.alive !== false && parsed.ok !== false;
         const mcp = parsed.mcp;
+        statusServers = mcp?.servers ?? [];
         const summary = [
           parsed.channel,
           parsed.reason,
@@ -91,16 +78,6 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
           ok: operatorOk,
           detail: summary || status.slice(0, 400),
         });
-        for (const s of mcp?.servers ?? []) {
-          if (!s?.name || s.state !== "skipped") {
-            continue;
-          }
-          checks.push({
-            id: `skip:${s.name}`,
-            ok: false,
-            detail: `${s.name}: ${s.reason ?? "skipped"}${s.note ? ` — ${s.note}` : ""}`,
-          });
-        }
       } else {
         const fail = /unhealthy|error|skipped/i.test(status) && !/ok|healthy/i.test(status);
         checks.push({
@@ -118,11 +95,93 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
     }
   }
 
+  const named = uniqueMcpServers(statusServers);
+  if (named.length > 0) {
+    for (const s of named) {
+      const check = mcpServerCheck(s);
+      if (check) {
+        checks.push(check);
+      }
+    }
+  } else {
+    pushFileMcpChecks(checks, servers, g.envFile, g.dataDir);
+  }
+
   const hard = checks.filter(
     (c) => c.id === "process" || c.id === "mcp-listed" || c.id === "gantry-status" || c.id.startsWith("env:"),
   );
   const ok = hard.every((c) => c.ok);
   return { slug, ok, checks };
+}
+
+function uniqueMcpServers(
+  rows: NonNullable<NonNullable<GantryStatusJson["mcp"]>["servers"]>,
+): NonNullable<NonNullable<GantryStatusJson["mcp"]>["servers"]> {
+  const rank = (state: string | undefined): number => {
+    if (state === "connected") {
+      return 2;
+    }
+    if (state === "unknown") {
+      return 1;
+    }
+    return 0;
+  };
+  const byName = new Map<string, (typeof rows)[number]>();
+  for (const s of rows) {
+    if (!s?.name) {
+      continue;
+    }
+    const prev = byName.get(s.name);
+    if (!prev || rank(s.state) > rank(prev.state)) {
+      byName.set(s.name, s);
+    }
+  }
+  return [...byName.values()];
+}
+
+function mcpServerCheck(s: NonNullable<NonNullable<GantryStatusJson["mcp"]>["servers"]>[number]): DoctorCheck | null {
+  if (!s?.name) {
+    return null;
+  }
+  if (s.state === "skipped") {
+    return {
+      id: `mcp:${s.name}`,
+      ok: false,
+      detail: `${s.name}: ${s.reason ?? "skipped"}${s.note ? ` — ${s.note}` : ""}`,
+    };
+  }
+  if (s.state === "connected") {
+    return { id: `mcp:${s.name}`, ok: true, detail: `${s.name}: connected` };
+  }
+  return { id: `mcp:${s.name}`, ok: true, detail: `${s.name}: unknown (no boot snapshot yet)` };
+}
+
+function pushFileMcpChecks(
+  checks: DoctorCheck[],
+  servers: ReturnType<typeof parseMcpToml>,
+  envFile: string | null,
+  dataDir: string | null,
+): void {
+  const env = envKeyNames(envFile);
+  for (const s of servers) {
+    const cat = loadCatalog().find((c) => c.name === s.name);
+    const missing = (cat?.envKeys ?? []).filter((k) => !env.valuesPresent[k]);
+    checks.push({
+      id: `env:${s.name}`,
+      ok: missing.length === 0,
+      detail: missing.length ? `${s.name}: missing env ${missing.join(", ")}` : `${s.name}: required env keys present (or none)`,
+    });
+    if (cat?.auth_args?.length) {
+      const oauthFile = dataDir ? existsSync(resolve(dataDir, `${s.name}-oauth.json`)) : false;
+      checks.push({
+        id: `oauth:${s.name}`,
+        ok: true,
+        detail: oauthFile
+          ? `${s.name}: oauth session file present`
+          : `${s.name}: needs auth (no session file spotted; confirm in chat /auth)`,
+      });
+    }
+  }
 }
 
 /** Parse `gantry status` JSON. `"ok":false` must not be regex-matched as healthy. */

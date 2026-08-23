@@ -15,6 +15,8 @@ import {
 import { shouldPushTelegram } from "@/lib/yard/host/telegram";
 import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, type McpSample, type McpServer, type StatSample, type TurnSample, type UptimeSample } from "@/lib/yard/types";
 import { CraneAvatar } from "./CraneAvatar";
+import { craneFoldKey, DashFold } from "./DashFold";
+import { DoctorPanel } from "./DoctorPanel";
 import { EventStrip } from "./EventStrip";
 import { LogViewer } from "./LogViewer";
 import { MetricCharts } from "./MetricCharts";
@@ -244,8 +246,13 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       {notice ? <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300">{notice}</p> : null}
 
-      <section data-shot="photo" className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
-        <h2 className="mb-1 text-sm font-medium text-zinc-400">Photo</h2>
+      <DashFold
+        title="Photo"
+        persistKey={craneFoldKey(slug, "photo")}
+        shot="photo"
+        className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+        hint="persona/avatar.jpg — Telegram uses the same picture"
+      >
         <p className="mb-3 text-xs text-zinc-600">
           Saved as <code className="text-zinc-500">persona/avatar.jpg</code>. Telegram bots get the same picture.
         </p>
@@ -277,15 +284,18 @@ export function AgentDashboard({ slug }: { slug: string }) {
             </div>
           ) : null}
         </div>
-      </section>
+      </DashFold>
 
       {telegramOn ? (
         <TelegramBot slug={slug} busy={busy} setBusy={setBusy} onNotice={setNotice} onSaved={refresh} readOnly={!mutate} />
       ) : null}
 
-      <section>
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-sm font-medium text-zinc-400">Metrics</h2>
+      <DashFold
+        title="Metrics"
+        persistKey={craneFoldKey(slug, "metrics")}
+        defaultOpen
+        hint="CPU, RAM, MCP, tokens"
+        aside={
           <SpendScope
             window={spendWindow}
             onWindow={setSpendWindow}
@@ -293,34 +303,28 @@ export function AgentDashboard({ slug }: { slug: string }) {
             onBucket={setSpendBucket}
             buckets={allowedBuckets}
           />
-        </div>
+        }
+      >
         <CraneSpend rollup={rollupTurns(slug, turnsInWindow)} scope={fmtSpendWindow(spendWindow)} />
         <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} bucket={bucket} since={since} now={Date.now()} />
-      </section>
+      </DashFold>
 
-      <section>
-        <h2 className="mb-3 text-sm font-medium text-zinc-400">Logs</h2>
+      <DashFold title="Logs" persistKey={craneFoldKey(slug, "logs")} defaultOpen hint="live slog">
         <LogViewer slug={slug} />
-      </section>
+      </DashFold>
 
       <EventStrip slug={slug} />
 
-      <section>
-        <h2 className="mb-3 text-sm font-medium text-zinc-400">Doctor</h2>
-        <ul className="space-y-2">
-          {doctor?.checks.map((c) => (
-            <li key={c.id} className="flex gap-3 rounded border border-zinc-800 px-3 py-2 text-sm">
-              <span className={c.ok ? "text-emerald-400" : "text-red-400"}>{c.ok ? "ok" : "fail"}</span>
-              <span className="text-zinc-300">{c.detail}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <DoctorPanel doctor={doctor} persistKey={craneFoldKey(slug, "doctor")} />
 
-      <section>
-        <h2 className="mb-1 text-sm font-medium text-zinc-400">Tools</h2>
+      <DashFold
+        title="Tools"
+        persistKey={craneFoldKey(slug, "tools")}
+        summary={`${granted.size} granted`}
+        hint="mcp.toml — recreate fetches bins"
+      >
         <p className="mb-3 text-xs text-zinc-600">
-          Toggle writes mcp.toml. Fetch bins (output in the notice, not container logs), then recreate.
+          Toggle writes mcp.toml. Recreate fetches bins into /data/bin and reloads MCP.
         </p>
         <div className="mb-3 flex flex-wrap gap-2">
           <button
@@ -433,10 +437,9 @@ export function AgentDashboard({ slug }: { slug: string }) {
             );
           })}
         </div>
-      </section>
+      </DashFold>
 
-      <section>
-        <h2 className="mb-1 text-sm font-medium text-zinc-400">Persona</h2>
+      <DashFold title="Persona" persistKey={craneFoldKey(slug, "persona")} hint="PERSONA.md — SELF.md is harness-written">
         <p className="mb-2 text-xs text-zinc-600">
           SELF.md is harness-written — prune, don’t treat it as config.
         </p>
@@ -456,10 +459,9 @@ export function AgentDashboard({ slug }: { slug: string }) {
         >
           Save PERSONA.md
         </button>
-      </section>
+      </DashFold>
 
-      <section>
-        <h2 className="mb-1 text-sm font-medium text-zinc-400">Secrets</h2>
+      <DashFold title="Secrets" persistKey={craneFoldKey(slug, "secrets")} hint="crane mouth plus keys for granted tools">
         <p className="mb-2 text-xs text-zinc-600">
           Only the crane mouth plus keys for <em>granted</em> tools. Toggle a server
           first. Never paste a whole fleet .env. Values are never shown after save.
@@ -510,10 +512,9 @@ export function AgentDashboard({ slug }: { slug: string }) {
         >
           Save .env
         </button>
-      </section>
+      </DashFold>
 
-      <section>
-        <h2 className="mb-1 text-sm font-medium text-zinc-400">Image pin</h2>
+      <DashFold title="Image pin" persistKey={craneFoldKey(slug, "pin")} hint="pull + recreate tag">
         <p className="mb-2 text-xs text-zinc-600">
           pull + recreate uses this tag, keeps the host uid that owns <code className="text-zinc-500">data/</code>, and
           waits for doctor. Recreate without pull does the same uid keep — it does not docker pull.
@@ -529,7 +530,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
             pull + recreate
           </button>
         </div>
-      </section>
+      </DashFold>
     </section>
   );
 }

@@ -13,9 +13,6 @@
 # First boot is /setup (one operator). Yard sqlite is ./var/gantree.db — not a
 # crane's data/gantry.db. Forgot passphrase: stop, delete var/gantree.db, setup.
 # Never set GANTREE_DEV here — HOST=0.0.0.0, so auto-login is ignored anyway.
-# Attach existing agents by mounting their host paths at the same path
-# (gantree.toml uses those paths for recreate). Example:
-#   - /opt/agents:/opt/agents
 
 services:
   gantree:
@@ -37,4 +34,8 @@ services:
       - ./gantries:/app/gantries
       - ./backups:/app/backups
       - ./var:/app/var
+      # Same-path attach: gantree.toml absolute paths must exist in this
+      # container, and recreate bind-mounts them from the host. Uncomment
+      # and match your inventory.
+      # - /opt/agents:/opt/agents
     restart: unless-stopped

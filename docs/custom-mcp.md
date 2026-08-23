@@ -78,11 +78,12 @@ Placeholders in `download_url`: `{tag}` `{version}` `{os}` `{arch}`.
 
 Then on the crane dashboard:
 
-1. **tools-fetch** — installs into `/data/bin` (notice text, not container logs)
-2. Put required keys in the crane `.env` (secrets form only lists catalog
+1. Put required keys in the crane `.env` (secrets form only lists catalog
    `env_keys`; for a custom server, type them in `.env` or we add the package
    to the yard list)
-3. **recreate** — `PATH` includes `/data/bin`
+2. **recreate** — fetches bins into `/data/bin`, prunes leftovers not in
+   `mcp.toml`, reloads MCP (`PATH` includes `/data/bin`). The tools-fetch
+   button is the same install, without reload.
 
 Doctor / skip hints follow missing env and `auth_args`.
 

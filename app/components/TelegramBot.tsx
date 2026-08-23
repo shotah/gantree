@@ -8,6 +8,7 @@ import {
   type TelegramSnapshot,
 } from "@/lib/yard/host/telegram";
 import { BotFatherHint } from "./BotFatherHint";
+import { craneFoldKey, DashFold } from "./DashFold";
 import { yardFetch } from "../lib/yardFetch";
 
 export function TelegramBot({
@@ -103,15 +104,14 @@ export function TelegramBot({
   }
 
   return (
-    <section data-shot="telegram" className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-sm font-medium text-zinc-400">Telegram</h2>
-          <p className="mt-1 text-xs text-zinc-600">
-            BotFather minted the token. Name, about, commands, and photo (above) go through the Bot API. Allowlist is{" "}
-            <code className="text-zinc-500">TELEGRAM_ALLOWED_USERS</code> — recreate after save.
-          </p>
-        </div>
+    <DashFold
+      title="Telegram"
+      persistKey={craneFoldKey(slug, "telegram")}
+      shot="telegram"
+      className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+      summary={snap.bot?.username ? `@${snap.bot.username}` : snap.tokenSet ? "token set" : "no token"}
+      hint="profile, commands, allowlist"
+      aside={
         <button
           type="button"
           disabled={busy}
@@ -120,7 +120,12 @@ export function TelegramBot({
         >
           refresh
         </button>
-      </div>
+      }
+    >
+      <p className="mb-3 text-xs text-zinc-600">
+        BotFather minted the token. Name, about, commands, and photo (above) go through the Bot API. Allowlist is{" "}
+        <code className="text-zinc-500">TELEGRAM_ALLOWED_USERS</code> — recreate after save.
+      </p>
 
       {!snap.tokenSet ? (
         <div className="space-y-3">
@@ -288,6 +293,6 @@ export function TelegramBot({
         </div>
         {addErr ? <p className="mt-2 text-xs text-amber-200">{addErr}</p> : null}
       </div>
-    </section>
+    </DashFold>
   );
 }

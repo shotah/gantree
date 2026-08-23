@@ -78,8 +78,8 @@ Long-horizon is useless if the container is “healthy” with zero tools and a
 dead token. MCP **is** the grant. The UI is a structured editor of that
 crane’s `mcp.toml`, not a second inventory.
 
-- Toggle on → write `[[server]]`, fetch the binary, recreate, wait until
-  `/tools` shows the prefix.
+- Toggle on → write `[[server]]`. Recreate fetches bins into `/data/bin` and
+  reloads until `/tools` shows the prefix.
 - Toggle off → omit from the manifest.
 - “Needs auth” is a button (laptop hop or paste a code from `/auth` in
   chat).

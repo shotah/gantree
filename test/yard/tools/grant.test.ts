@@ -16,7 +16,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
 
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { stringifyMcpToml } from "@/lib/yard/host/files";
-import { grant, revoke } from "@/lib/yard/tools/grant";
+import { grant, revoke, enrichDownloadUrls } from "@/lib/yard/tools/grant";
 
 const dirs: string[] = [];
 
@@ -107,5 +107,33 @@ describe("revoke", () => {
     expect(out.ok).toBe(true);
     expect(out.servers.map((s) => s.name)).toEqual(["math"]);
     expect(readFileSync(mcp, "utf8")).not.toContain("google");
+  });
+});
+
+describe("enrichDownloadUrls", () => {
+  it("fills catalog download_* when the manifest only has name/command", () => {
+    const catalog = [
+      {
+        name: "google",
+        command: "google-mcp",
+        download_url: "https://example.com/google.tgz",
+        download_tag: "latest",
+        envKeys: [],
+        blurb: "",
+      },
+    ];
+    const out = enrichDownloadUrls(
+      [
+        { name: "google", command: "google-mcp" },
+        { name: "custom", command: "my-bin", download_url: "https://mine.example/x.tgz" },
+      ],
+      catalog,
+    );
+    expect(out[0]).toMatchObject({
+      name: "google",
+      download_url: "https://example.com/google.tgz",
+      download_tag: "latest",
+    });
+    expect(out[1]?.download_url).toBe("https://mine.example/x.tgz");
   });
 });

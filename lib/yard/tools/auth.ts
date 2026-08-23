@@ -1,6 +1,10 @@
+import { resolve } from "node:path";
 import { getGantry } from "../crane/inventory";
 import { execGantry } from "../host/docker";
-import type { AuthFlow } from "../types";
+import { parseMcpToml, readText, stringifyMcpToml, writeText } from "../host/files";
+import type { AuthFlow, GantryCard } from "../types";
+import { loadCatalog } from "./catalog";
+import { enrichDownloadUrls } from "./grant";
 
 export type AuthOp = "start" | "exchange" | "wait";
 
@@ -80,18 +84,44 @@ export async function waitAuth(slug: string, server: string): Promise<AuthResult
   return runAuth(slug, authCmd(server, "wait"));
 }
 
+/** True when fetch put (or confirmed) bins that the running process has not loaded. */
+export function fetchNeedsReload(detail: string): boolean {
+  if (/no download_url servers/i.test(detail)) {
+    return false;
+  }
+  const installed = detail.match(/installed=(\d+)/);
+  if (installed) {
+    return Number(installed[1]) > 0;
+  }
+  return /tools-fetch: done/i.test(detail) || detail === "tools-fetch finished";
+}
+
+const FETCH_MANIFEST = ".gantree-fetch.toml";
+
+function toolsFetchArgs(g: Pick<GantryCard, "mcpManifest" | "dataDir">): string[] {
+  const listed = parseMcpToml(readText(g.mcpManifest));
+  const base = ["tools-fetch", "--outdir", "/data/bin", "--prune", "--manifest", "/etc/gantry/mcp.toml"];
+  if (listed.length === 0) {
+    return base;
+  }
+  const enriched = enrichDownloadUrls(listed, loadCatalog());
+  const filled = listed.some((s) => {
+    const hit = enriched.find((e) => e.name === s.name);
+    return Boolean(hit?.download_url && !s.download_url);
+  });
+  if (filled && g.dataDir) {
+    writeText(resolve(g.dataDir, FETCH_MANIFEST), stringifyMcpToml(enriched));
+    return ["tools-fetch", "--outdir", "/data/bin", "--prune", "--manifest", `/data/${FETCH_MANIFEST}`];
+  }
+  return base;
+}
+
 export async function toolsFetch(slug: string): Promise<{ ok: boolean; detail: string }> {
   const g = await getGantry(slug);
   if (!g?.containerId || g.state !== "running") {
     return { ok: false, detail: "container must be running for tools-fetch" };
   }
-  const result = await execGantry(g.containerId, [
-    "tools-fetch",
-    "--outdir",
-    "/data/bin",
-    "--manifest",
-    "/etc/gantry/mcp.toml",
-  ]);
+  const result = await execGantry(g.containerId, toolsFetchArgs(g));
   if (!result) {
     return { ok: false, detail: "could not exec gantry tools-fetch" };
   }

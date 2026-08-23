@@ -31,7 +31,14 @@ export function normalizeName(name: string): string {
   return name.replace(/^\//, "");
 }
 
-export function stateOf(raw: string | undefined): GantryState {
+export function stateOf(raw: string | undefined, flags?: { running?: boolean; paused?: boolean }): GantryState {
+  if (flags?.paused) {
+    return "paused";
+  }
+  // docker restart leaves Status=restarting while Running is already true
+  if (flags?.running) {
+    return "running";
+  }
   switch (raw) {
     case "running":
     case "exited":

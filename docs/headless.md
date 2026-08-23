@@ -25,6 +25,9 @@ Login, profile, settings: [operators.md](operators.md).
 - Set `GANTREE_DEV` in compose. `HOST=0.0.0.0` ignores it; do not get in
   the habit. Loopback auto-login is for `npm run dev` screenshots only
   ([security.md](security.md#dev-auto-login)).
+- Point `gantree.toml` at absolute host dirs and run compose without the
+  same-path volume — the board still sees Docker; persona and `mcp.toml`
+  look empty.
 
 ---
 
@@ -77,8 +80,9 @@ Repeat one `[[gantry]]` block per agent.
 Catalog is a **menu**. Enabled = that crane’s `mcp.toml`. `.env` stays theirs.
 Do not use the Build wizard for these slugs.
 
-`npm start` on the **host** can read those paths. Gantree’s own compose only
-mounts `./gantries` — skip compose for this attach.
+`npm start` on the **host** can read those paths as-is. Compose only mounts
+`./gantries` by default — uncomment the same-path volume in `compose.yml`
+so `/opt/agents` exists inside the console ([§8](#8-console-in-docker)).
 
 ---
 
@@ -224,22 +228,34 @@ docker compose up -d --build
 `gantree.toml` paths are resolved **inside** the console container. Relative
 `./gantries/<slug>` works (that dir is mounted at `/app/gantries`). Recreate
 rewrites those to **host** paths via `GANTREE_HOST_ROOT` (compose sets it to
-`PWD` — run `docker compose` from this checkout). Absolute attach paths must
-exist at the **same path** in the console:
+`PWD` — run `docker compose` from this checkout).
+
+Absolute attach paths must exist at the **same path** in the console.
+`compose.yml` has a commented volume next to the others — uncomment it and
+match the inventory prefix:
 
 ```yaml
-# compose.yml — extra volume
-- /opt/agents:/opt/agents
+# compose.yml
+# - /opt/agents:/opt/agents
 ```
 
 ```toml
 data_dir = "/opt/agents/kit/data"
+persona_dir = "/opt/agents/kit/persona"
+mcp_manifest = "/opt/agents/kit/mcp.toml"
+env_file = "/opt/agents/kit/.env"
 ```
 
-Without that mount, the board can still *see* Docker, but recreate cannot
-bind `/opt/agents/kit/data`. Missing `GANTREE_HOST_ROOT` bind-mounts
-`/app/gantries/…` on the host — the crane then has no `mcp.toml` and no
-`data/.config`.
+Without that mount the board can still *see* Docker: CPU/RAM, uptime, and
+model/channel from container env. Persona and `mcp.toml` stay empty — those
+are file reads, not inspect. The crane `.env` form can look populated for
+the same reason. Recreate cannot bind `/opt/agents/kit/data` either.
+
+Start / stop does not add missing binds. After the volume is up, **recreate**
+each attached crane so persona and `mcp.toml` land in the agent.
+
+Missing `GANTREE_HOST_ROOT` bind-mounts `/app/gantries/…` on the host — the
+crane then has no `mcp.toml` and no `data/.config`.
 
 Home LAN: compose publishes host `:80` → container `:3000`
 (`http://<headless-lan-ip>/`). Cloud VM: `GANTREE_LISTEN=127.0.0.1` — do

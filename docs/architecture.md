@@ -93,7 +93,10 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | Telegram bot | Bot API `getMe` / `setMy*` after a token exists. Allowlist is `.env`. Never `getUpdates`. |
 
 Files remain the source of truth. The UI is an editor of those files,
-not a second inventory. Secrets never go in git.
+not a second inventory. Secrets never go in git. Console-in-Docker must
+see those files at the inventory path — uncomment the same-path volume in
+`compose.yml` when attaching absolute host dirs ([headless.md](headless.md#8-console-in-docker)).
+Metrics and container env still work without it; persona and `mcp.toml` do not.
 
 Inventory is `gantree.toml` (no secrets). One mutation path: the UI
 calls `lib/yard`. Never dockerode from a React Server Component.

@@ -29,12 +29,18 @@ vi.mock("@/lib/yard/host/envfile", async (importOriginal) => {
   return { ...actual, loadEnvFile: vi.fn(() => ({ CHANNEL: "telegram" })) };
 });
 
+vi.mock("@/lib/yard/tools/auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/yard/tools/auth")>();
+  return { ...actual, toolsFetch: vi.fn() };
+});
+
 import { createOrReplaceContainer } from "@/lib/yard/crane/build";
 import { doctor } from "@/lib/yard/crane/doctor";
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { run, waitUntilDoctorSettled } from "@/lib/yard/crane/run";
 import { docker, pullImage } from "@/lib/yard/host/docker";
 import { backupFiles } from "@/lib/yard/host/files";
+import { toolsFetch } from "@/lib/yard/tools/auth";
 import { DEFAULT_IMAGE, type DoctorReport } from "@/lib/yard/types";
 
 beforeEach(() => {
@@ -44,6 +50,8 @@ beforeEach(() => {
   vi.mocked(docker).mockReset();
   vi.mocked(pullImage).mockReset();
   vi.mocked(backupFiles).mockReset();
+  vi.mocked(toolsFetch).mockReset();
+  vi.mocked(toolsFetch).mockResolvedValue({ ok: true, detail: "tools-fetch: no download_url servers in manifest" });
 });
 
 function report(processOk: boolean, extra: DoctorReport["checks"] = []): DoctorReport {
@@ -87,6 +95,25 @@ describe("waitUntilDoctorSettled", () => {
       },
       doctor: async () =>
         report(true, [{ id: "docker-health", ok: false, detail: "health: starting" }]),
+    });
+    expect(result.ok).toBe(true);
+    expect(result.detail).toMatch(/still settling/);
+  });
+
+  it("waits out a docker restart reload instead of treating it as up", async () => {
+    let t = 0;
+    const result = await waitUntilDoctorSettled("kit", {
+      timeoutMs: 10,
+      intervalMs: 5,
+      now: () => t,
+      sleep: async (ms) => {
+        t += ms;
+      },
+      doctor: async () => ({
+        slug: "kit",
+        ok: true,
+        checks: [{ id: "process", ok: true, detail: "container ada is restarting (reload)" }],
+      }),
     });
     expect(result.ok).toBe(true);
     expect(result.detail).toMatch(/still settling/);
@@ -165,6 +192,29 @@ describe("run", () => {
 
     vi.mocked(getGantry).mockResolvedValue(card({ personaDir: null }));
     expect(await run("kit", "recreate")).toMatchObject({ ok: false, detail: expect.stringMatching(/needs persona/) });
+  });
+
+  it("fetches MCP bins after recreate and reloads when install happens", async () => {
+    const restart = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(docker).mockReturnValue({ getContainer: () => ({ restart }) } as never);
+    vi.mocked(getGantry).mockResolvedValue(
+      card({ personaDir: "/p", dataDir: "/d", mcpManifest: "/m", envFile: "/e" }),
+    );
+    vi.mocked(createOrReplaceContainer).mockResolvedValue({ id: "n", detail: "built crane kit" });
+    vi.mocked(doctor).mockResolvedValue({
+      slug: "kit",
+      ok: true,
+      checks: [{ id: "process", ok: true, detail: "running" }],
+    });
+    vi.mocked(toolsFetch).mockResolvedValue({
+      ok: true,
+      detail: "tools-fetch: done installed=2 skipped=0 total=2",
+    });
+
+    const out = await run("kit", "recreate");
+    expect(out.ok).toBe(true);
+    expect(out.detail).toMatch(/reloaded/);
+    expect(restart).toHaveBeenCalledWith({ t: 5 });
   });
 
   it("starts and stops an attached container", async () => {

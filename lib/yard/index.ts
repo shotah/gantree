@@ -7,17 +7,17 @@ export {
   suggestBotIdentity,
 } from "./host/telegram";
 export { craneTelegramAuth, saveGantryAllowlist, telegramSnapshot } from "./crane/telegram";
-export { kickAuth, exchangeAuth, waitAuth, toolsFetch } from "./tools/auth";
+export { kickAuth, exchangeAuth, waitAuth, toolsFetch, fetchNeedsReload } from "./tools/auth";
 export { CRANE_CORE_KEYS, LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog, parseHostManifest, secretKeysForGrant } from "./tools/catalog";
 export { doctor } from "./crane/doctor";
 export { craneUser, hostUserSpec, inspectByName, pullImage, containerLogsBuffer, containerLogsFollow, dockerErrorMessage } from "./host/docker";
 export { parseMcpToml, readText, writeText } from "./host/files";
-export { grant, revoke } from "./tools/grant";
+export { grant, revoke, enrichDownloadUrls } from "./tools/grant";
 export { getGantry, listYard } from "./crane/inventory";
 export { decodeDockerLogs, groupLogsByTurn, parseLogLine, parseLogText } from "./host/logs";
 export { craneNags, mcpHint, mcpSnapshot } from "./tools/mcp";
 export { buildCrane, writeCraneFiles } from "./crane/build";
-export { run, waitUntilDoctorSettled } from "./crane/run";
+export { run, waitUntilDoctorSettled, fetchBinsAndReload } from "./crane/run";
 export {
   bucketsForWindow,
   combineSpend,
