@@ -4,7 +4,7 @@ import { dirBytes } from "../host/disk";
 import { decodeDockerLogs, parseLogText, turnFromLog } from "../host/logs";
 import { mcpSnapshot } from "../tools/mcp";
 import type { McpSample, StatSample, TurnSample, UptimeSample, YardSpend } from "../types";
-import { persistHost, persistMcp, persistTurn, persistUptime, recallSamples } from "./memory";
+import { dropCraneSamples, persistHost, persistMcp, persistTurn, persistUptime, recallSamples } from "./memory";
 import { combineSpend, filterSamples, rollupTurns } from "./spend";
 import { clearMachineRing, rememberedCraneNames, sampleMachine } from "./machine";
 
@@ -96,6 +96,18 @@ export function clearObserveRings(): void {
   diskAt.clear();
   diskVal.clear();
   clearMachineRing();
+}
+
+/** Drop live rings and sqlite samples for a destroyed crane. */
+export function forgetCrane(slug: string): void {
+  hostRing.delete(slug);
+  turnRing.delete(slug);
+  mcpRing.delete(slug);
+  uptimeRing.delete(slug);
+  hydrated.delete(slug);
+  diskAt.delete(slug);
+  diskVal.delete(slug);
+  dropCraneSamples(slug);
 }
 
 export async function sampleHost(slug: string): Promise<StatSample[]> {

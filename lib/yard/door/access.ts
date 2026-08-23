@@ -6,7 +6,7 @@ export const OPERATOR_ROLES = ["admin", "user", "readonly"] as const;
 
 export const ROLE_BLURB: Record<OperatorRole, string> = {
   admin: "full access — every crane, operators, build",
-  user: "assigned cranes — card and details; grant, recreate, env",
+  user: "assigned cranes — card and details; grant, recreate, env, destroy",
   readonly: "assigned cranes — look; not touch",
 };
 

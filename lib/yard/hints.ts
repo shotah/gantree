@@ -65,7 +65,7 @@ export const HINTS = {
     hint: "Type the same passphrase again. Mismatch refuses the save.",
   },
   operatorRole: {
-    hint: "admin = whole yard (build, operators, every crane). user = assigned cranes, can grant/recreate/env. readonly = look only.",
+    hint: "admin = whole yard (build, operators, every crane). user = assigned cranes, can grant/recreate/env/destroy. readonly = look only.",
     example: "user",
   },
   operatorCranes: {
@@ -139,6 +139,12 @@ export const HINTS = {
   envRecreate: {
     hint: "The file is on disk. The running container still has the old environment. Recreate this crane — restart will not pick up the new values.",
   },
+  destroyCrane: {
+    hint: "Stops and removes the Docker container, then drops this crane from the yard. Assigned operators lose the slug. Files stay unless you check below.",
+  },
+  destroyFiles: {
+    hint: "Deletes gantries/<slug>/ — persona, data, .env, mcp.toml. Unchecked keeps the folder so a later build can reuse it.",
+  },
 } as const satisfies Record<string, HintCopy>;
 
 const ENV_HINTS: Record<string, HintCopy> = {
@@ -182,6 +188,34 @@ const ENV_HINTS: Record<string, HintCopy> = {
   GOOGLE_API_KEY: {
     hint: "Alternate Google AI Studio key name. google-search accepts this instead of GEMINI_API_KEY.",
     example: "AIzaSy…",
+  },
+  USER_GOOGLE_EMAIL: {
+    hint: "Default Google account for workspace tools (Gmail, Calendar, Drive). Not required for google-search. Not a password, not the AI Studio key.",
+    example: "you@gmail.com",
+  },
+  GOOGLE_PSE_API_KEY: {
+    hint: "Programmable Search Engine key for google__search_query. Not GEMINI_API_KEY. General web search uses google-search instead.",
+    example: "AIzaSy…",
+  },
+  GOOGLE_PSE_ENGINE_ID: {
+    hint: "Programmable Search Engine cx id that pairs with GOOGLE_PSE_API_KEY.",
+    example: "012345678901234567890:abcdefghijk",
+  },
+  GEMINI_MODEL: {
+    hint: "Optional Gemini model id for google-search. Blank uses the MCP default.",
+    example: "gemini-3.1-pro-preview",
+  },
+  GOOGLE_GENAI_USE_VERTEXAI: {
+    hint: "Set true to send google-search through Vertex AI instead of AI Studio. Then GOOGLE_CLOUD_PROJECT is required.",
+    example: "true",
+  },
+  GOOGLE_CLOUD_PROJECT: {
+    hint: "GCP project id for google-search on Vertex. Required when GOOGLE_GENAI_USE_VERTEXAI is on. Not an API key.",
+    example: "my-gcp-project",
+  },
+  GOOGLE_CLOUD_LOCATION: {
+    hint: "Vertex region for google-search. Blank defaults to global.",
+    example: "global",
   },
   GOOGLE_MAPS_API_KEY: {
     hint: "Google Cloud Maps / Places key. Enable the APIs the maps MCP lists, then restrict the key.",

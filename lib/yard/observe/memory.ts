@@ -312,6 +312,17 @@ export function pruneByObservePrefs(): void {
   }
 }
 
+export function dropCraneSamples(slug: string): void {
+  try {
+    const db = yardDb();
+    for (const table of ["sample_host", "sample_turn", "sample_mcp", "sample_uptime"] as const) {
+      db.prepare(`DELETE FROM ${table} WHERE slug = ?`).run(slug);
+    }
+  } catch {
+    /* gone is gone */
+  }
+}
+
 function prune(db: ReturnType<typeof yardDb>, table: string, slug: string, cap: number, retainMs = hostRetainMs()): void {
   const cutoff = Date.now() - retainMs;
   db.prepare(`DELETE FROM ${table} WHERE slug = ? AND at < ?`).run(slug, cutoff);

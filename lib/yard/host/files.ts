@@ -55,6 +55,20 @@ export function upsertTomlGantry(row: TomlGantry, yard = "home"): void {
   saveGantreeToml(doc);
 }
 
+export function removeTomlGantry(slug: string): boolean {
+  const doc = loadGantreeToml();
+  if (!doc?.gantry?.length) {
+    return false;
+  }
+  const next = doc.gantry.filter((g) => g.slug !== slug);
+  if (next.length === doc.gantry.length) {
+    return false;
+  }
+  doc.gantry = next;
+  saveGantreeToml(doc);
+  return true;
+}
+
 export function envKeyNames(envFile: string | null): { keys: string[]; valuesPresent: Record<string, boolean> } {
   const valuesPresent: Record<string, boolean> = {};
   if (!envFile || !existsSync(envFile)) {

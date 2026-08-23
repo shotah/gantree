@@ -26,10 +26,11 @@ import { closeYardDb } from "@/lib/yard/door/store";
 import {
   persistHost,
   persistMcp,
-  persistTurn,
-  persistUptime,
-  recallSamples,
-  RETAIN_MS,
+    persistTurn,
+    persistUptime,
+    recallSamples,
+    dropCraneSamples,
+    RETAIN_MS,
   TURN_RETAIN_MS,
 } from "@/lib/yard/observe/memory";
 import { clearObserveRings, peekTurns, sampleTurns } from "@/lib/yard/observe/stats";
@@ -195,5 +196,46 @@ describe("yard memory", () => {
     expect(jules.turns.map((t) => t.key)).toEqual(["turn-jules"]);
     expect(jules.host).toHaveLength(1);
     expect(kit.host).toEqual([]);
+  });
+
+  it("drops one crane's samples and leaves another", () => {
+    const now = Date.now();
+    persistTurn("kit", {
+      at: now,
+      key: "turn-kit",
+      rounds: 1,
+      recoveries: 0,
+      estTokens: 10,
+      promptEstTokens: 8,
+      genEstTokens: 2,
+      source: "user",
+      userId: null,
+      sessionId: null,
+      outcome: "ok",
+    });
+    persistHost("kit", { at: now, cpuPercent: 1, memBytes: 1, memLimitBytes: 2 });
+    persistMcp("kit", { at: now, published: 1, skipped: 0 });
+    persistUptime("kit", { at: now, uptimeSeconds: 10, restartCount: 0 });
+    persistTurn("jules", {
+      at: now,
+      key: "turn-jules",
+      rounds: 1,
+      recoveries: 0,
+      estTokens: 4,
+      promptEstTokens: 3,
+      genEstTokens: 1,
+      source: null,
+      userId: null,
+      sessionId: null,
+      outcome: "ok",
+    });
+    dropCraneSamples("kit");
+    const kit = recallSamples("kit", { host: 720, turns: 400, mcp: 200, uptime: 720 });
+    const jules = recallSamples("jules", { host: 720, turns: 400, mcp: 200, uptime: 720 });
+    expect(kit.turns).toEqual([]);
+    expect(kit.host).toEqual([]);
+    expect(kit.mcp).toEqual([]);
+    expect(kit.uptime).toEqual([]);
+    expect(jules.turns.map((t) => t.key)).toEqual(["turn-jules"]);
   });
 });

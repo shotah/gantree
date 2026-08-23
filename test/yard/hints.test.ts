@@ -18,4 +18,20 @@ describe("envHint", () => {
     expect(envHint("GOOGLE_MAPS_API_KEY").hint).toMatch(/Maps/);
     expect(envHint("RENTCAST_API_KEY").hint).toMatch(/RentCast/);
   });
+
+  it("names USER_GOOGLE_EMAIL as the workspace account, not google-search", () => {
+    expect(envHint("USER_GOOGLE_EMAIL").hint).toMatch(/workspace/i);
+    expect(envHint("USER_GOOGLE_EMAIL").hint).toMatch(/not required for google-search/i);
+    expect(envHint("USER_GOOGLE_EMAIL").example).toMatch(/@/);
+    expect(envHint("GOOGLE_PSE_API_KEY").hint).toMatch(/search_query/);
+  });
+
+  it("names google-search Vertex and model params", () => {
+    expect(envHint("GEMINI_API_KEY").hint).toMatch(/google-search/);
+    expect(envHint("GOOGLE_API_KEY").hint).toMatch(/GEMINI_API_KEY/);
+    expect(envHint("GEMINI_MODEL").hint).toMatch(/model/);
+    expect(envHint("GOOGLE_GENAI_USE_VERTEXAI").hint).toMatch(/Vertex/);
+    expect(envHint("GOOGLE_CLOUD_PROJECT").hint).toMatch(/GOOGLE_GENAI_USE_VERTEXAI/);
+    expect(envHint("GOOGLE_CLOUD_LOCATION").hint).toMatch(/global/i);
+  });
 });

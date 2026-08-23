@@ -8,6 +8,7 @@ import {
   parseMcpToml,
   stringifyMcpToml,
   upsertTomlGantry,
+  removeTomlGantry,
   writeText,
 } from "@/lib/yard/host/files";
 
@@ -61,6 +62,20 @@ describe("inventory toml", () => {
     expect(doc?.yard).toBe("home");
     expect(doc?.gantry?.map((g) => g.slug)).toEqual(["kit", "tryout"]);
     expect(doc?.gantry?.[0]?.data_dir).toContain("kit");
+  });
+
+  it("drops one slug and leaves the rest", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    process.env.GANTREE_TOML = join(root, "gantree.toml");
+    upsertTomlGantry({ slug: "kit" });
+    upsertTomlGantry({ slug: "tryout" });
+    expect(removeTomlGantry("kit")).toBe(true);
+    expect(loadGantreeToml()?.gantry?.map((g) => g.slug)).toEqual(["tryout"]);
+    expect(removeTomlGantry("kit")).toBe(false);
+    expect(removeTomlGantry("tryout")).toBe(true);
+    expect(loadGantreeToml()?.gantry).toEqual([]);
   });
 });
 

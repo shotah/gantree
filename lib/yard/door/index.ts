@@ -34,6 +34,7 @@ export {
   sessionCookieHeader,
   setOperatorAccess,
   setupOperator,
+  unassignCrane,
   updateOwnProfile,
   withDevSessionCookie,
   withDoor,

@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CatalogEntry } from "../types";
 import { yardRoot } from "../host/files";
-import { PACKAGES, fallbackEntry, parseHostManifest, type PackageRef } from "./packages";
+import { PACKAGES, fallbackEntry, parseHostManifest, uniqueKeys, type PackageRef } from "./packages";
 import { HOST_SHAPE } from "./shape";
 
 export {
@@ -93,12 +93,15 @@ function tryRepoManifestJson(repoDir: string): CatalogEntry | null {
 function withShape(pkg: PackageRef, live: CatalogEntry | null): CatalogEntry {
   const known = HOST_SHAPE[pkg.name];
   const base = live ?? fallbackEntry(pkg);
+  const optionalEnvKeys = uniqueKeys([...(base.optionalEnvKeys ?? []), ...(known?.optionalEnvKeys ?? [])]);
   const merged: CatalogEntry = known
     ? {
         ...known,
         ...base,
-        envKeys: base.envKeys.length ? base.envKeys : known.envKeys,
-        optionalEnvKeys: base.optionalEnvKeys?.length ? base.optionalEnvKeys : known.optionalEnvKeys,
+        // Last-known keys stay listed so Secrets can expose a newly required var
+        // before the installed binary's host-manifest catches up.
+        envKeys: uniqueKeys([...base.envKeys, ...known.envKeys]),
+        ...(optionalEnvKeys.length ? { optionalEnvKeys } : { optionalEnvKeys: undefined }),
         blurb: base.blurb || known.blurb,
         args: base.args ?? known.args,
         auth_args: base.auth_args ?? known.auth_args,

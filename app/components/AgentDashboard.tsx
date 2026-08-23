@@ -88,6 +88,8 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [secretDraft, setSecretDraft] = useState<Record<string, string>>({});
   const [confirmToken, setConfirmToken] = useState(false);
   const [envRecreateOpen, setEnvRecreateOpen] = useState(false);
+  const [destroyOpen, setDestroyOpen] = useState(false);
+  const [destroyFiles, setDestroyFiles] = useState(false);
   const [authFor, setAuthFor] = useState<string | null>(null);
   const [authDetail, setAuthDetail] = useState<string | null>(null);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
@@ -156,6 +158,22 @@ export function AgentDashboard({ slug }: { slug: string }) {
   useEffect(() => {
     setNow(Date.now());
   }, [spendWindow]);
+
+  async function destroy() {
+    setBusy(true);
+    const res = await yardFetch(`/api/gantries/${slug}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ removeFiles: destroyFiles }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; detail?: string; error?: string };
+    if (!res.ok) {
+      setNotice(data.detail || data.error || "could not destroy");
+      setBusy(false);
+      return;
+    }
+    window.location.replace("/");
+  }
 
   async function act(action: string) {
     setBusy(true);
@@ -366,6 +384,17 @@ export function AgentDashboard({ slug }: { slug: string }) {
                 {a}
               </button>
             ))}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setDestroyFiles(false);
+                setDestroyOpen(true);
+              }}
+              className="rounded border border-red-900/70 px-3 py-1.5 text-xs capitalize text-red-200 hover:border-red-600 disabled:opacity-50 max-sm:text-sm"
+            >
+              destroy
+            </button>
           </div>
         ) : null}
       </div>
@@ -775,6 +804,45 @@ export function AgentDashboard({ slug }: { slug: string }) {
         </div>
       </DashFold>
 
+      {destroyOpen ? (
+        <YardModal
+          title={`Destroy ${slug}`}
+          onClose={() => setDestroyOpen(false)}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setDestroyOpen(false)}
+                className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-zinc-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void destroy()}
+                className="rounded border border-red-900/70 bg-red-950/40 px-3 py-1.5 text-xs text-red-200 hover:border-red-600 disabled:opacity-50"
+              >
+                Destroy
+              </button>
+            </>
+          }
+        >
+          <p>{HINTS.destroyCrane.hint}</p>
+          <label className="mt-3 flex items-start gap-2 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={destroyFiles}
+              onChange={(e) => setDestroyFiles(e.target.checked)}
+            />
+            <span>
+              Also delete files
+              <span className="mt-0.5 block text-xs text-zinc-500">{HINTS.destroyFiles.hint}</span>
+            </span>
+          </label>
+        </YardModal>
+      ) : null}
       {envRecreateOpen ? (
         <YardModal
           title="Recreate to apply .env"

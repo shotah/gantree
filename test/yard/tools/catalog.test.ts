@@ -77,13 +77,20 @@ describe("loadCatalog", () => {
     const byName = Object.fromEntries(loadCatalog().map((c) => [c.name, c]));
     expect(byName.maps?.envKeys).toEqual(["GOOGLE_MAPS_API_KEY"]);
     expect(byName.google?.envKeys).toEqual(["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"]);
-    expect(byName.google?.optionalEnvKeys).toBeUndefined();
+    expect(byName.google?.optionalEnvKeys).toEqual(["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]);
     expect(byName.google?.auth_args).toEqual(["auth"]);
     expect(byName.garmin?.envKeys).toEqual(["GARMIN_EMAIL", "GARMIN_PASSWORD"]);
     expect(byName.flights?.envKeys).toEqual(["SERPAPI_API_KEY"]);
     expect(byName.math?.envKeys).toEqual([]);
     expect(byName["google-search"]?.envKeys).toEqual(["GEMINI_API_KEY"]);
-    expect(byName["google-search"]?.optionalEnvKeys).toEqual(["GOOGLE_API_KEY"]);
+    expect(byName["google-search"]?.envKeys).not.toContain("USER_GOOGLE_EMAIL");
+    expect(byName["google-search"]?.optionalEnvKeys).toEqual([
+      "GOOGLE_API_KEY",
+      "GEMINI_MODEL",
+      "GOOGLE_GENAI_USE_VERTEXAI",
+      "GOOGLE_CLOUD_PROJECT",
+      "GOOGLE_CLOUD_LOCATION",
+    ]);
   });
 });
 
@@ -102,6 +109,19 @@ describe("secretKeysForGrant", () => {
     const keys = secretKeysForGrant(["rentals"], sample, [{ name: "rentals", env_keys: ["RENTCAST_API_KEY"] }]);
     expect(keys).toContain("RENTCAST_API_KEY");
     expect(keys).not.toContain("GOOGLE_MAPS_API_KEY");
+  });
+
+  it("lists USER_GOOGLE_EMAIL on google workspace, not google-search", () => {
+    const catalog = loadCatalog();
+    const search = catalog.filter((c) => c.name === "google-search");
+    const google = catalog.filter((c) => c.name === "google");
+    expect(secretKeysForGrant(["google-search"], search)).not.toContain("USER_GOOGLE_EMAIL");
+    expect(envKeysForServer({ name: "google-search" }, search)).toEqual(["GEMINI_API_KEY"]);
+    expect(secretKeysForGrant(["google"], google)).toEqual(expect.arrayContaining(["USER_GOOGLE_EMAIL"]));
+    expect(optionalKeysForGrant(["google"], google)).toEqual(
+      expect.arrayContaining(["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]),
+    );
+    expect(envKeysForServer({ name: "google" }, google)).not.toContain("USER_GOOGLE_EMAIL");
   });
 
   it("includes optional catalog keys in Secrets but not skip/doctor", () => {

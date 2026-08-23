@@ -129,7 +129,7 @@ export function serverFromCatalog(cat: CatalogEntry): McpServer {
   };
 }
 
-function uniqueKeys(keys: string[]): string[] {
+export function uniqueKeys(keys: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const k of keys) {

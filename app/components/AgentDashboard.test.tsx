@@ -46,6 +46,7 @@ function json(data: unknown, status = 200): Promise<Response> {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.unstubAllGlobals();
   vi.mocked(useDoor).mockReturnValue({ ready: true, operator: null });
 });
 
@@ -124,6 +125,9 @@ function mockCrane(
     }
     if (u.includes("/grant")) {
       return json({ catalog: disk.catalog ?? [] });
+    }
+    if (u === "/api/gantries/noodles" && init?.method === "DELETE") {
+      return json({ ok: true, detail: "destroyed noodles", slug: "noodles" });
     }
     if (u === "/api/gantries/noodles") {
       return json(card({ slug: "noodles", channel: "stdio", canMutate, personaDir: "/tmp/persona" }));
@@ -339,6 +343,31 @@ describe("AgentDashboard secrets", () => {
     expect(screen.getByRole("button", { name: /3 need a key/ })).toBeTruthy();
   });
 
+  it("lists USER_GOOGLE_EMAIL for granted google-search so .env can set it", async () => {
+    mockCrane({
+      persona: "# you\n",
+      self: "# me\n",
+      writable: true,
+      servers: [{ name: "google-search", command: "mcp-gemini-google-search", env_keys: ["GEMINI_API_KEY"] }],
+      catalog: [
+        {
+          name: "google-search",
+          command: "mcp-gemini-google-search",
+          envKeys: ["GEMINI_API_KEY", "USER_GOOGLE_EMAIL"],
+          optionalEnvKeys: ["GOOGLE_API_KEY"],
+          blurb: "Search.",
+        },
+      ],
+    });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
+    await waitFor(() => expect(screen.getByLabelText("USER_GOOGLE_EMAIL")).toBeTruthy());
+    expect(screen.getByLabelText("GEMINI_API_KEY")).toBeTruthy();
+    expect(screen.getByLabelText("GOOGLE_API_KEY")).toBeTruthy();
+    expect((screen.getByLabelText("USER_GOOGLE_EMAIL") as HTMLInputElement).placeholder).toBe("");
+  });
+
   it("lists optional catalog keys without nagging for them", async () => {
     mockCrane({
       persona: "# you\n",
@@ -502,5 +531,63 @@ describe("AgentDashboard secrets", () => {
       ).toBe(true),
     );
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
+describe("AgentDashboard destroy", () => {
+  it("hides destroy when the crane is read-only", async () => {
+    vi.mocked(useDoor).mockReturnValue(readonlyDoor);
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: false }, false);
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    expect(screen.queryByRole("button", { name: "destroy" })).toBeNull();
+  });
+
+  it("lets a user destroy their crane without deleting files", async () => {
+    vi.mocked(useDoor).mockReturnValue(userDoor);
+    const replace = vi.fn();
+    vi.stubGlobal("location", { replace });
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "destroy" }));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "Destroy noodles" })).toBeTruthy());
+    expect(screen.getByRole("checkbox", { name: /Also delete files/ })).toHaveProperty("checked", false);
+    fireEvent.click(screen.getByRole("button", { name: "Destroy" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some(
+          (c) =>
+            String(c[0]) === "/api/gantries/noodles" &&
+            c[1]?.method === "DELETE" &&
+            String(c[1]?.body ?? "").includes('"removeFiles":false'),
+        ),
+      ).toBe(true),
+    );
+    expect(replace).toHaveBeenCalledWith("/");
+    vi.unstubAllGlobals();
+  });
+
+  it("sends removeFiles when the checkbox is on", async () => {
+    vi.mocked(useDoor).mockReturnValue(adminDoor);
+    const replace = vi.fn();
+    vi.stubGlobal("location", { replace });
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "destroy" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Also delete files/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Destroy" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some(
+          (c) =>
+            String(c[0]) === "/api/gantries/noodles" &&
+            c[1]?.method === "DELETE" &&
+            String(c[1]?.body ?? "").includes('"removeFiles":true'),
+        ),
+      ).toBe(true),
+    );
+    vi.unstubAllGlobals();
   });
 });

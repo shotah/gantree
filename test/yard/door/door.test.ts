@@ -27,6 +27,7 @@ import {
   sessionCookieHeader,
   setOperatorAccess,
   setupOperator,
+  unassignCrane,
   updateOwnProfile,
   withDevSessionCookie,
   withDoor,
@@ -616,6 +617,26 @@ describe("roles", () => {
     expect(listed.status).toBe(200);
     const body = (await listed.json()) as { events: { slug: string | null }[] };
     expect(body.events.map((e) => e.slug).sort()).toEqual(["kit", "tryout"]);
+  });
+
+  it("unassigns a destroyed slug and allows an empty crane list", () => {
+    const first = setupOperator("kit", pass);
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    const pair = addOperator("ada", pass, "user", ["kit", "tryout"]);
+    const look = addOperator("look", pass, "readonly", "kit");
+    expect(pair.ok && look.ok).toBe(true);
+    if (!pair.ok || !look.ok) {
+      return;
+    }
+    expect(unassignCrane("kit")).toBe(2);
+    expect(getOperator(pair.operator.id)?.cranes).toEqual(["tryout"]);
+    expect(getOperator(look.operator.id)?.cranes).toEqual([]);
+    expect(unassignCrane("tryout")).toBe(1);
+    expect(getOperator(pair.operator.id)?.cranes).toEqual([]);
+    expect(unassignCrane("kit")).toBe(0);
   });
 
   it("refuses to demote or delete the last admin, and profile cannot self-promote", () => {

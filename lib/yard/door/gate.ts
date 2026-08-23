@@ -457,6 +457,20 @@ export function setOperatorAccess(
   return { ok: true, operator: next };
 }
 
+/** Drop a destroyed slug from every user/readonly assignment. Empty lists are allowed. */
+export function unassignCrane(slug: string): number {
+  let n = 0;
+  for (const op of listOperators()) {
+    if (op.role === "admin" || !op.cranes.includes(slug)) {
+      continue;
+    }
+    const next = op.cranes.filter((c) => c !== slug);
+    yardDb().prepare("UPDATE operator SET crane_slug = ? WHERE id = ?").run(serializeCranes(next), op.id);
+    n += 1;
+  }
+  return n;
+}
+
 function adminCount(): number {
   const row = yardDb().prepare("SELECT COUNT(*) AS n FROM operator WHERE role = 'admin'").get() as { n: number } | undefined;
   return Number(row?.n ?? 0);
