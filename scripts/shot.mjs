@@ -37,7 +37,7 @@ const SHOTS = {
   "phone-preview": {
     path: "/?phone=1",
     sel: "[data-shot=phone-preview]",
-    text: "390px phone",
+    text: "390×844",
     waitIframe: "[data-shot=yard]",
     waitMs: 2500,
   },

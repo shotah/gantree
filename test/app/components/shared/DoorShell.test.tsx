@@ -87,5 +87,22 @@ describe("DoorShell phone preview", () => {
     await waitFor(() => expect(document.querySelector("[data-shot=phone-preview]")).toBeTruthy());
     expect(screen.queryByText("board")).toBeNull();
     expect(screen.getByTitle("phone preview")).toBeTruthy();
+    expect(screen.getByLabelText("phone size")).toBeTruthy();
+    expect(screen.getByText("390×844")).toBeTruthy();
+    expect(screen.getByTitle("phone preview").getAttribute("style")).toMatch(/width: 390px/);
+  });
+
+  it("sizes the frame from ?phone=iphone-max", async () => {
+    stubDoor(true);
+    vi.mocked(useSearchParams).mockReturnValue(search("phone=iphone-max"));
+    render(
+      <DoorShell>
+        <p>board</p>
+      </DoorShell>,
+    );
+    await waitFor(() => expect(document.querySelector("[data-shot=phone-preview]")).toBeTruthy());
+    expect(screen.getByDisplayValue("iPhone Max")).toBeTruthy();
+    expect(screen.getByText("430×932")).toBeTruthy();
+    expect(screen.getByTitle("phone preview").getAttribute("style")).toMatch(/width: 430px/);
   });
 });

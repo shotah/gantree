@@ -6,7 +6,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { OperatorRole } from "@/lib/yard/door/channels";
 import { OperatorAvatar } from "./OperatorAvatar";
 import { GantreeMark } from "./GantreeMark";
-import { phoneFrameSrc } from "@/app/lib/phonePreview";
+import { PHONE_PRESETS, phoneFrameSrc, phonePreset, phonePreviewHref } from "@/app/lib/phonePreview";
 
 export type DoorOperator = {
   id: string;
@@ -98,10 +98,30 @@ export function DoorShell({ children }: { children: ReactNode }) {
   const label = you ? you.displayName || you.name : "";
 
   if (phone.on) {
+    const size = phone.preset;
     return (
       <div data-shot="phone-preview" className="flex min-h-screen flex-col items-center bg-zinc-950 px-3 py-3">
         <p className="mb-2 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-500">
-          <span>390px phone</span>
+          <label className="flex items-center gap-2">
+            <span className="sr-only">phone size</span>
+            <select
+              aria-label="phone size"
+              className="rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 text-sm text-zinc-300"
+              value={size.id}
+              onChange={(e) => {
+                window.location.replace(phonePreviewHref(path, searchParams.toString(), phonePreset(e.target.value).id));
+              }}
+            >
+              {PHONE_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span>
+            {size.width}×{size.height}
+          </span>
           <Link href={phone.src} className="text-amber-200 hover:text-amber-100">
             exit
           </Link>
@@ -109,8 +129,11 @@ export function DoorShell({ children }: { children: ReactNode }) {
         <iframe
           title="phone preview"
           src={phone.src}
-          className="w-[390px] max-w-full rounded-[1.25rem] border border-zinc-700 bg-zinc-950 shadow-xl"
-          style={{ height: "min(844px, calc(100dvh - 3.5rem))" }}
+          className="max-w-full rounded-[1.25rem] border border-zinc-700 bg-zinc-950 shadow-xl"
+          style={{
+            width: size.width,
+            height: `min(${size.height}px, calc(100dvh - 3.5rem))`,
+          }}
         />
       </div>
     );
@@ -132,7 +155,7 @@ export function DoorShell({ children }: { children: ReactNode }) {
                     href={`${path}?phone=1`}
                     className="hidden text-zinc-400 hover:text-amber-200 sm:inline-flex"
                     aria-label="phone preview"
-                    title="phone preview — 390px, no DevTools"
+                    title="phone preview — device frame, no DevTools"
                   >
                     <PhoneIcon />
                   </Link>
