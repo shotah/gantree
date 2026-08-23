@@ -17,7 +17,7 @@
 >
 > **gantree** *(n.)* — the shipping yard those cranes live in.
 
-You opened the yard repo. **The product is the runner.**
+You opened the yard repo. **The product is a long-horizon AI harness.**
 
 <p align="center">
   <img src="assets/login.png" alt="Log in — the door to the yard, not the chat" width="400">
@@ -33,18 +33,23 @@ You opened the yard repo. **The product is the runner.**
 
 ---
 
-## The case for the runner
+## The case for this harness
+
+The industry name is **AI harness**. The goal is **long-horizon
+planning**: hold aims, personality, and work across days — not a
+chatbot that dies when the context window gets expensive.
 
 Most “personal agents” are a chatbot with a plugin list. They feel like
 someone after a long thread, then `/new` lobotomizes them. A small local
 model misspells a tool name and the chain dies. A dashboard or a gateway
 sits in the token path, so every message pays a platform tax.
 
-**[ai-gantry](https://github.com/shotah/ai-gantry)** spends the engineering
-budget on the thing you actually talk to. One Distroless Go process. One
-persona. One OpenAI-compat model — Ollama, Gemini, ChatGPT, Grok. Chat
-dials *out* (Telegram, Discord, Slack). Tools if you grant them. Memory
-you can `sqlite3`. Aims that still exist on Thursday.
+**[ai-gantry](https://github.com/shotah/ai-gantry)** is that harness. It
+spends the engineering budget on the thing you actually talk to. One
+Distroless Go process. One persona. One OpenAI-compat model — Ollama,
+Gemini, ChatGPT, Grok. Chat dials *out* (Telegram, Discord, Slack).
+Tools if you grant them. Memory you can `sqlite3`. Aims that still exist
+on Thursday.
 
 ```text
 static binary + persona + mcp.toml + any OpenAI-compat LLM  →  outbound chat
@@ -65,11 +70,11 @@ GCP. Same family of model; this loop is the difference.
 The loop itself was hardened on **Gemma 12B** (and the 7–12B class):
 typos, printed JSON, think-stalls. Quality was there. On a memory-bound
 Mini it was too slow to live with — that is RAM and prefill, not a
-missing repair. Point the runner at Ollama when the box can feed it;
+missing repair. Point the harness at Ollama when the box can feed it;
 Flash when you want the trajectory now.
 
 This repository is the board that appears when you run more than one of
-those. It is a by-product. If a chart would make the runner slower, the
+those. It is a by-product. If a chart would make the harness slower, the
 chart is wrong.
 
 One crane, no yard: `docker compose up` in
@@ -144,7 +149,7 @@ browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
 ```
 
 The yard is allowed to be a bit meh. It is JS, in a browser, for an
-operator who clicks a few named pets. The runner is not.
+operator who clicks a few named pets. The harness is not.
 
 If you need a team inbox, a multi-agent router, or “ChatGPT for work” on
 day one, this is the wrong stack — and that’s fine.
@@ -155,7 +160,7 @@ day one, this is the wrong stack — and that’s fine.
 
 | If you want… | Go here |
 | --- | --- |
-| The runner | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
+| The harness | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
 | One crane, Docker hello | **[deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)** |
 | The board, grants, avatars | **[docs/console.md](docs/console.md)** |
 | Login, profile, settings | **[docs/operators.md](docs/operators.md)** |
