@@ -248,4 +248,12 @@ describe("hostBindPath", () => {
     delete process.env.GANTREE_HOST_ROOT;
     expect(hostBindPath("/app/gantries/kit/mcp.toml")).toBe("/app/gantries/kit/mcp.toml");
   });
+
+  it("resolves relative inventory paths against the yard, not process cwd", () => {
+    process.env.GANTREE_ROOT = "/app";
+    delete process.env.GANTREE_HOST_ROOT;
+    expect(hostBindPath("./gantries/kit/data")).toBe("/app/gantries/kit/data");
+    process.env.GANTREE_HOST_ROOT = "/opt/gantree";
+    expect(hostBindPath("./gantries/kit/mcp.toml")).toBe("/opt/gantree/gantries/kit/mcp.toml");
+  });
 });

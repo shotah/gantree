@@ -6,20 +6,20 @@
 
 yard = "home"
 
-# New cranes from the UI live under ./gantries/<slug>/.
-# Existing agents: point these paths at the live dirs (absolute is fine).
+# New cranes from the UI live under gantries/<slug>/ with absolute paths.
+# Existing agents: point these paths at the live dirs (absolute).
 # Console-in-Docker: uncomment the same-path volume in compose.yml
 # (`/opt/agents:/opt/agents`) so those paths exist in the console.
 # See docs/headless.md. container must match `docker ps`.
 #
-# Built from the UI (./gantries is already mounted):
+# Built from the UI (absolute paths under the yard):
 # [[gantry]]
 # slug = "kit"
 # container = "kit"
-# data_dir = "./gantries/kit/data"
-# persona_dir = "./gantries/kit/persona"
-# mcp_manifest = "./gantries/kit/mcp.toml"
-# env_file = "./gantries/kit/.env"
+# data_dir = "/abs/yard/gantries/kit/data"
+# persona_dir = "/abs/yard/gantries/kit/persona"
+# mcp_manifest = "/abs/yard/gantries/kit/mcp.toml"
+# env_file = "/abs/yard/gantries/kit/.env"
 #
 # Attach an existing tree (needs the compose.yml volume above):
 # [[gantry]]

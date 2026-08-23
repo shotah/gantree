@@ -101,10 +101,10 @@ export function writeCraneFiles(input: BuildInput): {
     {
       slug,
       container: slug,
-      data_dir: `./gantries/${slug}/data`,
-      persona_dir: `./gantries/${slug}/persona`,
-      mcp_manifest: `./gantries/${slug}/mcp.toml`,
-      env_file: `./gantries/${slug}/.env`,
+      data_dir: dataDir,
+      persona_dir: personaDir,
+      mcp_manifest: mcpManifest,
+      env_file: envFile,
     },
     yard,
   );

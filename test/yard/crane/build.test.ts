@@ -19,6 +19,7 @@ vi.mock("@/lib/yard/tools/catalog", async (importOriginal) => {
 });
 
 import { buildCrane, dropStaleDoctorSnapshot, writeCraneFiles } from "@/lib/yard/crane/build";
+import { loadGantreeToml } from "@/lib/yard/host/files";
 import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
 const dirs: string[] = [];
@@ -52,6 +53,16 @@ describe("writeCraneFiles", () => {
     expect(readFileSync(out.mcpManifest, "utf8")).not.toMatch(/zchee/);
     expect(readFileSync(out.envFile, "utf8")).toContain("CHANNEL=stdio");
     expect(readFileSync(join(root, "gantree.toml"), "utf8")).toContain("slug = \"kit\"");
+    const inventory = loadGantreeToml()?.gantry?.[0];
+    expect(inventory).toMatchObject({
+      slug: "kit",
+      data_dir: out.dataDir,
+      persona_dir: out.personaDir,
+      mcp_manifest: out.mcpManifest,
+      env_file: out.envFile,
+    });
+    expect(inventory?.data_dir?.startsWith(root)).toBe(true);
+    expect(inventory?.data_dir).not.toMatch(/^\.\//);
     const compose = readFileSync(join(out.dir, "compose.yml"), "utf8");
     expect(compose).toContain("HOME: /data");
     expect(compose).toContain(`image: ${DEFAULT_IMAGE}`);
@@ -123,6 +134,7 @@ describe("writeCraneFiles", () => {
     writeCraneFiles({ slug: "kit", persona: "# rebuilt\n" });
     expect(readFileSync(join(first.personaDir, "PERSONA.md"), "utf8")).toBe("# kit\n\nA long-horizon personal agent.\n");
     expect(readFileSync(join(first.personaDir, "SELF.md"), "utf8")).toBe("kept by /new\n");
+    expect(loadGantreeToml()?.gantry?.[0]?.data_dir).toBe(first.dataDir);
     delete process.env.GANTREE_ROOT;
     delete process.env.GANTREE_TOML;
   });

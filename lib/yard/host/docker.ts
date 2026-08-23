@@ -133,18 +133,22 @@ export function bindDest(bind: string): string {
  * Absolute attach paths (/opt/agents/…) stay as-is — same-path mount those.
  */
 export function hostBindPath(containerPath: string): string {
-  const hostRoot = process.env.GANTREE_HOST_ROOT?.trim();
-  if (!hostRoot || !containerPath) {
+  if (!containerPath) {
     return containerPath;
   }
   const root = yardRoot();
-  const hostPrefix = hostRoot.endsWith(sep) ? hostRoot : `${hostRoot}${sep}`;
-  if (containerPath === hostRoot || containerPath.startsWith(hostPrefix)) {
-    return containerPath;
+  const fromConsole = isAbsolute(containerPath) ? containerPath : resolve(root, containerPath);
+  const hostRoot = process.env.GANTREE_HOST_ROOT?.trim();
+  if (!hostRoot) {
+    return fromConsole;
   }
-  const rel = relative(root, containerPath);
+  const hostPrefix = hostRoot.endsWith(sep) ? hostRoot : `${hostRoot}${sep}`;
+  if (fromConsole === hostRoot || fromConsole.startsWith(hostPrefix)) {
+    return fromConsole;
+  }
+  const rel = relative(root, fromConsole);
   if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
-    return containerPath;
+    return fromConsole;
   }
   return resolve(hostRoot, rel);
 }

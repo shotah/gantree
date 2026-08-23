@@ -46,7 +46,8 @@ describe("TelegramBot", () => {
     render(<TelegramBot slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />);
     await waitFor(() => expect(screen.getByText("@kit_bot")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
-    expect(screen.getByText("open on phone").getAttribute("href")).toBe("https://t.me/kit_bot");
+    const phone = await waitFor(() => screen.getByRole("link", { name: /open on phone/ }));
+    expect(phone.getAttribute("href")).toBe("https://t.me/kit_bot");
     expect(screen.getByText(/add 9/)).toBeTruthy();
     expect(screen.getByRole("button", { name: /ask 1 to tap \/new/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Put \/new in \/ menu/ })).toBeTruthy();
