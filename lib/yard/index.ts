@@ -10,7 +10,7 @@ export {
 } from "./host/telegram";
 export { askTelegramNew, craneTelegramAuth, saveGantryAllowlist, telegramSnapshot } from "./crane/telegram";
 export { kickAuth, exchangeAuth, waitAuth, toolsFetch, fetchNeedsReload } from "./tools/auth";
-export { CRANE_CORE_KEYS, LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog, parseHostManifest, secretKeysForGrant, envKeysForServer } from "./tools/catalog";
+export { CRANE_CORE_KEYS, LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog, parseHostManifest, secretKeysForGrant, optionalKeysForGrant, envKeysForServer } from "./tools/catalog";
 export { doctor } from "./crane/doctor";
 export { craneUser, hostUserSpec, inspectByName, pullImage, containerLogsBuffer, containerLogsFollow, dockerErrorMessage, findConsoleWorkload, pickConsoleWorkload } from "./host/docker";
 export { parseMcpToml, readText, writeText } from "./host/files";

@@ -14,6 +14,7 @@ export {
   PACKAGES,
   SLIM_GRANT,
   envKeysForServer,
+  optionalKeysForGrant,
   parseHostManifest,
   secretKeysForGrant,
   serverFromCatalog,
@@ -97,6 +98,7 @@ function withShape(pkg: PackageRef, live: CatalogEntry | null): CatalogEntry {
         ...known,
         ...base,
         envKeys: base.envKeys.length ? base.envKeys : known.envKeys,
+        optionalEnvKeys: base.optionalEnvKeys?.length ? base.optionalEnvKeys : known.optionalEnvKeys,
         blurb: base.blurb || known.blurb,
         args: base.args ?? known.args,
         auth_args: base.auth_args ?? known.auth_args,
@@ -107,7 +109,9 @@ function withShape(pkg: PackageRef, live: CatalogEntry | null): CatalogEntry {
   return {
     ...merged,
     download_tag: merged.download_tag || pkg.downloadTag,
-    download_url: merged.download_url || pkg.downloadUrl,
+    // Yard PACKAGES win for google-search so a leftover zchee binary cannot redirect tools-fetch.
+    download_url:
+      pkg.name === "google-search" ? pkg.downloadUrl || merged.download_url : merged.download_url || pkg.downloadUrl,
   };
 }
 

@@ -56,7 +56,7 @@ function mockCrane(
     writable: boolean;
     env?: Record<string, { set: boolean; secret: boolean; value: string }>;
     servers?: { name: string; command?: string; env_keys?: string[] }[];
-    catalog?: { name: string; command: string; envKeys: string[]; blurb: string }[];
+    catalog?: { name: string; command: string; envKeys: string[]; optionalEnvKeys?: string[]; blurb: string }[];
   },
   canMutate = true,
 ) {
@@ -337,6 +337,36 @@ describe("AgentDashboard secrets", () => {
     fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
     await waitFor(() => expect(screen.getByLabelText("GOOGLE_MAPS_API_KEY")).toBeTruthy());
     expect(screen.getByRole("button", { name: /3 need a key/ })).toBeTruthy();
+  });
+
+  it("lists optional catalog keys without nagging for them", async () => {
+    mockCrane({
+      persona: "# you\n",
+      self: "# me\n",
+      writable: true,
+      servers: [{ name: "google", command: "google-mcp", env_keys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"] }],
+      catalog: [
+        {
+          name: "google",
+          command: "google-mcp",
+          envKeys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+          optionalEnvKeys: ["USER_GOOGLE_EMAIL"],
+          blurb: "Workspace.",
+        },
+      ],
+      env: {
+        LLM_API_KEY: { set: true, secret: true, value: "" },
+        TELEGRAM_BOT_TOKEN: { set: true, secret: true, value: "" },
+        GOOGLE_OAUTH_CLIENT_ID: { set: true, secret: false, value: "id.apps.googleusercontent.com" },
+        GOOGLE_OAUTH_CLIENT_SECRET: { set: true, secret: true, value: "" },
+      },
+    });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
+    await waitFor(() => expect(screen.getByLabelText("USER_GOOGLE_EMAIL")).toBeTruthy());
+    expect((screen.getByLabelText("USER_GOOGLE_EMAIL") as HTMLInputElement).placeholder).toBe("");
+    expect(screen.queryByRole("button", { name: /need a key/ })).toBeNull();
   });
 
   it("keeps dots for an existing secret and still flags a missing one", async () => {

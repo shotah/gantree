@@ -2,15 +2,16 @@ import { getGantry } from "../crane/inventory";
 import { parseMcpToml, readText, stringifyMcpToml, writeText } from "../host/files";
 import type { CatalogEntry, McpServer } from "../types";
 import { loadCatalog } from "./catalog";
-import { serverFromCatalog } from "./packages";
+import { isGeminiSearchServer, isUpstreamGeminiSearchUrl, serverFromCatalog } from "./packages";
 
 /** Fill catalog download_* when an attached mcp.toml only has name/command. */
 export function enrichDownloadUrls(servers: McpServer[], catalog: CatalogEntry[]): McpServer[] {
   return servers.map((s) => {
-    if (s.download_url) {
+    const hit = catalog.find((c) => c.name === s.name || c.command === s.command);
+    const pinUpstream = isGeminiSearchServer(s) && isUpstreamGeminiSearchUrl(s.download_url);
+    if (s.download_url && !pinUpstream) {
       return s;
     }
-    const hit = catalog.find((c) => c.name === s.name || c.command === s.command);
     if (!hit?.download_url) {
       return s;
     }

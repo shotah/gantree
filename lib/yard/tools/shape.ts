@@ -6,11 +6,15 @@ import type { CatalogEntry } from "../types";
  * the Secrets form would list only the crane mouth.
  */
 export type HostShape = Pick<CatalogEntry, "envKeys" | "blurb"> &
-  Partial<Pick<CatalogEntry, "args" | "auth_args" | "authFlow" | "homeOnly">>;
+  Partial<Pick<CatalogEntry, "args" | "auth_args" | "authFlow" | "homeOnly" | "optionalEnvKeys">>;
 
 export const HOST_SHAPE: Record<string, HostShape> = {
   math: { envKeys: [], blurb: "No secrets. Slim default." },
-  "google-search": { envKeys: [], blurb: "Uses the crane LLM key. Slim default." },
+  "google-search": {
+    envKeys: ["GEMINI_API_KEY"],
+    optionalEnvKeys: ["GOOGLE_API_KEY"],
+    blurb: "Gemini grounding search. Needs GEMINI_API_KEY (or GOOGLE_API_KEY).",
+  },
   google: {
     envKeys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     args: ["--preset", "everyday"],

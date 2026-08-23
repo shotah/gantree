@@ -241,6 +241,8 @@ export type CatalogEntry = {
   download_tag?: string;
   download_url?: string;
   envKeys: string[];
+  /** Shown in Secrets; missing values do not skip the server. */
+  optionalEnvKeys?: string[];
   homeOnly?: boolean;
   blurb: string;
 };

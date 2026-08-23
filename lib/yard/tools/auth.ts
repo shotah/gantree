@@ -103,7 +103,7 @@ function toolsFetchArgs(g: Pick<GantryCard, "mcpManifest" | "dataDir">): string[
   const enriched = enrichDownloadUrls(listed, loadCatalog());
   const filled = listed.some((s) => {
     const hit = enriched.find((e) => e.name === s.name);
-    return Boolean(hit?.download_url && !s.download_url);
+    return Boolean(hit?.download_url && hit.download_url !== s.download_url);
   });
   if (filled && g.dataDir) {
     writeText(resolve(g.dataDir, FETCH_MANIFEST), stringifyMcpToml(enriched));

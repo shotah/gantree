@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { optionalKeysForGrant, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import { envHint, HINTS } from "@/lib/yard/hints";
 import {
   bucketsForWindow,
@@ -305,8 +305,12 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
   const secretKeys = secretKeysForGrant([...granted], catalog, files?.servers ?? []);
+  const optionalSecretKeys = new Set(optionalKeysForGrant([...granted], catalog));
   const missingSecrets = files
     ? secretKeys.filter((k) => {
+        if (optionalSecretKeys.has(k)) {
+          return false;
+        }
         const row = envRow(k, files.env);
         return row.secret && !row.set;
       }).length
@@ -498,6 +502,9 @@ export function AgentDashboard({ slug }: { slug: string }) {
                     <span className="block text-xs text-zinc-500">{c.blurb}</span>
                     {c.envKeys?.length ? (
                       <span className="block font-mono text-[11px] text-zinc-600">{c.envKeys.join(", ")}</span>
+                    ) : null}
+                    {c.optionalEnvKeys?.length ? (
+                      <span className="block font-mono text-[11px] text-zinc-600">optional {c.optionalEnvKeys.join(", ")}</span>
                     ) : null}
                   </span>
                   {needsAuth && mutate ? (
@@ -694,9 +701,14 @@ export function AgentDashboard({ slug }: { slug: string }) {
           {secretKeys.map((k) => {
             const row = envRow(k, files?.env);
             const shown = fieldValue(k, row, secretDraft);
+            const optional = optionalSecretKeys.has(k);
             const look = secretLook(row, shown, secretNoun(k));
+            const shownLook =
+              optional && look.missing
+                ? { ...look, placeholder: "optional", status: "optional", missing: false }
+                : look;
             const badUrl = k === "LLM_BASE_URL" && shown.trim() !== "" && !looksLikeUrl(shown);
-            const warn = look.missing || badUrl;
+            const warn = shownLook.missing || badUrl;
             const tip = envHint(k);
             return (
             <HintField
@@ -706,7 +718,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
               example={tip.example}
               aside={
                 <span className={`text-[11px] ${warn ? "text-amber-200" : "text-zinc-600"}`}>
-                  {badUrl ? "not a URL" : look.status}
+                  {badUrl ? "not a URL" : shownLook.status}
                 </span>
               }
             >
@@ -714,13 +726,13 @@ export function AgentDashboard({ slug }: { slug: string }) {
                 className={`rounded border bg-zinc-950 px-2 py-1 ${
                   warn ? "border-amber-800/80 placeholder:text-amber-200/90" : "border-zinc-800"
                 }`}
-                type={look.type}
+                type={shownLook.type}
                 name={`gantree-env-${k}`}
                 autoComplete={row.secret ? "new-password" : "off"}
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
-                placeholder={look.placeholder}
+                placeholder={shownLook.placeholder}
                 value={shown}
                 disabled={!files?.writable}
                 onChange={(e) => setSecretDraft((s) => ({ ...s, [k]: e.target.value }))}

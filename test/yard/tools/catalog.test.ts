@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "@/lib/yard/tools/catalog";
-import { CRANE_CORE_KEYS, PACKAGES, envKeysForServer, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { CRANE_CORE_KEYS, PACKAGES, envKeysForServer, isUpstreamGeminiSearchUrl, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import type { CatalogEntry } from "@/lib/yard/types";
 
 const sample: CatalogEntry[] = [
@@ -38,6 +38,14 @@ describe("parseHostManifest", () => {
     expect(() => parseHostManifest("no json")).toThrow(/no JSON object/);
     expect(() => parseHostManifest('{"name":""}')).toThrow(/name and command/);
   });
+
+  it("reads optional_env_keys without treating them as required", () => {
+    const entry = parseHostManifest(
+      '{"name":"google","command":"google-mcp","env_keys":["GOOGLE_OAUTH_CLIENT_ID"],"optional_env_keys":["USER_GOOGLE_EMAIL"]}',
+    );
+    expect(entry.envKeys).toEqual(["GOOGLE_OAUTH_CLIENT_ID"]);
+    expect(entry.optionalEnvKeys).toEqual(["USER_GOOGLE_EMAIL"]);
+  });
 });
 
 describe("PACKAGES", () => {
@@ -49,6 +57,9 @@ describe("PACKAGES", () => {
     expect(byName.cars?.command).toBe("cars-search-mcp");
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.cast?.command).toBe("mcp-beam");
+    expect(byName["google-search"]?.command).toBe("mcp-gemini-google-search");
+    expect(byName["google-search"]?.downloadUrl).toContain("github.com/shotah/mcp-gemini-search");
+    expect(byName["google-search"]?.downloadUrl).not.toMatch(/zchee/);
   });
 });
 
@@ -58,16 +69,21 @@ describe("loadCatalog", () => {
     expect(byName.maps?.command).toBe("google-maps-mcp");
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.cast?.download_url).toContain("mcp-beam");
+    expect(byName["google-search"]?.download_url).toContain("github.com/shotah/mcp-gemini-search");
+    expect(byName["google-search"]?.download_url).not.toMatch(/zchee/);
   });
 
   it("fills env_keys and auth from last-known host-manifest when the binary cannot run", () => {
     const byName = Object.fromEntries(loadCatalog().map((c) => [c.name, c]));
     expect(byName.maps?.envKeys).toEqual(["GOOGLE_MAPS_API_KEY"]);
     expect(byName.google?.envKeys).toEqual(["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"]);
+    expect(byName.google?.optionalEnvKeys).toBeUndefined();
     expect(byName.google?.auth_args).toEqual(["auth"]);
     expect(byName.garmin?.envKeys).toEqual(["GARMIN_EMAIL", "GARMIN_PASSWORD"]);
     expect(byName.flights?.envKeys).toEqual(["SERPAPI_API_KEY"]);
     expect(byName.math?.envKeys).toEqual([]);
+    expect(byName["google-search"]?.envKeys).toEqual(["GEMINI_API_KEY"]);
+    expect(byName["google-search"]?.optionalEnvKeys).toEqual(["GOOGLE_API_KEY"]);
   });
 });
 
@@ -87,6 +103,25 @@ describe("secretKeysForGrant", () => {
     expect(keys).toContain("RENTCAST_API_KEY");
     expect(keys).not.toContain("GOOGLE_MAPS_API_KEY");
   });
+
+  it("includes optional catalog keys in Secrets but not skip/doctor", () => {
+    const google: CatalogEntry[] = [
+      {
+        name: "google",
+        command: "google-mcp",
+        envKeys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+        optionalEnvKeys: ["USER_GOOGLE_EMAIL"],
+        blurb: "Workspace.",
+      },
+    ];
+    const secrets = secretKeysForGrant(["google"], google);
+    expect(secrets).toEqual(expect.arrayContaining(["GOOGLE_OAUTH_CLIENT_SECRET", "USER_GOOGLE_EMAIL"]));
+    expect(optionalKeysForGrant(["google"], google)).toEqual(["USER_GOOGLE_EMAIL"]);
+    expect(envKeysForServer({ name: "google" }, google)).toEqual([
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "GOOGLE_OAUTH_CLIENT_SECRET",
+    ]);
+  });
 });
 
 describe("envKeysForServer", () => {
@@ -96,5 +131,13 @@ describe("envKeysForServer", () => {
       "GOOGLE_MAPS_API_KEY",
       "EXTRA",
     ]);
+  });
+});
+
+describe("isUpstreamGeminiSearchUrl", () => {
+  it("matches the zchee GitHub fork and ignores other zchee modules", () => {
+    expect(isUpstreamGeminiSearchUrl("https://github.com/zchee/mcp-gemini-search/releases/download/latest/x.tgz")).toBe(true);
+    expect(isUpstreamGeminiSearchUrl("https://github.com/shotah/mcp-gemini-search/releases/download/{tag}/x.tgz")).toBe(false);
+    expect(isUpstreamGeminiSearchUrl("https://github.com/zchee/dumper")).toBe(false);
   });
 });

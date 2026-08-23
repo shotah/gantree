@@ -22,6 +22,15 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
       envKeys: [],
       blurb: "",
     },
+    {
+      name: "google-search",
+      command: "mcp-gemini-google-search",
+      download_url:
+        "https://github.com/shotah/mcp-gemini-search/releases/download/{tag}/mcp-gemini-google-search_{version}_{os}_{arch}.tar.gz",
+      download_tag: "latest",
+      envKeys: [],
+      blurb: "",
+    },
   ],
 }));
 
@@ -150,6 +159,36 @@ describe("kickAuth / exchangeAuth / waitAuth / toolsFetch", () => {
       "/data/.gantree-fetch.toml",
     ]);
     expect(readFileSync(join(dataDir, ".gantree-fetch.toml"), "utf8")).toContain("download_url");
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it("rewrites a zchee google-search URL before tools-fetch", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    const dataDir = join(root, "data");
+    mkdirSync(dataDir);
+    const mcp = join(root, "mcp.toml");
+    writeFileSync(
+      mcp,
+      '[[server]]\nname = "google-search"\ncommand = "mcp-gemini-google-search"\ndownload_url = "https://github.com/zchee/mcp-gemini-search/releases/download/latest/x.tgz"\n',
+    );
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, dataDir }));
+    vi.mocked(execGantry).mockResolvedValue({
+      text: "tools-fetch: done installed=1 skipped=0 total=1",
+      exitCode: 0,
+    });
+    const out = await toolsFetch("kit");
+    expect(out.ok).toBe(true);
+    expect(vi.mocked(execGantry).mock.calls.at(-1)?.[1]).toEqual([
+      "tools-fetch",
+      "--outdir",
+      "/data/bin",
+      "--prune",
+      "--manifest",
+      "/data/.gantree-fetch.toml",
+    ]);
+    const fetchToml = readFileSync(join(dataDir, ".gantree-fetch.toml"), "utf8");
+    expect(fetchToml).toContain("github.com/shotah/mcp-gemini-search");
+    expect(fetchToml).not.toMatch(/zchee/);
     rmSync(root, { recursive: true, force: true });
   });
 });

@@ -10,8 +10,23 @@ export const CRANE_CORE_KEYS = [
   "TELEGRAM_ALLOWED_USERS",
 ];
 
+/** Yard GitHub org — google-search must not fetch zchee/mcp-gemini-search. */
+const YARD_GITHUB = "shotah";
+
 function ghRelease(repo: string, archive: string): string {
-  return `https://github.com/shotah/${repo}/releases/download/{tag}/${archive}_{version}_{os}_{arch}.tar.gz`;
+  return `https://github.com/${YARD_GITHUB}/${repo}/releases/download/{tag}/${archive}_{version}_{os}_{arch}.tar.gz`;
+}
+
+export function isGeminiSearchServer(server: Pick<McpServer, "name" | "command">): boolean {
+  return server.name === "google-search" || server.command === "mcp-gemini-google-search";
+}
+
+/** True when a download_url still points at the Python/upstream GitHub fork. */
+export function isUpstreamGeminiSearchUrl(url: string | undefined): boolean {
+  if (!url) {
+    return false;
+  }
+  return /https?:\/\/(www\.)?github\.com\/zchee\/mcp-gemini-(search|google-search)(\/|$)/i.test(url);
 }
 
 /**
@@ -30,6 +45,7 @@ export type PackageRef = {
 
 export const PACKAGES: PackageRef[] = [
   { name: "math", command: "mcp-go-math", repo: "mcp-go-math", downloadTag: "latest", downloadUrl: ghRelease("mcp-go-math", "mcp-go-math") },
+  // shotah/mcp-gemini-search (Go). Do not use zchee/mcp-gemini-search.
   { name: "google-search", command: "mcp-gemini-google-search", repo: "mcp-gemini-search", downloadTag: "latest", downloadUrl: ghRelease("mcp-gemini-search", "mcp-gemini-google-search") },
   { name: "google", command: "google-mcp", repo: "google-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-mcp", "google-mcp") },
   { name: "ghealth", command: "google-health-mcp", repo: "google-health-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-health-mcp", "google-health-mcp") },
@@ -69,11 +85,8 @@ export function parseHostManifest(raw: string): CatalogEntry {
   if (!name || !command) {
     throw new Error("host-manifest: name and command required");
   }
-  const envKeys = Array.isArray(j.env_keys)
-    ? j.env_keys.map(String)
-    : Array.isArray(j.envKeys)
-      ? j.envKeys.map(String)
-      : [];
+  const envKeys = stringList(j.env_keys, j.envKeys);
+  const optionalEnvKeys = stringList(j.optional_env_keys, j.optionalEnvKeys);
   const args = Array.isArray(j.args) ? j.args.map(String) : undefined;
   const auth_args = Array.isArray(j.auth_args) ? j.auth_args.map(String) : undefined;
   const flowRaw = typeof j.auth_flow === "string" ? j.auth_flow : undefined;
@@ -89,9 +102,19 @@ export function parseHostManifest(raw: string): CatalogEntry {
     download_tag,
     download_url,
     envKeys,
+    ...(optionalEnvKeys.length ? { optionalEnvKeys } : {}),
     homeOnly: Boolean(j.home_only ?? j.homeOnly),
     blurb: String(j.blurb ?? ""),
   };
+}
+
+function stringList(...cands: unknown[]): string[] {
+  for (const c of cands) {
+    if (Array.isArray(c)) {
+      return c.map(String);
+    }
+  }
+  return [];
 }
 
 export function serverFromCatalog(cat: CatalogEntry): McpServer {
@@ -134,7 +157,13 @@ export function secretKeysForGrant(
 ): string[] {
   const extra = [
     ...catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.envKeys),
+    ...catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.optionalEnvKeys ?? []),
     ...servers.filter((s) => granted.includes(s.name)).flatMap((s) => s.env_keys ?? []),
   ];
   return uniqueKeys([...CRANE_CORE_KEYS, ...extra]);
+}
+
+/** Optional Secrets fields — missing values must not skip the server. */
+export function optionalKeysForGrant(granted: string[], catalog: CatalogEntry[]): string[] {
+  return uniqueKeys(catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.optionalEnvKeys ?? []));
 }

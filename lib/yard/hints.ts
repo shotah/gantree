@@ -176,7 +176,11 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "xapp-…",
   },
   GEMINI_API_KEY: {
-    hint: "Google AI Studio key. Some tools want this name instead of LLM_API_KEY.",
+    hint: "Google AI Studio key for google-search (Gemini grounding). Not LLM_API_KEY, not the Workspace OAuth secret.",
+    example: "AIzaSy…",
+  },
+  GOOGLE_API_KEY: {
+    hint: "Alternate Google AI Studio key name. google-search accepts this instead of GEMINI_API_KEY.",
     example: "AIzaSy…",
   },
   GOOGLE_MAPS_API_KEY: {

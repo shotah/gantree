@@ -48,6 +48,8 @@ describe("writeCraneFiles", () => {
     expect(self).toContain("north-star");
     expect(persona).not.toBe(self);
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("math");
+    expect(readFileSync(out.mcpManifest, "utf8")).toContain("github.com/shotah/mcp-gemini-search");
+    expect(readFileSync(out.mcpManifest, "utf8")).not.toMatch(/zchee/);
     expect(readFileSync(out.envFile, "utf8")).toContain("CHANNEL=stdio");
     expect(readFileSync(join(root, "gantree.toml"), "utf8")).toContain("slug = \"kit\"");
     const compose = readFileSync(join(out.dir, "compose.yml"), "utf8");

@@ -154,4 +154,29 @@ describe("enrichDownloadUrls", () => {
     });
     expect(out[1]?.download_url).toBe("https://mine.example/x.tgz");
   });
+
+  it("rewrites a zchee google-search download_url to the yard catalog", () => {
+    const catalog = [
+      {
+        name: "google-search",
+        command: "mcp-gemini-google-search",
+        download_url: "https://github.com/shotah/mcp-gemini-search/releases/download/{tag}/mcp-gemini-google-search_{version}_{os}_{arch}.tar.gz",
+        download_tag: "latest",
+        envKeys: [],
+        blurb: "",
+      },
+    ];
+    const out = enrichDownloadUrls(
+      [
+        {
+          name: "google-search",
+          command: "mcp-gemini-google-search",
+          download_url: "https://github.com/zchee/mcp-gemini-search/releases/download/latest/x.tgz",
+        },
+      ],
+      catalog,
+    );
+    expect(out[0]?.download_url).toContain("github.com/shotah/mcp-gemini-search");
+    expect(out[0]?.download_url).not.toMatch(/zchee/);
+  });
 });
