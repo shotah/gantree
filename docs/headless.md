@@ -148,7 +148,7 @@ that sqlite file, start, run setup again. No email reset. People walk:
 ![Log in](../assets/login.png)
 
 **Home LAN only** (no WAN port forward): listen on all interfaces.
-Compose publishes host `:80` (nginx). `npm start` stays `:3000`.
+Compose publishes host `:80`. `npm start` stays `:3000`.
 
 ```bash
 # stop the old foreground npm start first (Ctrl-C), then:
@@ -167,7 +167,7 @@ not a reason to open a WAN firewall port.
 
 ```bash
 ssh -N -L 3000:127.0.0.1:3000 user@host   # npm start
-# compose publishes nginx on :80, not gantree :3000:
+# compose publishes :80, not gantree :3000 on the host:
 ssh -N -L 3000:127.0.0.1:80 user@host
 ```
 
@@ -259,7 +259,7 @@ each attached crane so persona and `mcp.toml` land in the agent.
 Missing `GANTREE_HOST_ROOT` bind-mounts `/app/gantries/…` on the host — the
 crane then has no `mcp.toml` and no `data/.config`.
 
-Home LAN: compose publishes host `:80` (nginx) → gantree `:3000`
+Home LAN: compose publishes host `:80` → container `:3000`
 (`http://<headless-lan-ip>/`). Cloud VM: `GANTREE_LISTEN=127.0.0.1` — do
 not open a WAN firewall port.
 

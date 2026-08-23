@@ -1,0 +1,73 @@
+# Public hostname via nginx-proxy + Let's Encrypt on this host.
+# Use this when you do not have (or do not want) a Cloudflare Tunnel.
+# Prefer compose.cloudflare.yml if the zone is already on Cloudflare.
+#
+#   GANTREE_DOMAIN=gantree.example.com LETSENCRYPT_EMAIL=you@example.com \
+#     docker compose -f compose.nginx.yml up -d
+#
+# Cloudflare DNS: grey cloud (DNS only). Orange-cloud Always-HTTPS blocks
+# HTTP-01. Router: 80 and 443 to this host. Gantree is unpublished.
+# Keep gantree: in sync with compose.yml.
+
+services:
+  gantree:
+    image: shotah/gantree:${GANTREE_TAG:-latest}
+    build: .
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DOCKER_SOCKET: /var/run/docker.sock
+      GANTREE_CRANE_USER: ${GANTREE_CRANE_USER:-${SUDO_UID:-${UID:-1000}}:${SUDO_GID:-${GID:-1000}}}
+      GANTREE_ROOT: /app
+      GANTREE_HOST_ROOT: ${GANTREE_HOST_ROOT:-${PWD}}
+      GANTREE_DB: /app/var/gantree.db
+      # nginx-proxy / acme-companion read these from inspect — not the Node app.
+      VIRTUAL_HOST: ${GANTREE_DOMAIN:-changeme.example.com}
+      VIRTUAL_PORT: "3000"
+      LETSENCRYPT_HOST: ${GANTREE_DOMAIN:-changeme.example.com}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-changeme@example.com}
+      HTTPS_METHOD: redirect
+    expose:
+      - "3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./gantree.toml:/app/gantree.toml
+      - ./gantries:/app/gantries
+      - ./backups:/app/backups
+      - ./var:/app/var
+      # - /opt/agents:/opt/agents
+    restart: unless-stopped
+
+  proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    depends_on:
+      - gantree
+    ports:
+      - "${GANTREE_LISTEN:-0.0.0.0}:80:80"
+      - "${GANTREE_LISTEN:-0.0.0.0}:443:443"
+    labels:
+      com.github.nginx-proxy.nginx: "true"
+    environment:
+      HTTPS_METHOD: redirect
+      DEFAULT_HOST: ${GANTREE_DOMAIN:-changeme.example.com}
+    volumes:
+      - ./var/proxy/certs:/etc/nginx/certs:ro
+      - ./var/proxy/html:/usr/share/nginx/html
+      - ./var/proxy/vhost:/etc/nginx/vhost.d
+      - ./proxy/gantree.conf:/etc/nginx/vhost.d/default_location:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    restart: unless-stopped
+
+  acme:
+    image: nginxproxy/acme-companion:latest
+    depends_on:
+      - proxy
+    environment:
+      DEFAULT_EMAIL: ${LETSENCRYPT_EMAIL:-changeme@example.com}
+    volumes:
+      - ./var/proxy/certs:/etc/nginx/certs:rw
+      - ./var/proxy/html:/usr/share/nginx/html
+      - ./var/proxy/vhost:/etc/nginx/vhost.d
+      - ./var/proxy/acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped

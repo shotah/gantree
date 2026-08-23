@@ -79,7 +79,8 @@ one crane — without any they see an empty board. Tick more than one
 when a person covers two bots. Only **admin** sees every crane.
 Do not share an admin login the way you would share a read-only
 dashboard. A partner who only pastes keys is **user** on their crane(s).
-Compose: they hit nginx `:80`, not gantree `:3000`.
+Compose: they hit LAN `:80` or the hostname file you chose, not a published
+gantree `:3000`.
 
 Add / remove / change access are **confirm-scary** (checkbox), like a
 token push. You cannot delete the last operator, or the last admin, or

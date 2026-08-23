@@ -47,16 +47,20 @@ the way you would share a read-only dashboard.
 | --- | --- |
 | `npm start` (default) | `127.0.0.1:3000` only |
 | `HOST=0.0.0.0 npm start` | that host’s interfaces, `:3000` |
-| compose (default) | host `:80` (nginx) on `0.0.0.0` → gantree `:3000` (unpublished) |
-| compose + `GANTREE_LISTEN=127.0.0.1` | host loopback `:80` (nginx) only |
+| compose (default) | host `:80` on `0.0.0.0` → container `:3000` |
+| compose + `GANTREE_LISTEN=127.0.0.1` | host loopback `:80` only |
+| `compose.cloudflare.yml` | LAN `:80` + Cloudflare Tunnel (no WAN ports) |
+| `compose.nginx.yml` | host `:80`/`:443` (nginx-proxy) → gantree unpublished |
 
 `npm start` already sets loopback. Compose sets `HOST=0.0.0.0` *inside*
-the container so nginx can reach it; that is not “open the cloud
+the container so the port map works; that is not “open the cloud
 firewall.” On a VM use `GANTREE_LISTEN=127.0.0.1` and Tailscale or a
-tunnel to host `:80` (nginx). A partner who only needs keys is a **user**
-on their crane — they hit nginx, not gantree `:3000`. Do not WAN-forward
-`:3000` / `:80` and hope login is enough. A flood can still knock nginx
-over; dropping php/wordpress probes is not a WAN license.
+tunnel. A partner who only needs keys is a **user** on their crane.
+Do not WAN-forward `:3000` / `:80` and hope login is enough.
+
+Public hostname: **Cloudflare Tunnel** (`compose.cloudflare.yml`) if the
+zone is on Cloudflare — no router ports. Origin TLS on this box is
+`compose.nginx.yml` (grey cloud, WAN 80+443). Login is still the door.
 
 If `HOST` is `0.0.0.0` / `::` and there are **no** operators yet, the
 process warns once: only `/setup` is live. Create the first operator
@@ -234,7 +238,7 @@ console does not become the IdP.
 
 - DDoS / slowloris / filling the disk. Login backoff is anti-guess, not
   anti-flood. In-memory; restart resets the counters.
-- A WAN-open console. Login and nginx in front do not make that a good idea.
+- A WAN-open console. Login does not make that a good idea.
 - SSO, OIDC, email, invite links, “forgot password.”
 - HaveIBeenPwned / zxcvbn. Offline denylist + structure checks.
 - CSRF tokens. Cookie is `SameSite=Lax`, APIs are same-origin.
@@ -248,10 +252,11 @@ console does not become the IdP.
 
 1. First boot: `/setup` with a real passphrase before the LAN URL is a
    habit for anyone else on the network.
-2. Home LAN: compose `:80` (nginx) is OK *behind* login. Cloud:
-   `GANTREE_LISTEN=127.0.0.1` + Tailscale or tunnel to `:80`. No cloud
-   firewall hole. Port-forward nginx, not gantree `:3000`. Partner keys:
-   **user** on that crane, not a shared admin login.
+2. Home LAN: compose `:80` is OK *behind* login. Cloud:
+   `GANTREE_LISTEN=127.0.0.1` + Tailscale or tunnel. No cloud firewall
+   hole. Partner keys: **user** on that crane, not a shared admin login.
+   Public hostname: `compose.cloudflare.yml` (recommended) or
+   `compose.nginx.yml`.
 3. Never set `GANTREE_DEV` in compose.
 4. Forgot passphrase → delete yard sqlite → setup. There is no other
    recovery.

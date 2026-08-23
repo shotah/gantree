@@ -18,10 +18,7 @@ Harness-side design note (nested checkout, **dev only**):
 ```text
 [ browser ]
      |
-     |  localhost | Tailscale | Cloudflare Tunnel (console only)
-     v
-[ nginx — compose :80 ]     (compose only; npm start has no sidecar)
-     |
+     |  localhost | Tailscale | Cloudflare Tunnel | nginx-proxy (console only)
      v
 [ gantree  — Vinext on Node, on the Docker host ]
      |

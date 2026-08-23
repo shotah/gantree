@@ -1,0 +1,43 @@
+# Public hostname via Cloudflare Tunnel. Recommended over compose.nginx.yml:
+# no WAN ports, orange cloud is fine, TLS at Cloudflare. Free on a CF account.
+#
+#   CLOUDFLARE_TUNNEL_TOKEN=... docker compose -f compose.cloudflare.yml up -d
+#   (or put the token in .env — compose loads it)
+#
+# Zero Trust → Networks → Tunnels → Docker token.
+# Public hostname origin: http://gantree:3000 (compose DNS, not localhost).
+#
+# LAN still publishes :80. Do not forward 80/443 on the router.
+# Keep gantree: in sync with compose.yml.
+
+services:
+  gantree:
+    image: shotah/gantree:${GANTREE_TAG:-latest}
+    build: .
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DOCKER_SOCKET: /var/run/docker.sock
+      GANTREE_CRANE_USER: ${GANTREE_CRANE_USER:-${SUDO_UID:-${UID:-1000}}:${SUDO_GID:-${GID:-1000}}}
+      GANTREE_ROOT: /app
+      GANTREE_HOST_ROOT: ${GANTREE_HOST_ROOT:-${PWD}}
+      GANTREE_DB: /app/var/gantree.db
+    ports:
+      - "${GANTREE_LISTEN:-0.0.0.0}:80:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./gantree.toml:/app/gantree.toml
+      - ./gantries:/app/gantries
+      - ./backups:/app/backups
+      - ./var:/app/var
+      # - /opt/agents:/opt/agents
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    depends_on:
+      - gantree
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    restart: unless-stopped
