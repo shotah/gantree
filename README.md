@@ -77,9 +77,9 @@ This repository is the board that appears when you run more than one of
 those. It is a by-product. If a chart would make the harness slower, the
 chart is wrong.
 
-One crane, no yard: `docker compose up` in
-**[ai-gantry](https://github.com/shotah/ai-gantry)**. Start there if you
-want a bot tonight.
+Want a bot tonight? Stay here. Open the board, **build a crane** — this
+yard pulls `shotah/ai-gantry`, writes the files, recreates. Chat stays
+Telegram. You do not need the other checkout to stand one up.
 
 | You get | Why it holds |
 | --- | --- |
@@ -120,7 +120,7 @@ The UI never sits in a chat turn.
 Cranes pin `shotah/ai-gantry:latest`. Nested `repos/ai-gantry` is **dev
 only** — do not copy `.env` or `data/` from a private checkout.
 
-One crane, no board:
+No UI, one crane by hand:
 **[ai-gantry deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)**.
 
 Home Mini vs cloud VM, tunnels, attach existing dirs:
@@ -134,7 +134,7 @@ Home Mini vs cloud VM, tunnels, attach existing dirs:
 | `npm start` | Console on this host (`127.0.0.1`) |
 | `npm run dev` | Same, with hot reload. Loopback auto-login: `GANTREE_DEV` in `.env` ([security](docs/security.md#dev-auto-login)) |
 | `docker compose up -d` | Hub image `shotah/gantree` — never set `GANTREE_DEV` here |
-| **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard |
+| **[ai-gantry](https://github.com/shotah/ai-gantry)** | Harness only — no yard |
 
 ```bash
 npm run dev               # still 127.0.0.1; GANTREE_DEV auto-login is loopback only
@@ -161,7 +161,7 @@ day one, this is the wrong stack — and that’s fine.
 | If you want… | Go here |
 | --- | --- |
 | The harness | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
-| One crane, Docker hello | **[deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)** |
+| Harness without this UI | **[deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)** |
 | The board, grants, avatars | **[docs/console.md](docs/console.md)** |
 | Login, profile, settings | **[docs/operators.md](docs/operators.md)** |
 | Home Mini vs cloud VM | **[docs/install.md](docs/install.md)** |
