@@ -1,8 +1,4 @@
-# gantree
-
-<p align="center">
-  <img src="assets/logo.svg" alt="gantree" width="96" height="96">
-</p>
+# <img src="assets/logo.svg" alt="" width="40" height="40"> gantree
 
 <p align="center">
   <img src="assets/banner.svg" alt="Shipping yard for personal agents - operator plane, not the chat" width="100%">
