@@ -17,11 +17,15 @@ Do not write Python. Do not use `curl` (or wget, httpie) to poke endpoints, bina
 
 If a function, handler, or parse path needs checking, call it from a TypeScript Vitest test.
 
+## Do not use canvas
+
+It is an external tool, it does not store or keep. Only use Markdown so we can keep track of our choices and plans.
+
 ## Write TypeScript and TypeScript tests
 
-- Change `*.ts` / `*.tsx`. Add tests next to the existing layout: `test/**/*.test.ts`, `app/**/*.test.tsx`, `scripts/**/*.test.ts`.
+- Change `*.ts` / `*.tsx`. Tests live under `test/`, mirroring the source: `test/yard/` → `lib/yard`, `test/app/` → `app/`, `test/scripts/` → `scripts/`. Never next to source. See `.cursor/rules/repo-layout.mdc`.
 - Import with `@/` and `describe` / `it` / `expect` from `vitest`, matching files already in `test/`.
-- Run `npm test` and `npm run typecheck` on what you touched.
+- Run `npm test`, `npm run typecheck`, and `npm run lint` (ESLint, including `@stylistic`) on what you touched. Style lives in ESLint — do not add Prettier. Do not disable `no-explicit-any` or `no-useless-assignment` to match existing code; type it or delete the dead write.
 
 ```typescript
 // ❌ BAD — discovery theater

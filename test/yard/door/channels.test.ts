@@ -3,6 +3,8 @@ import {
   parseChannelIds,
   parseOperatorChannels,
   parseRole,
+  validateDescription,
+  validateDisplayName,
   validateEmail,
 } from "@/lib/yard/door/channels";
 
@@ -28,5 +30,14 @@ describe("operator channel ids", () => {
     expect(validateEmail("")).toBeNull();
     expect(validateEmail("bob@yard.example")).toBeNull();
     expect(validateEmail("nope")).toBe("email looks wrong");
+  });
+
+  it("rejects control characters in display name and description", () => {
+    expect(validateDisplayName("Ada")).toBeNull();
+    expect(validateDisplayName("Ada\u0000")).toBe("display name cannot contain control characters");
+    expect(validateDisplayName("Ada\nLovelace")).toBe("display name cannot contain control characters");
+    expect(validateDescription("ok\nwrap")).toBeNull();
+    expect(validateDescription("ok\tcol")).toBeNull();
+    expect(validateDescription("bell\u0007")).toBe("description cannot contain control characters");
   });
 });

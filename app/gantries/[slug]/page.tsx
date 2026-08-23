@@ -1,4 +1,4 @@
-import { AgentDashboard } from "../../components/AgentDashboard";
+import { AgentDashboard } from "../../components/crane/AgentDashboard";
 
 export default async function GantryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

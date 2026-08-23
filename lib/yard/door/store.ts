@@ -170,7 +170,7 @@ export function inspectYardDb(): YardDbInspect {
   try {
     sizeBytes = statSync(path).size;
   } catch {
-    sizeBytes = null;
+    /* missing db file — size stays null */
   }
   const db = yardDb();
   const journalRow = db.prepare("PRAGMA journal_mode").get() as Record<string, unknown> | undefined;

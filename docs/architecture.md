@@ -119,28 +119,30 @@ image `65532`), `network_mode`, and extra binds. Dropping uid is how
 ```text
 gantree/                    this repo — shipping yard
 ├── app/                    Vinext / Next-shaped UI
+│   ├── lib/                browser helpers (yardFetch, jpeg, phone frame)
+│   └── components/         nested by screen, not by widget type
+│       ├── shared/         DoorShell, DashFold, HintField, avatars, EventStrip
+│       ├── yard/           YardBoard, BuildCrane, HostCard, SpendBoard
+│       ├── crane/          AgentDashboard + folds, Telegram, logs, charts
+│       ├── host/           HostDashboard, HostCharts
+│       └── operators/      AuthForms, OperatorProfile, YardSettings panes
 ├── assets/banner.svg       GitHub README banner
 ├── assets/banner.png       Hub overview (Hub does not render SVG)
 ├── assets/logo.svg         app icon mark (portal crane)
 ├── app/icon.svg            tab icon (SVG)
 ├── app/favicon.ico         tab icon (browsers that still ask for .ico)
-├── assets/setup.png        operators.md: first-boot operator
-├── assets/setup-phone.png  operators.md: first-boot on a phone
-├── assets/login.png        operators.md / install: log in
-├── assets/login-phone.png  README: log in on a phone
-├── assets/profile.png      operators.md: operator profile
-├── assets/settings.png     operators.md: roles and operators
-├── assets/yard-phone.png   README + console.md: board on a phone
-├── assets/crane-phone.png  README + console.md: Jules on a phone
-├── assets/phone-preview.png operators.md: 390px frame, no DevTools
+├── assets/docs/            console screenshots (shot.mjs) + pitch stills
 ├── scripts/shot.mjs        headless Chrome recapture
 ├── lib/yard/               host I/O (not RSC)
 │   ├── door/               operators, session, audit events
-│   ├── host/               dockerode, files, .env, avatar, telegram, logs
+│   ├── host/               dockerode, identity, stats, files, .env, avatar, telegram, logs
 │   ├── crane/              inventory, build, run, doctor
 │   ├── tools/              catalog, grant, mcp, auth
 │   └── observe/            stats samples, sqlite memory, spend rollup
-├── test/yard/              mirrors lib/yard
+├── test/                   all tests — mirrors source, never next to it
+│   ├── yard/               mirrors lib/yard
+│   ├── app/                mirrors app/ (components by screen, lib helpers)
+│   └── scripts/            mirrors scripts/
 └── repos/                  local nested checkouts (gitignored)
     └── ai-gantry/          harness — own remote, own git
         └── repos/          MCP servers — own remotes
@@ -154,8 +156,18 @@ checkout.
 `lib/yard` is the host I/O surface: inventory, build, grant/revoke,
 doctor, run (start / stop / recreate), logs, stats, auth hop,
 `tools-fetch`, the operator door (`lib/yard/door`, yard `gantree.db` —
-operators, sessions, graph samples, audit). Tests live in `test/yard/`
-with the same folders. Import dockerode from `lib/yard`, not from `app/`.
+operators, sessions, graph samples, audit). Import dockerode from
+`lib/yard`, not from `app/`. Import leaf modules (`@/lib/yard/crane/build`),
+not a root barrel.
+
+**Tests live under `test/`.** They mirror the source tree and never sit
+beside production files. `test/yard/` covers `lib/yard` (Node / Docker /
+files). `test/app/` covers the UI and `app/lib/` helpers. `test/scripts/`
+covers `scripts/`. Coverage thresholds apply to `lib/yard` only.
+
+**UI folders match screens** (`shared` / `yard` / `crane` / `host` /
+`operators`). Pages stay thin route shells. Do not invent
+atoms/molecules or a `src/` wrap.
 
 ---
 

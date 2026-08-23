@@ -124,8 +124,8 @@ function discover(pkg: PackageRef): CatalogEntry {
   const fromTools = !fromPath && tools ? tryManifest(resolve(tools, pkg.command), ["host-manifest"]) : null;
   const fromBins = !fromPath && !fromTools ? tryCraneBins(pkg) : null;
   const repoDir = resolve(mcpReposRoot(), pkg.repo);
-  const fromGo =
-    !fromPath && !fromTools && !fromBins && existsSync(repoDir)
+  const fromGo
+    = !fromPath && !fromTools && !fromBins && existsSync(repoDir)
       ? tryManifest("go", ["run", ".", "host-manifest"], repoDir)
       : null;
   const fromJson = !fromPath && !fromTools && !fromBins && !fromGo ? tryRepoManifestJson(repoDir) : null;

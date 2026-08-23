@@ -9,7 +9,7 @@ export const GET = withDoor(async (req: Request) => {
   if (denied) {
     return denied;
   }
-  let box: Awaited<ReturnType<typeof findConsoleWorkload>> = null;
+  let box: Awaited<ReturnType<typeof findConsoleWorkload>>;
   try {
     box = await findConsoleWorkload();
   } catch (err) {

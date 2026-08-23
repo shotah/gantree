@@ -1,0 +1,31 @@
+---
+description: Where files and tests go — screens for UI, all tests under test/.
+alwaysApply: true
+---
+
+# Repo layout
+
+## Tests live under `test/`, never next to source
+
+Mirror the module they cover:
+
+- `lib/yard/**/*.ts` → `test/yard/<same folders>/*.test.ts`
+- `app/components/<screen>/*.tsx` → `test/app/components/<screen>/*.test.tsx`
+- `app/lib/*.ts` → `test/app/lib/*.test.ts`
+- `scripts/*.mjs` → `test/scripts/*.test.ts`
+
+Import `@/`. Do not colocate `*.test.ts` beside `lib/` or `app/`.
+
+```typescript
+// lib/yard/tools/packages.ts  →  test/yard/tools/catalog.test.ts
+// app/components/crane/AgentDashboard.tsx  →  test/app/components/crane/AgentDashboard.test.tsx
+// app/lib/yardFetch.ts  →  test/app/lib/yardFetch.test.ts
+```
+
+## Folders
+
+- `lib/yard/{door,host,crane,tools,observe}` — host I/O. Import leaf modules, not `@/lib/yard`.
+- `app/components/{shared,yard,crane,host,operators}` — nest by screen, not `ui/`/`forms/`/`charts/`.
+- `assets/` — brand at the root (`logo.svg`, `banner.svg`, `banner.png`). Console shots in `assets/docs/` (`scripts/shot.mjs`).
+- `app/lib/` — browser helpers (`yardFetch`, `jpegFromFile`, `phonePreview`). Not components.
+- Pages stay thin route shells. Coverage stays on `lib/yard`.

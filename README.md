@@ -20,11 +20,11 @@
 You opened the yard repo. **The product is a long-horizon AI harness.**
 
 <p align="center">
-  <img src="assets/login-phone.png" alt="Log in — the door to the yard, not the chat" width="220">
+  <img src="assets/docs/login-phone.png" alt="Log in — the door to the yard, not the chat" width="220">
   &nbsp;
-  <img src="assets/yard-phone.png" alt="The yard on a phone — Ada, Jules, host" width="220">
+  <img src="assets/docs/yard-phone.png" alt="The yard on a phone — Ada, Jules, host" width="220">
   &nbsp;
-  <img src="assets/crane-phone.png" alt="Jules on a phone — start/stop and boxed folds" width="220">
+  <img src="assets/docs/crane-phone.png" alt="Jules on a phone — start/stop and boxed folds" width="220">
 </p>
 
 ---

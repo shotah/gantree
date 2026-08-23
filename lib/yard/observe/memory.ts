@@ -296,7 +296,6 @@ function num(v: number | null | undefined): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : v == null ? null : Number(v);
 }
 
-
 export function pruneByObservePrefs(): void {
   try {
     const db = yardDb();

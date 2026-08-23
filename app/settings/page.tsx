@@ -1,4 +1,4 @@
-import { YardSettings } from "../components/YardSettings";
+import { YardSettings } from "../components/operators/YardSettings";
 
 export default function SettingsPage() {
   return (

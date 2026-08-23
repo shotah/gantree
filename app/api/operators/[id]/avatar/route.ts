@@ -38,7 +38,7 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ id: s
   if (!getOperator(id)) {
     return Response.json({ error: "not found" }, { status: 404 });
   }
-  let file: Blob | null = null;
+  let file: Blob | null;
   try {
     const form = await req.formData();
     const row = form.get("file");

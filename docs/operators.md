@@ -22,13 +22,15 @@ There is no setup token. On an open bind, **whoever POSTs `/setup` first
 owns the box.** Create that person before you leave LAN `:80` sitting
 there. A second setup is `409 already set up`.
 
-![First-boot setup: create the operator who owns the box](../assets/setup.png)
-
-![Log in with name and passphrase](../assets/login.png)
-
-![First operator on a phone](../assets/setup-phone.png)
-
-![Log in on a phone](../assets/login-phone.png)
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First-boot setup: create the operator who owns the box" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in with name and passphrase" width="280">
+  &nbsp;
+  <img src="../assets/docs/setup-phone.png" alt="First operator on a phone" width="220">
+  &nbsp;
+  <img src="../assets/docs/login-phone.png" alt="Log in on a phone" width="220">
+</p>
 
 Name is `2–32` letters, digits, `.` `_` `-`. Passphrase ≥10 characters,
 not blank, not your name, not a common password. Failed logins back off
@@ -41,7 +43,9 @@ compose `HOST=0.0.0.0` ignores the flag. Unset it to photograph `/login`.
 On a wide screen, the phone mark in the header is a 390px preview
 (`?phone=1`) — no DevTools. Recapture: `node scripts/shot.mjs`.
 
-![Phone preview — 390px frame in a desktop tab](../assets/phone-preview.png)
+<p align="center">
+  <img src="../assets/docs/phone-preview.png" alt="Phone preview — 390px frame in a desktop tab" width="560">
+</p>
 
 ---
 
@@ -50,7 +54,9 @@ On a wide screen, the phone mark in the header is a 390px preview
 Click **your name** (or photo) in the header. That is `/profile`. It is
 not the cog, and it is not the operator list.
 
-![Profile — your face, login name, and passphrase](../assets/profile.png)
+<p align="center">
+  <img src="../assets/docs/profile.png" alt="Profile — your face, login name, and passphrase" width="480">
+</p>
 
 Here you can change:
 
@@ -74,7 +80,9 @@ The **cog** in the header is `/settings`. (`/operators` redirects here.)
 Everyone can read the three roles. Only **admin** can add, change access,
 or remove.
 
-![Settings — roles, operators, add. The cog in the header](../assets/settings.png)
+<p align="center">
+  <img src="../assets/docs/settings.png" alt="Settings — roles, operators, add. The cog in the header" width="560">
+</p>
 
 | Role | Access |
 | --- | --- |

@@ -40,7 +40,7 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug:
   if (!g.personaDir) {
     return Response.json({ error: "no persona_dir" }, { status: 400 });
   }
-  let file: Blob | null = null;
+  let file: Blob | null;
   try {
     const form = await req.formData();
     const row = form.get("file");

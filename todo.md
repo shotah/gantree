@@ -128,9 +128,9 @@ to *see* the loop, not only the door:
 
 - [x] Login (cropped tight) + yard board
 - [x] Recapture the board with **live** cranes — model, channel, MCP
-      published (`assets/yard.png`). last turn stays empty until a chat.
+      published (`assets/docs/yard.png`). last turn stays empty until a chat.
 - [x] Crane dashboard: CPU/RAM + MCP + uptime from live Ada
-      (`assets/crane-metrics.png`, `assets/metrics.png`). Token / completer
+      (`assets/docs/crane-metrics.png`, `assets/docs/metrics.png`). Token / completer
       charts stay empty until a chat — not invented. `metrics.png` is a tight
       crop of the six tiles, validated (not a letterboxed blank page).
 - [ ] Telegram: one multi-step turn with tool trace — the mouth
@@ -511,8 +511,8 @@ page. One operator, a login page, every mutation gated.
       novel.
 - [x] Docs: [install.md](docs/install.md), [headless.md](docs/headless.md),
       compose comments. LAN is OK *behind* login. Cloud VM still
-      `GANTREE_LISTEN=127.0.0.1`. Screenshots: `assets/setup.png`,
-      `assets/login.png` (README + install + headless).
+      `GANTREE_LISTEN=127.0.0.1`. Screenshots: `assets/docs/setup.png`,
+      `assets/docs/login.png` (README + install + headless).
 - [x] **Walk:** compose on the Mini, LAN IP, logged-out browser
       cannot read logs or `.env`. Setup one operator. Login. Board
       works. Restart. Must log in again.

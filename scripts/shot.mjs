@@ -13,7 +13,7 @@ import { resolve } from "node:path";
 
 const base = process.argv[2] || "http://127.0.0.1:3000";
 const names = process.argv.slice(3);
-const outDir = resolve("assets");
+const outDir = resolve("assets/docs");
 const chrome =
   process.env.CHROME ||
   "/var/lib/flatpak/app/com.google.Chrome/current/active/files/extra/chrome";

@@ -1,4 +1,4 @@
-import { OperatorProfile } from "../components/OperatorProfile";
+import { OperatorProfile } from "../components/operators/OperatorProfile";
 
 export default function ProfilePage() {
   return (

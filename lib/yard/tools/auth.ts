@@ -49,11 +49,11 @@ async function runAuth(slug: string, args: string[]): Promise<AuthResult> {
     };
   }
   const url = extractAuthUrl(result.text);
-  const detail =
-    result.text ||
-    (result.exitCode === 0
-      ? `gantry ${args.join(" ")} finished.`
-      : `gantry ${args.join(" ")} exited ${result.exitCode}`);
+  const detail
+    = result.text
+      || (result.exitCode === 0
+        ? `gantry ${args.join(" ")} finished.`
+        : `gantry ${args.join(" ")} exited ${result.exitCode}`);
   return { ok: result.exitCode === 0, detail, url };
 }
 

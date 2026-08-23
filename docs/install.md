@@ -36,11 +36,13 @@ in `.env` ([.env.example](../.env.example)). Loopback only — compose
 `HOST=0.0.0.0` ignores the flag. Unset it to photograph `/login`. Details:
 [security.md](security.md#dev-auto-login) · [operators.md](operators.md).
 
-![First operator — create the person who owns the box](../assets/setup.png)
-
-![Log in](../assets/login.png)
-
-![Log in on a phone](../assets/login-phone.png)
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First operator — create the person who owns the box" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in" width="280">
+  &nbsp;
+  <img src="../assets/docs/login-phone.png" alt="Log in on a phone" width="220">
+</p>
 
 Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
 That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the

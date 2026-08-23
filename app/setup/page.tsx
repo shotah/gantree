@@ -1,4 +1,4 @@
-import { SetupForm } from "../components/AuthForms";
+import { SetupForm } from "../components/operators/AuthForms";
 
 export default function SetupPage() {
   return (

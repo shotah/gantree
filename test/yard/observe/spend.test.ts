@@ -310,7 +310,7 @@ describe("namesFromOperators", () => {
         channels: { telegram: ["42", "99"], slack: ["U1"], discord: [] },
       },
     ]);
-    expect(names).toEqual({ "42": "Ada", "99": "bob", U1: "bob" });
+    expect(names).toEqual({ 42: "Ada", 99: "bob", U1: "bob" });
     expect(labelSlices([{ id: "42", turns: 1, estTokens: 10 }, { id: "7", turns: 1, estTokens: 3 }], names)).toEqual([
       { id: "42", turns: 1, estTokens: 10, label: "Ada" },
       { id: "7", turns: 1, estTokens: 3 },

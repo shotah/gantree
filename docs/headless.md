@@ -143,9 +143,11 @@ that sqlite file, start, run setup again. No email reset. People walk:
 [operators.md](operators.md). What the door checks:
 [security.md](security.md).
 
-![First operator](../assets/setup.png)
-
-![Log in](../assets/login.png)
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First operator" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in" width="280">
+</p>
 
 **Home LAN only** (no WAN port forward): listen on all interfaces.
 Compose publishes host `:80`. `npm start` stays `:3000`.

@@ -36,11 +36,13 @@ again. No email reset. Click your name for **Profile**; the cog is
 [operators.md](operators.md). What the door checks:
 [security.md](security.md).
 
-![First-boot setup: create the operator who owns the box](../assets/setup.png)
-
-![Log in with name and passphrase](../assets/login.png)
-
-![Log in on a phone](../assets/login-phone.png)
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First-boot setup: create the operator who owns the box" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in with name and passphrase" width="280">
+  &nbsp;
+  <img src="../assets/docs/login-phone.png" alt="Log in on a phone" width="220">
+</p>
 
 ---
 
@@ -66,9 +68,11 @@ after someone talks — not `@username`). Grant
 a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 `/tools` is the crane’s mouth; this page is the operator’s.
 
-![The yard on a phone](../assets/yard-phone.png)
-
-![Jules on a phone — start/stop and boxed folds](../assets/crane-phone.png)
+<p align="center">
+  <img src="../assets/docs/yard-phone.png" alt="The yard on a phone" width="220">
+  &nbsp;
+  <img src="../assets/docs/crane-phone.png" alt="Jules on a phone — start/stop and boxed folds" width="220">
+</p>
 
 Pin: `shotah/ai-gantry:latest` (Hub). Nested `repos/ai-gantry` is **dev
 only** — do not copy `.env` or `data/` from a private checkout.

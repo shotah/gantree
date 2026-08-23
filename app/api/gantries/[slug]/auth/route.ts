@@ -14,8 +14,8 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug:
   }
   const flow = loadCatalog().find((c) => c.name === body.server)?.authFlow;
   const op = body.op ?? "start";
-  const result =
-    op === "exchange"
+  const result
+    = op === "exchange"
       ? await exchangeAuth(slug, body.server, body.code ?? "", flow)
       : op === "wait"
         ? await waitAuth(slug, body.server)

@@ -1,4 +1,4 @@
-import { YardBoard } from "./components/YardBoard";
+import { YardBoard } from "./components/yard/YardBoard";
 
 export default function Home() {
   return (

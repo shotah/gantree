@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { DoorShell } from "./components/DoorShell";
+import { DoorShell } from "./components/shared/DoorShell";
 import "./globals.css";
 
 export const metadata: Metadata = {

@@ -199,15 +199,15 @@ function cardFrom(opts: {
   mcpManifest: string | null;
   envFile: string | null;
 }): GantryCard {
-  let image = opts.enrich?.image ?? opts.listed?.image ?? null;
-  let state = opts.enrich?.state ?? opts.listed?.state ?? "unknown";
-  let health = opts.enrich?.health ?? null;
-  let startedAt = opts.enrich?.startedAt ?? null;
-  let restartCount = opts.enrich?.restartCount ?? null;
+  const image = opts.enrich?.image ?? opts.listed?.image ?? null;
+  const state = opts.enrich?.state ?? opts.listed?.state ?? "unknown";
+  const health = opts.enrich?.health ?? null;
+  const startedAt = opts.enrich?.startedAt ?? null;
+  const restartCount = opts.enrich?.restartCount ?? null;
   let model = opts.enrich?.model ?? null;
   let channel = opts.enrich?.channel ?? null;
-  let lastError = opts.enrich?.lastError ?? null;
-  let lastTurn = opts.enrich?.lastTurn ?? null;
+  const lastError = opts.enrich?.lastError ?? null;
+  const lastTurn = opts.enrich?.lastTurn ?? null;
   const snapMcp = mcpSnapshot({
     mcpManifest: opts.mcpManifest,
     envFile: opts.envFile,

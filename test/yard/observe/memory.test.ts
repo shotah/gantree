@@ -26,11 +26,11 @@ import { closeYardDb } from "@/lib/yard/door/store";
 import {
   persistHost,
   persistMcp,
-    persistTurn,
-    persistUptime,
-    recallSamples,
-    dropCraneSamples,
-    RETAIN_MS,
+  persistTurn,
+  persistUptime,
+  recallSamples,
+  dropCraneSamples,
+  RETAIN_MS,
   TURN_RETAIN_MS,
 } from "@/lib/yard/observe/memory";
 import { clearObserveRings, peekTurns, sampleTurns } from "@/lib/yard/observe/stats";
@@ -114,8 +114,8 @@ describe("yard memory", () => {
     expect(recalled.mcp[0]?.skipped).toBe(1);
     expect(recalled.uptime[0]?.restartCount).toBe(0);
 
-    const line =
-      '{"time":"2026-08-22T18:00:00.000Z","msg":"turn perf","prompt_est_tokens":10,"gen_est_tokens":2,"iterations":1}\n';
+    const line
+      = '{"time":"2026-08-22T18:00:00.000Z","msg":"turn perf","prompt_est_tokens":10,"gen_est_tokens":2,"iterations":1}\n';
     vi.mocked(getGantry).mockResolvedValue(card({ slug: "kit" }));
     vi.mocked(containerLogsBuffer).mockResolvedValue(Buffer.from(line));
     await sampleTurns("kit");

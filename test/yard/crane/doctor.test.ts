@@ -59,11 +59,11 @@ function craneFiles(opts?: { persona?: boolean; oauth?: boolean; env?: string; m
   const mcpManifest = join(root, "mcp.toml");
   writeFileSync(
     mcpManifest,
-    opts?.mcp ??
-      stringifyMcpToml([
-        { name: "math", command: "mcp-go-math" },
-        { name: "google", command: "google-mcp", auth_args: ["auth"] },
-      ]),
+    opts?.mcp
+    ?? stringifyMcpToml([
+      { name: "math", command: "mcp-go-math" },
+      { name: "google", command: "google-mcp", auth_args: ["auth"] },
+    ]),
   );
   const envFile = join(root, ".env");
   writeFileSync(envFile, opts?.env ?? "GOOGLE_OAUTH_CLIENT_ID=id\nGOOGLE_OAUTH_CLIENT_SECRET=sec\n");

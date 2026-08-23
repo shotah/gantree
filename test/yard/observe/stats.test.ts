@@ -102,8 +102,8 @@ describe("sampleTurns", () => {
   });
 
   it("ingests turn perf lines once and skips junk", async () => {
-    const line =
-      '{"time":"2026-08-22T18:00:00.000Z","msg":"turn perf","prompt_est_tokens":10,"gen_est_tokens":2,"iterations":1}\n';
+    const line
+      = '{"time":"2026-08-22T18:00:00.000Z","msg":"turn perf","prompt_est_tokens":10,"gen_est_tokens":2,"iterations":1}\n';
     vi.mocked(getGantry).mockResolvedValue(card({ slug: "turns-ok" }));
     vi.mocked(containerLogsBuffer).mockResolvedValue(
       Buffer.from(`${line}{"time":"2026-08-22T18:00:00Z","msg":"tools_published"}\nnot-json\n{"msg":"turn perf"}\n`),

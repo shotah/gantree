@@ -13,14 +13,14 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["test/**/*.test.ts", "scripts/**/*.test.ts", "app/**/*.test.tsx"],
+    include: ["test/**/*.test.ts", "test/**/*.test.tsx"],
     setupFiles: [resolve(import.meta.dirname, "test/setup.ts")],
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"],
       reportsDirectory: "coverage",
       include: ["lib/yard/**/*.ts"],
-      exclude: ["lib/yard/index.ts", "lib/yard/door/index.ts"],
+      exclude: ["lib/yard/door/index.ts"],
       thresholds: {
         lines: 60,
         statements: 60,

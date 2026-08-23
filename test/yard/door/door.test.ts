@@ -253,7 +253,7 @@ describe("the door", () => {
 
   it("reports door status without leaking other operators", () => {
     const empty = doorStatus(req());
-    expect(empty).toEqual({ ready: false, operator: null, bindOpen: false });
+    expect(empty).toEqual({ ready: false, operator: null, bindOpen: false, dev: false });
     const created = setupOperator("kit", "a-long-enough-pass");
     expect(created.ok).toBe(true);
     if (!created.ok) {
@@ -495,6 +495,7 @@ describe("dev auto-login", () => {
     const incoming = req("/api/door");
     const status = doorStatus(incoming);
     expect(status.ready).toBe(true);
+    expect(status.dev).toBe(true);
     expect(status.operator?.name).toBe("bob");
     const cooked = withDevSessionCookie(incoming, Response.json(status));
     expect(cooked.headers.get("set-cookie")).toMatch(new RegExp(`${SESSION_COOKIE}=`));
@@ -511,6 +512,7 @@ describe("dev auto-login", () => {
     process.env.HOST = "0.0.0.0";
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     expect(devAutoLoginEnabled()).toBe(false);
+    expect(doorStatus(req()).dev).toBe(false);
     expect(denyUnlessOperator(req())?.status).toBe(401);
     expect(operatorCount()).toBe(0);
     warn.mockRestore();

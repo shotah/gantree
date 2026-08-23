@@ -66,17 +66,17 @@ export function parseLogLine(raw: string): LogLine {
       json = null;
     }
   }
-  const ts =
-    (typeof json?.time === "string" && json.time) ||
-    (typeof json?.ts === "string" && json.ts) ||
-    null;
+  const ts
+    = (typeof json?.time === "string" && json.time)
+      || (typeof json?.ts === "string" && json.ts)
+      || null;
   const level = typeof json?.level === "string" ? json.level : null;
-  const base =
-    (typeof json?.msg === "string" && json.msg) ||
-    (typeof json?.message === "string" && json.message) ||
-    trimmed;
-  const err =
-    typeof json?.err === "string"
+  const base
+    = (typeof json?.msg === "string" && json.msg)
+      || (typeof json?.message === "string" && json.message)
+      || trimmed;
+  const err
+    = typeof json?.err === "string"
       ? json.err
       : json?.err instanceof Error
         ? json.err.message

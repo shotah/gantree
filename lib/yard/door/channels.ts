@@ -19,6 +19,20 @@ const DISCORD_ID = /^\d{5,20}$/;
 const SLACK_ID = /^[A-Za-z][A-Za-z0-9._-]{2,63}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** C0 + DEL. `allowWrap` keeps tab/LF/CR so a description can wrap. */
+function hasForbiddenControls(s: string, allowWrap = false): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (allowWrap && (c === 0x09 || c === 0x0a || c === 0x0d)) {
+      continue;
+    }
+    if (c <= 0x1f || c === 0x7f) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function emptyChannels(): OperatorChannels {
   return { telegram: [], slack: [], discord: [] };
 }
@@ -35,7 +49,7 @@ export function validateDisplayName(raw: string): string | null {
   if (s.length > MAX_DISPLAY_NAME) {
     return `display name must be at most ${MAX_DISPLAY_NAME} characters`;
   }
-  if (/[\u0000-\u001f\u007f]/.test(s)) {
+  if (hasForbiddenControls(s)) {
     return "display name cannot contain control characters";
   }
   return null;
@@ -65,7 +79,7 @@ export function validateDescription(raw: string): string | null {
   if (raw.length > MAX_DESCRIPTION) {
     return `description must be at most ${MAX_DESCRIPTION} characters`;
   }
-  if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(raw)) {
+  if (hasForbiddenControls(raw, true)) {
     return "description cannot contain control characters";
   }
   return null;
