@@ -12,7 +12,8 @@ Docker on the box. Cast / `life-cast` is allowed (mDNS, TV on the LAN).
 Need **Node 22** (`node -v`). Distro `apt install npm` is often Node 20 and
 will fail. Headless host, attach existing agents, tunnel, gotchas:
 **[headless.md](headless.md)**. What the board is for:
-**[console.md](console.md)**.
+**[console.md](console.md)**. Login, profile, settings:
+**[operators.md](operators.md)**.
 
 ```bash
 git clone https://github.com/shotah/gantree.git
@@ -33,7 +34,7 @@ Chat is Telegram — not this UI.
 Local screenshots / `npm run dev`: `GANTREE_DEV=1` plus operator + passphrase
 in `.env` ([.env.example](../.env.example)). Loopback only — compose
 `HOST=0.0.0.0` ignores the flag. Unset it to photograph `/login`. Details:
-[security.md](security.md#dev-auto-login) · [console.md](console.md).
+[security.md](security.md#dev-auto-login) · [operators.md](operators.md).
 
 ![First operator — create the person who owns the box](../assets/setup.png)
 
@@ -43,7 +44,8 @@ Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
 That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the
 passphrase: delete it and run `/setup` again. Add a partner from **Settings**
 (the cog) after login (admin / user on one crane / readonly). Your photo and
-passphrase are **Profile**. What the door checks: [security.md](security.md).
+passphrase are **Profile**. People walk: [operators.md](operators.md). What
+the door checks: [security.md](security.md).
 
 ## Cloud (your GCE / EC2)
 

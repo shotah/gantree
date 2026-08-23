@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GantreeMark } from "./GantreeMark";
 
 export function SetupForm() {
   return <AuthForm kind="setup" />;
@@ -46,14 +47,17 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-stone-100">{setup ? "First operator" : "Log in"}</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          {setup
-            ? "This yard has no door yet. Create the operator who owns the box. Passphrase ≥10 characters — not blank, not your name, not a common password. Forgot later: sqlite3 gantree.db, delete from operator."
-            : "Same yard. Same files. Chat still stays Telegram."}
-        </p>
+    <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4" data-shot={setup ? "setup" : "login"}>
+      <div className="flex items-start gap-3">
+        <GantreeMark tiled className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-zinc-800" />
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-100">{setup ? "First operator" : "Log in"}</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {setup
+              ? "This yard has no door yet. Create the operator who owns the box. Passphrase ≥10 characters — not blank, not your name, not a common password. Forgot later: sqlite3 gantree.db, delete from operator."
+              : "Same yard. Same files. Chat still stays Telegram."}
+          </p>
+        </div>
       </div>
       <label className="flex flex-col gap-1 text-xs text-zinc-500">
         name

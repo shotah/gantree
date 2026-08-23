@@ -7,7 +7,8 @@ Login is **defense in depth**, not a reason to open a WAN port. Cloud VM
 still pins loopback + Tailscale / tunnel. Home compose may publish `:80`
 on the LAN *behind* this door. Agents still open **zero** inbound ports.
 
-Walk: [console.md](console.md). Bind stories: [install.md](install.md).
+Walk: [console.md](console.md). Login, profile, settings:
+[operators.md](operators.md). Bind stories: [install.md](install.md).
 Stack: [architecture.md](architecture.md). Code: `lib/yard/door/`.
 
 ---

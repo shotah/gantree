@@ -5,7 +5,8 @@ The product is the crane:
 operator walk for **this** repo — the board that appears when you run more
 than one. Pitch and why the harness is worth operating live in the
 [root readme](../README.md). Install: [install.md](install.md). Headless
-host + attach: [headless.md](headless.md). Door: [security.md](security.md).
+host + attach: [headless.md](headless.md). Login, profile, settings:
+[operators.md](operators.md). Door: [security.md](security.md).
 
 Chat stays Telegram (or Discord / Slack). Nothing here sits in a chat turn.
 Gantree reads Docker and files after the fact. It writes the same files the
@@ -30,19 +31,10 @@ Need **Node 22**. `npm start` (or compose) on the Docker host.
 3. Sessions live in yard `gantree.db` — not a crane’s `data/gantry.db`.
 
 Forgot the passphrase: stop, delete that sqlite file, start, run setup
-again. No email reset. Whoever logs in has a **role**: admin is full
-access, user is one crane, readonly can look. Your face and passphrase
-are **Profile** (click your name). Operators and roles are **Settings**
-(the cog). Confirm-scary on add / remove, like a token push. You cannot
-delete the last operator, or the last admin. The row is a UUID, so
-renaming bob does not mint a new person.
-
-Local screenshots / `npm run dev`: set `GANTREE_DEV=1` plus operator +
-passphrase in `.env` (see `.env.example`). That mints a real session on
-**loopback only**. Compose publishes `HOST=0.0.0.0`, so the flag is ignored
-on a LAN. Unset it to photograph `/login`. Passphrase ≥10 characters, not
-blank, not your name, not a common password. Failed logins back off.
-What the door actually checks: [security.md](security.md).
+again. No email reset. Click your name for **Profile**; the cog is
+**Settings**. Roles, add/remove, and the stuck table:
+[operators.md](operators.md). What the door checks:
+[security.md](security.md).
 
 ![First-boot setup: create the operator who owns the box](../assets/setup.png)
 

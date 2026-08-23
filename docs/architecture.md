@@ -4,7 +4,8 @@ Gantree is the **operator plane** for
 [ai-gantry](https://github.com/shotah/ai-gantry): a shipping yard, not the
 chat. The crane is the product — why the harness is worth operating lives
 in the [root readme](../README.md). What you click on the board:
-[console.md](console.md). This page is how the yard is put together —
+[console.md](console.md). People (login, profile, settings):
+[operators.md](operators.md). This page is how the yard is put together —
 stack, host I/O, and why the console never sits in a chat turn.
 
 Harness-side design note (nested checkout, **dev only**):
@@ -120,8 +121,10 @@ gantree/                    this repo — shipping yard
 ├── assets/logo.svg         app icon mark (portal crane)
 ├── app/icon.svg            tab icon (SVG)
 ├── app/favicon.ico         tab icon (browsers that still ask for .ico)
-├── assets/setup.png        console.md: first-boot operator
-├── assets/login.png        console.md: log in
+├── assets/setup.png        operators.md: first-boot operator
+├── assets/login.png        operators.md: log in
+├── assets/profile.png      operators.md: operator profile
+├── assets/settings.png     operators.md: roles and operators
 ├── assets/yard.png         console.md: board with avatars
 ├── assets/crane-metrics.png console.md: Ada dashboard graphs + logs
 ├── assets/metrics.png      console.md: six-tile live charts (tokens wait for a chat)

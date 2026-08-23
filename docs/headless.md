@@ -6,6 +6,7 @@ Telegram.
 
 This page is the operator walk (Node 22, attach existing dirs, SSH tunnel).
 Stranger hello: [install.md](install.md). Board walk: [console.md](console.md).
+Login, profile, settings: [operators.md](operators.md).
 
 ---
 
@@ -132,9 +133,10 @@ You want in the log: `Production server running at http://0.0.0.0:3000`
 
 The UI has a **login**. First boot is `/setup` (one operator). Sessions
 live in yard `gantree.db` (compose: `var/gantree.db`) — not a crane’s
-`data/gantry.db`. Whoever can log in can read logs, edit `.env`, and
-recreate containers. Forgot the passphrase: stop, delete that sqlite
-file, start, run setup again. No email reset. What the door checks:
+`data/gantry.db`. Whoever logs in has a **role** — admin is full access,
+user is one crane, readonly can look. Forgot the passphrase: stop, delete
+that sqlite file, start, run setup again. No email reset. People walk:
+[operators.md](operators.md). What the door checks:
 [security.md](security.md).
 
 ![First operator](../assets/setup.png)

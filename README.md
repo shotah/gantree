@@ -125,7 +125,8 @@ One crane, no board:
 Home Mini vs cloud VM, tunnels, attach existing dirs:
 **[docs/install.md](docs/install.md)** ·
 **[docs/headless.md](docs/headless.md)**. Grants, doctor, avatars:
-**[docs/console.md](docs/console.md)**.
+**[docs/console.md](docs/console.md)**. Login, profile, settings:
+**[docs/operators.md](docs/operators.md)**.
 
 | Path | When |
 | --- | --- |
@@ -160,7 +161,8 @@ day one, this is the wrong stack — and that’s fine.
 | --- | --- |
 | The runner | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
 | One crane, Docker hello | **[deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)** |
-| The board, grants, login | **[docs/console.md](docs/console.md)** |
+| The board, grants, avatars | **[docs/console.md](docs/console.md)** |
+| Login, profile, settings | **[docs/operators.md](docs/operators.md)** |
 | Home Mini vs cloud VM | **[docs/install.md](docs/install.md)** |
 | Headless host + attach | **[docs/headless.md](docs/headless.md)** |
 | A custom MCP binary | **[docs/custom-mcp.md](docs/custom-mcp.md)** |
