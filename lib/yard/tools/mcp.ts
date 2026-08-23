@@ -93,9 +93,13 @@ export function mcpHint(snap: McpSnapshot): string | null {
 }
 
 /** Board badges from docker state + file-based snapshot. Empty is honest, not fake-green. */
-export function craneNags(state: GantryCard["state"], snap: McpSnapshot): CraneNag[] {
+export function craneNags(
+  state: GantryCard["state"],
+  snap: McpSnapshot,
+  opts?: { dockerPending?: boolean },
+): CraneNag[] {
   const nags: CraneNag[] = [];
-  if (state !== "running" && state !== "restarting") {
+  if (!opts?.dockerPending && state !== "running" && state !== "restarting") {
     nags.push({ kind: "dead", detail: `process ${state}` });
   }
   for (const name of snap.authMissing) {

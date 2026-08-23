@@ -119,4 +119,45 @@ describe("YardBoard", () => {
     await waitFor(() => expect(screen.getByText("300 MiB")).toBeTruthy());
     expect(screen.getByText("data dir")).toBeTruthy();
   });
+
+  it("paints host chrome before the gantries fetch returns", () => {
+    vi.mocked(yardFetch).mockImplementation((input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return Promise.resolve({ ok: true, json: async () => ({ events: [] }) } as Response);
+      }
+      return new Promise(() => undefined);
+    });
+    render(<YardBoard />);
+    expect(screen.getByText("Shipping yard")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Host/ })).toBeTruthy();
+    expect(screen.getByText(/Sampling Docker/)).toBeTruthy();
+    expect(screen.queryByText("Talking to Docker…")).toBeNull();
+  });
+
+  it("shows toml cards while docker is still pending", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return { ok: true, json: async () => inventory({ dockerPending: true }) } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
+    expect(screen.getByText(/checking Docker/)).toBeTruthy();
+  });
+
+  it("does not show the empty-yard hint while docker is still pending", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return { ok: true, json: async () => inventory({ gantries: [], dockerPending: true }) } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText(/checking Docker/)).toBeTruthy());
+    expect(screen.queryByText(/No cranes yet/)).toBeNull();
+  });
 });

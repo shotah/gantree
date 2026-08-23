@@ -106,11 +106,13 @@ export function YardBoard() {
       });
   }, [spendWindow]);
 
+  const dockerPending = !yard || Boolean(yard.dockerPending);
+
   useEffect(() => {
     load();
-    const id = setInterval(load, 5000);
+    const id = setInterval(load, dockerPending ? 1000 : 5000);
     return () => clearInterval(id);
-  }, [load]);
+  }, [load, dockerPending]);
 
   return (
     <section className="flex flex-col gap-6" data-shot="yard">
@@ -118,7 +120,9 @@ export function YardBoard() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Shipping yard</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {yard ? `${yard.gantries.length} crane${yard.gantries.length === 1 ? "" : "s"} · ${yard.source} · ${yard.yard}` : "loading…"}
+            {yard
+              ? `${yard.gantries.length} crane${yard.gantries.length === 1 ? "" : "s"} · ${yard.source} · ${yard.yard}${yard.dockerPending ? " · checking Docker…" : ""}`
+              : "loading…"}
           </p>
         </div>
         {yard?.canBuild ? <BuildCrane onBuilt={load} /> : null}
@@ -130,9 +134,7 @@ export function YardBoard() {
 
       {yard ? <SpendBoard spend={yard.spend} window={spendWindow} onWindow={setSpendWindow} observe={yard.observe} /> : null}
 
-      {!yard ? <p className="text-sm text-zinc-500">Talking to Docker…</p> : null}
-
-      {yard && yard.gantries.length === 0 ? (
+      {yard && yard.gantries.length === 0 && !yard.dockerPending ? (
         <div className="rounded-lg border border-dashed border-zinc-800 px-5 py-8 text-sm text-zinc-400">
           <p>
             No cranes yet. Build one from this board, or copy <code className="text-amber-500">gantree.toml.example</code> to{" "}
@@ -142,7 +144,7 @@ export function YardBoard() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {yard ? <HostCard host={yard.host} dockerError={yard.dockerError} /> : null}
+        <HostCard host={yard?.host} dockerError={yard?.dockerError} />
         {yard?.gantries.map((g) => (
           <Link
             key={g.slug}

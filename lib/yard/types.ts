@@ -283,6 +283,8 @@ export type YardInventory = {
   yard: string;
   gantries: GantryCard[];
   dockerError: string | null;
+  /** True until the first Docker list/inspect finishes (board paints from files meanwhile). */
+  dockerPending?: boolean;
   /** CPU samples for board sparklines — filled by the list API, not listYard. */
   sparks?: Record<string, StatSample[]>;
   /** Est. token spend from JSON slog — filled by the list API, not listYard. */

@@ -106,5 +106,6 @@ describe("craneNags", () => {
       { kind: "auth", detail: "google needs auth" },
       { kind: "skipped", detail: "skipped math" },
     ]);
+    expect(craneNags("unknown", empty, { dockerPending: true })).toEqual([]);
   });
 });

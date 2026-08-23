@@ -19,7 +19,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
   ],
 }));
 
-import { containerDisplayName, getGantry, listYard } from "@/lib/yard/crane/inventory";
+import { containerDisplayName, getGantry, listYard, resetYardDockerCache } from "@/lib/yard/crane/inventory";
 import { containerLogsBuffer, inspectByName, listGantryContainers } from "@/lib/yard/host/docker";
 import { stringifyMcpToml } from "@/lib/yard/host/files";
 import { DEFAULT_IMAGE } from "@/lib/yard/types";
@@ -29,6 +29,7 @@ const prevRoot = process.env.GANTREE_ROOT;
 const prevToml = process.env.GANTREE_TOML;
 
 beforeEach(() => {
+  resetYardDockerCache();
   vi.mocked(listGantryContainers).mockReset();
   vi.mocked(inspectByName).mockReset();
   vi.mocked(containerLogsBuffer).mockReset();
@@ -226,5 +227,30 @@ env_file = "./.env"
     expect(inv.source).toBe("docker-discover");
     expect(inv.dockerError).toMatch(/Docker socket not found/);
     expect(inv.gantries).toEqual([]);
+  });
+
+  it("returns toml cards without waiting for docker", async () => {
+    yard(`
+[[gantry]]
+slug = "kit"
+container = "kit"
+`);
+    let release!: (rows: ReturnType<typeof listed>[]) => void;
+    vi.mocked(listGantryContainers).mockReturnValue(
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    const pending = await listYard({ waitDocker: false });
+    expect(pending.dockerPending).toBe(true);
+    expect(pending.gantries[0]?.slug).toBe("kit");
+    expect(pending.gantries[0]?.state).toBe("unknown");
+    expect(pending.gantries[0]?.nags.some((n) => n.kind === "dead")).toBe(false);
+
+    release([listed()]);
+    const live = await listYard();
+    expect(live.dockerPending).toBe(false);
+    expect(live.gantries[0]?.state).toBe("running");
   });
 });
