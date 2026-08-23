@@ -145,7 +145,7 @@ describe("TelegramBot", () => {
     render(<TelegramBot slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />);
     await waitFor(() => expect(screen.getByText("no token")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
-    expect(screen.getByText(/Paste TELEGRAM_BOT_TOKEN in Secrets/)).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/Paste TELEGRAM_BOT_TOKEN in Secrets/)).toBeTruthy());
   });
 
   it("signals env written after saving the allowlist", async () => {
@@ -185,7 +185,7 @@ describe("TelegramBot", () => {
     );
     await waitFor(() => expect(screen.getByText("@kit_bot")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Save allowlist" }));
+    fireEvent.click(await waitFor(() => screen.getByRole("button", { name: "Save allowlist" })));
     await waitFor(() => expect(onEnvWritten).toHaveBeenCalledTimes(1));
   });
 });

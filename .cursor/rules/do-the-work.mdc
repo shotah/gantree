@@ -1,0 +1,50 @@
+---
+description: Ship TypeScript and Vitest. Do not use git, Python, or curl to explore.
+alwaysApply: true
+---
+
+# Do the work
+
+This is a TypeScript repo (`npm test` = Vitest). Spend the turn implementing and testing, not touring.
+
+## Do not use git
+
+Do not run `git` (status, log, blame, diff, show, stash) unless the user explicitly asks for a commit or pull request. History is not how you learn this codebase.
+
+## Do not use Python or curl
+
+Do not write Python. Do not use `curl` (or wget, httpie) to poke endpoints, binaries, or "see what happens."
+
+If a function, handler, or parse path needs checking, call it from a TypeScript Vitest test.
+
+## Write TypeScript and TypeScript tests
+
+- Change `*.ts` / `*.tsx`. Add tests next to the existing layout: `test/**/*.test.ts`, `app/**/*.test.tsx`, `scripts/**/*.test.ts`.
+- Import with `@/` and `describe` / `it` / `expect` from `vitest`, matching files already in `test/`.
+- Run `npm test` and `npm run typecheck` on what you touched.
+
+```typescript
+// ❌ BAD — discovery theater
+// git log -p -- lib/yard/tools/catalog.ts
+// python3 -c "import json; print(json.loads(open('x').read()))"
+// curl -s http://127.0.0.1:3000/api/...
+
+// ✅ GOOD — assert the behavior
+import { describe, expect, it } from "vitest";
+import { parseHostManifest } from "@/lib/yard/tools/packages";
+
+describe("parseHostManifest", () => {
+  it("reads env_keys from JSON", () => {
+    const entry = parseHostManifest(
+      '{"name":"maps","command":"google-maps-mcp","env_keys":["GOOGLE_MAPS_API_KEY"]}\n',
+    );
+    expect(entry.envKeys).toEqual(["GOOGLE_MAPS_API_KEY"]);
+  });
+});
+```
+
+Open the files you will change, make the change, write the test, run it. Do not deep dive into git history or write elaborate python checks. Just use proper TDD. Yes I understand you need to review files to map features correctly.
+
+## ALWAYS TYPECHECK, ALWAYS LINT, and ALWAYS TEST
+
+Be sure to typecheck, lint, and test before telling the user the task is complete.
