@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
+  estSpendUsd,
   fmtAgo,
   fmtEstTokens,
   fmtSpendWindow,
+  fmtUsd,
   orderedSources,
   spendPace,
   SPEND_WINDOWS,
   type SpendBucket,
   type SpendWindow,
 } from "@/lib/yard/observe/spend";
-import type { LastTurn, SpendRollup, SpendSlice, YardSpend } from "@/lib/yard/types";
+import type { LastTurn, ObservePrefs, SpendRollup, SpendSlice, YardSpend } from "@/lib/yard/types";
 
 const WINDOW_LABELS: Record<SpendWindow, string> = {
   "1h": "1h",
@@ -237,10 +239,12 @@ export function SpendBoard({
   spend,
   window,
   onWindow,
+  observe,
 }: {
   spend: YardSpend | undefined;
   window: SpendWindow;
   onWindow: (w: SpendWindow) => void;
+  observe?: ObservePrefs | null;
 }) {
   const [open, setOpen] = useState(false);
   const max = spend?.cranes[0]?.estTokens ?? 0;
@@ -251,6 +255,7 @@ export function SpendBoard({
   const pace = spend && spend.estTokens > 0 ? spendPace(spend.estTokens, window, now) : null;
   const last = lastTurnLine(spend?.lastTurn, now);
   const mix = spend?.bySource ?? [];
+  const usd = estSpendUsd(spend?.promptEst ?? 0, spend?.genEst ?? 0, observe);
 
   return (
     <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
@@ -273,6 +278,7 @@ export function SpendBoard({
                 <span className="mt-1 block text-2xl font-semibold tabular-nums text-stone-100">
                   {fmtEstTokens(spend?.estTokens ?? 0)}
                   <span className="ml-2 text-sm font-normal text-zinc-500">est. tokens</span>
+                  {usd != null ? <span className="ml-2 text-sm font-normal text-emerald-400/90">{fmtUsd(usd)}</span> : null}
                 </span>
               </span>
             </span>
@@ -342,7 +348,7 @@ export function SpendBoard({
   );
 }
 
-export function CraneSpend({ rollup, scope }: { rollup: SpendRollup; scope: string }) {
+export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; scope: string; observe?: ObservePrefs | null }) {
   if (rollup.turns === 0) {
     return (
       <p className="mb-3 text-xs text-zinc-600">
@@ -351,6 +357,7 @@ export function CraneSpend({ rollup, scope }: { rollup: SpendRollup; scope: stri
     );
   }
   const last = lastTurnLine(rollup.lastTurn, Date.now());
+  const usd = estSpendUsd(rollup.promptEst, rollup.genEst, observe);
   return (
     <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
@@ -363,6 +370,7 @@ export function CraneSpend({ rollup, scope }: { rollup: SpendRollup; scope: stri
         <p className="mt-1 text-lg font-semibold tabular-nums text-emerald-400">{fmtEstTokens(rollup.estTokens)}</p>
         <p className="text-[11px] text-zinc-500">
           {fmtEstTokens(rollup.promptEst)} prompt · {fmtEstTokens(rollup.genEst)} gen
+          {usd != null ? ` · ${fmtUsd(usd)}` : ""}
         </p>
       </div>
       <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">

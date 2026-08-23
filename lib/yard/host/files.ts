@@ -16,6 +16,7 @@ export type TomlGantry = {
 export type GantreeToml = {
   yard?: string;
   gantry?: TomlGantry[];
+  observe?: Record<string, unknown>;
 };
 
 export function yardRoot(): string {

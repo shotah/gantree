@@ -2,6 +2,7 @@ import { canManageOperators, operatorFromRequest, withDoor } from "@/lib/yard/do
 import { listYard } from "@/lib/yard/crane/inventory";
 import { consoleRuntime } from "@/lib/yard/host/runtime";
 import { peekMachine, sampleMachine } from "@/lib/yard/observe/machine";
+import { loadObservePrefs } from "@/lib/yard/observe/prefs";
 
 export const GET = withDoor(async (req: Request) => {
   try {
@@ -17,6 +18,7 @@ export const GET = withDoor(async (req: Request) => {
       source: listed.source,
       canMutate: admin,
       runtime: admin ? consoleRuntime(host.live?.hostname) : null,
+      observe: loadObservePrefs(),
     });
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });

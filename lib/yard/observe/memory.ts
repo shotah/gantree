@@ -1,5 +1,6 @@
 import { yardDb } from "../door/store";
 import type { HostSample, McpSample, StatSample, TurnSample, UptimeSample } from "../types";
+import { hostRetainMs, turnRetainMs } from "./prefs";
 
 /** Seven days on a Mini. Ring buffers stay the live window. */
 export const RETAIN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -38,7 +39,7 @@ export function persistHost(slug: string, sample: StatSample): void {
       sample.blkWriteBytes ?? null,
       sample.diskBytes ?? null,
     );
-    prune(db, "sample_host", slug, HOST_CAP);
+    prune(db, "sample_host", slug, HOST_CAP, hostRetainMs());
   } catch {
     /* ring still works */
   }
@@ -68,7 +69,7 @@ export function persistTurn(slug: string, sample: TurnSample): void {
         sample.outcome,
         sample.durationMs ?? null,
       );
-    prune(yardDb(), "sample_turn", slug, TURN_CAP, TURN_RETAIN_MS);
+    prune(yardDb(), "sample_turn", slug, TURN_CAP, turnRetainMs());
   } catch {
     /* ring still works */
   }
@@ -79,7 +80,7 @@ export function persistMcp(slug: string, sample: McpSample): void {
     yardDb()
       .prepare("INSERT INTO sample_mcp (slug, at, published, skipped) VALUES (?, ?, ?, ?)")
       .run(slug, sample.at, sample.published, sample.skipped);
-    prune(yardDb(), "sample_mcp", slug, MCP_CAP);
+    prune(yardDb(), "sample_mcp", slug, MCP_CAP, hostRetainMs());
   } catch {
     /* ring still works */
   }
@@ -90,7 +91,7 @@ export function persistUptime(slug: string, sample: UptimeSample): void {
     yardDb()
       .prepare("INSERT INTO sample_uptime (slug, at, uptime_seconds, restart_count) VALUES (?, ?, ?, ?)")
       .run(slug, sample.at, sample.uptimeSeconds, sample.restartCount);
-    prune(yardDb(), "sample_uptime", slug, UPTIME_CAP);
+    prune(yardDb(), "sample_uptime", slug, UPTIME_CAP, hostRetainMs());
   } catch {
     /* ring still works */
   }
@@ -121,7 +122,7 @@ export function persistMachine(sample: HostSample): void {
       sample.otherRx,
       sample.otherTx,
     );
-    const cutoff = Date.now() - RETAIN_MS;
+    const cutoff = Date.now() - hostRetainMs();
     db.prepare("DELETE FROM sample_machine WHERE at < ?").run(cutoff);
     const n = Number((db.prepare("SELECT COUNT(*) AS n FROM sample_machine").get() as { n: number } | undefined)?.n ?? 0);
     if (n > MACHINE_CAP) {
@@ -135,7 +136,7 @@ export function persistMachine(sample: HostSample): void {
 }
 
 export function recallMachine(limit: number): HostSample[] {
-  const cutoff = Date.now() - RETAIN_MS;
+  const cutoff = Date.now() - hostRetainMs();
   try {
     const rows = yardDb()
       .prepare(
@@ -167,8 +168,8 @@ export function recallMachine(limit: number): HostSample[] {
 }
 
 export function recallSamples(slug: string, limits: { host: number; turns: number; mcp: number; uptime: number }): RecalledSamples {
-  const cutoff = Date.now() - RETAIN_MS;
-  const turnCutoff = Date.now() - TURN_RETAIN_MS;
+  const cutoff = Date.now() - hostRetainMs();
+  const turnCutoff = Date.now() - turnRetainMs();
   try {
     const db = yardDb();
     const host = (
@@ -295,7 +296,23 @@ function num(v: number | null | undefined): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : v == null ? null : Number(v);
 }
 
-function prune(db: ReturnType<typeof yardDb>, table: string, slug: string, cap: number, retainMs = RETAIN_MS): void {
+
+export function pruneByObservePrefs(): void {
+  try {
+    const db = yardDb();
+    const hostCut = Date.now() - hostRetainMs();
+    const turnCut = Date.now() - turnRetainMs();
+    for (const table of ["sample_host", "sample_mcp", "sample_uptime"] as const) {
+      db.prepare(`DELETE FROM ${table} WHERE at < ?`).run(hostCut);
+    }
+    db.prepare("DELETE FROM sample_turn WHERE at < ?").run(turnCut);
+    db.prepare("DELETE FROM sample_machine WHERE at < ?").run(hostCut);
+  } catch {
+    /* ring still works */
+  }
+}
+
+function prune(db: ReturnType<typeof yardDb>, table: string, slug: string, cap: number, retainMs = hostRetainMs()): void {
   const cutoff = Date.now() - retainMs;
   db.prepare(`DELETE FROM ${table} WHERE slug = ? AND at < ?`).run(slug, cutoff);
   const n = Number(

@@ -4,6 +4,7 @@ import { buildCrane, type BuildInput } from "@/lib/yard/crane/build";
 import { peekMachine, sampleMachine } from "@/lib/yard/observe/machine";
 import { labelSpend, namesFromOperators, parseSpendWindow, windowStart } from "@/lib/yard/observe/spend";
 import { kickYardSamples, peekYardSpend, sampleTurns } from "@/lib/yard/observe/stats";
+import { loadObservePrefs } from "@/lib/yard/observe/prefs";
 
 export const GET = withDoor(async (req: Request) => {
   try {
@@ -26,6 +27,7 @@ export const GET = withDoor(async (req: Request) => {
       host: peekMachine(),
       userNames,
       canBuild: Boolean(you && canBuildCrane(you)),
+      observe: loadObservePrefs(),
     });
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });

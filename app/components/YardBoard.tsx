@@ -128,7 +128,7 @@ export function YardBoard() {
         <p className="rounded-md border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200">{error}</p>
       ) : null}
 
-      {yard ? <SpendBoard spend={yard.spend} window={spendWindow} onWindow={setSpendWindow} /> : null}
+      {yard ? <SpendBoard spend={yard.spend} window={spendWindow} onWindow={setSpendWindow} observe={yard.observe} /> : null}
 
       {!yard ? <p className="text-sm text-zinc-500">Talking to Docker…</p> : null}
 

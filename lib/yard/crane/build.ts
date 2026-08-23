@@ -5,6 +5,7 @@ import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByN
 import { writeEnvFile } from "../host/envfile";
 import { stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
 import { DEFAULT_IMAGE, type McpServer } from "../types";
+import { loadObservePrefs } from "../observe/prefs";
 
 export { DEFAULT_IMAGE };
 
@@ -86,7 +87,7 @@ export function writeCraneFiles(input: BuildInput): {
     [
       `services:`,
       `  ${slug}:`,
-      `    image: ${input.image || DEFAULT_IMAGE}`,
+      `    image: ${input.image || loadObservePrefs().defaultImage}`,
       `    container_name: ${slug}`,
       `    restart: unless-stopped`,
       ...(user ? [`    user: "${user}"`] : [`    # user: "UID:GID" — account that owns data/`]),
@@ -201,7 +202,7 @@ export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; deta
     return { ok: false, detail: "life-cast is home only (host network / mDNS)", slug };
   }
   const files = writeCraneFiles({ ...input, slug });
-  const image = input.image || DEFAULT_IMAGE;
+  const image = input.image || loadObservePrefs().defaultImage;
   try {
     const { pullImage } = await import("../host/docker");
     await pullImage(image);

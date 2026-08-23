@@ -264,6 +264,17 @@ export type YardDbInspect = {
   tables: { name: string; rows: number }[];
 };
 
+export type ObservePrefs = {
+  hostRetainDays: number;
+  turnRetainDays: number;
+  /** IANA zone for chart ticks. Null = operator local. */
+  timezone: string | null;
+  /** Hub pin offered to *new* cranes. Existing compose tags stay until pin/recreate. */
+  defaultImage: string;
+  promptUsdPerMillion: number | null;
+  genUsdPerMillion: number | null;
+};
+
 export type YardInventory = {
   source: "gantree.toml" | "docker-discover";
   yard: string;
@@ -277,4 +288,6 @@ export type YardInventory = {
   host?: HostLive;
   /** True when this session may build a crane — filled by the list API. */
   canBuild?: boolean;
+  /** Yard [observe] prefs — filled by the list API. */
+  observe?: ObservePrefs;
 };

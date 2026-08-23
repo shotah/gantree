@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { secretKeysForGrant } from "@/lib/yard/tools/packages";
 import {
   bucketsForWindow,
@@ -15,17 +15,19 @@ import {
   type SpendWindow,
 } from "@/lib/yard/observe/spend";
 import { shouldPushTelegram } from "@/lib/yard/host/telegram";
-import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, type McpSample, type McpServer, type StatSample, type TurnSample, type UptimeSample } from "@/lib/yard/types";
+import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, type McpSample, type McpServer, type ObservePrefs, type StatSample, type TurnSample, type UptimeSample } from "@/lib/yard/types";
 import { CraneAvatar } from "./CraneAvatar";
 import { craneFoldKey, DashFold } from "./DashFold";
 import { DoctorPanel } from "./DoctorPanel";
 import { EventStrip } from "./EventStrip";
 import { LogViewer } from "./LogViewer";
-import { MetricCharts } from "./MetricCharts";
 import { CraneSpend, SpendScope } from "./SpendBoard";
 import { TelegramBot } from "./TelegramBot";
+import { ChartSkeleton } from "./WhenVisible";
 import { jpegFromFile } from "../lib/jpegFromFile";
 import { yardFetch } from "../lib/yardFetch";
+
+const MetricCharts = lazy(() => import("./MetricCharts").then((m) => ({ default: m.MetricCharts })));
 
 type EnvRow = { set: boolean; secret: boolean; value: string };
 type Files = {
@@ -46,6 +48,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [mcp, setMcp] = useState<McpSample[]>([]);
   const [uptime, setUptime] = useState<UptimeSample[]>([]);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [observe, setObserve] = useState<ObservePrefs | null>(null);
   const [files, setFiles] = useState<Files | null>(null);
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [persona, setPersona] = useState("");
@@ -60,6 +63,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [authCode, setAuthCode] = useState("");
   const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
   const [spendBucket, setSpendBucket] = useState<SpendBucket>("cumulative");
+  const [now, setNow] = useState(() => Date.now());
 
   const refresh = useCallback(() => {
     yardFetch(`/api/gantries/${slug}`)
@@ -84,12 +88,14 @@ export function AgentDashboard({ slug }: { slug: string }) {
       .catch(() => undefined);
     yardFetch(`/api/gantries/${slug}/stats`)
       .then((r) => r.json())
-      .then((s: { host: StatSample[]; turns: TurnSample[]; mcp: McpSample[]; uptime: UptimeSample[]; userNames?: Record<string, string> }) => {
+      .then((s: { host: StatSample[]; turns: TurnSample[]; mcp: McpSample[]; uptime: UptimeSample[]; userNames?: Record<string, string>; observe?: ObservePrefs }) => {
         setHost(s.host ?? []);
         setTurns(s.turns ?? []);
         setMcp(s.mcp ?? []);
         setUptime(s.uptime ?? []);
         setUserNames(s.userNames ?? {});
+        setObserve(s.observe ?? null);
+        setNow(Date.now());
       })
       .catch(() => undefined);
     yardFetch(`/api/gantries/${slug}/files`)
@@ -112,6 +118,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
     const id = setInterval(refresh, 4000);
     return () => clearInterval(id);
   }, [refresh]);
+
+  useEffect(() => {
+    setNow(Date.now());
+  }, [spendWindow]);
 
   async function act(action: string) {
     setBusy(true);
@@ -194,10 +204,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
     shouldPushTelegram(gantry?.channel ?? null) ||
     shouldPushTelegram(files?.env?.CHANNEL?.value ?? null) ||
     Boolean(files?.env?.TELEGRAM_BOT_TOKEN?.set);
-  const since = windowStart(spendWindow);
+  const since = windowStart(spendWindow, now);
   const allowedBuckets = bucketsForWindow(spendWindow);
   const bucket = allowedBuckets.includes(spendBucket) ? spendBucket : "cumulative";
-  const turnsInWindow = filterSamples(turns, since);
+  const turnsInWindow = filterSamples(turns, since, now);
 
   if (denied) {
     return (
@@ -308,8 +318,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
           />
         }
       >
-        <CraneSpend rollup={labelRollup(rollupTurns(slug, turnsInWindow), userNames)} scope={fmtSpendWindow(spendWindow)} />
-        <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} bucket={bucket} since={since} now={Date.now()} />
+        <CraneSpend rollup={labelRollup(rollupTurns(slug, turnsInWindow), userNames)} scope={fmtSpendWindow(spendWindow)} observe={observe} />
+        <Suspense fallback={<ChartSkeleton n={6} />}>
+          <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} bucket={bucket} since={since} now={now} timeZone={observe?.timezone} />
+        </Suspense>
       </DashFold>
 
       <DashFold title="Logs" persistKey={craneFoldKey(slug, "logs")} defaultOpen hint="live slog">

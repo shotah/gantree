@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_SPEND_WINDOW, fmtBytes, fmtSpendWindow, type SpendWindow, windowStart } from "@/lib/yard/observe/spend";
-import type { HostLive, HostRuntime, YardDbInspect } from "@/lib/yard/types";
+import type { HostLive, HostRuntime, ObservePrefs, YardDbInspect } from "@/lib/yard/types";
 import { craneFoldKey, DashFold } from "./DashFold";
 import { EventStrip } from "./EventStrip";
 import { HostAvatar, HostMeters } from "./HostCard";
 import { LogViewer } from "./LogViewer";
-import { HostCharts } from "./MetricCharts";
 import { SpendScope } from "./SpendBoard";
+import { ChartSkeleton } from "./WhenVisible";
 import { yardFetch } from "../lib/yardFetch";
+
+const HostCharts = lazy(() => import("./MetricCharts").then((m) => ({ default: m.HostCharts })));
 
 type HostMeta = {
   host?: HostLive;
@@ -20,6 +22,7 @@ type HostMeta = {
   canMutate?: boolean;
   runtime?: HostRuntime | null;
   error?: string;
+  observe?: ObservePrefs;
 };
 
 type HostFiles = {
@@ -38,6 +41,7 @@ export function HostDashboard() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
+  const [now, setNow] = useState(() => Date.now());
   const filesLoaded = useRef(false);
 
   const refresh = useCallback(() => {
@@ -45,6 +49,7 @@ export function HostDashboard() {
       .then((r) => r.json())
       .then((d: HostMeta) => {
         setMeta(d);
+        setNow(Date.now());
         if (d.canMutate) {
           if (!filesLoaded.current) {
             filesLoaded.current = true;
@@ -73,6 +78,10 @@ export function HostDashboard() {
     return () => clearInterval(id);
   }, [refresh]);
 
+  useEffect(() => {
+    setNow(Date.now());
+  }, [spendWindow]);
+
   async function saveToml() {
     setBusy(true);
     const res = await yardFetch("/api/host/files", {
@@ -92,7 +101,7 @@ export function HostDashboard() {
 
   const live = meta?.host?.live ?? null;
   const spark = meta?.host?.spark ?? [];
-  const since = windowStart(spendWindow);
+  const since = windowStart(spendWindow, now);
   const name = live?.hostname || "Host";
   const mutate = Boolean(meta?.canMutate);
   const runtime = meta?.runtime;
@@ -141,8 +150,10 @@ export function HostDashboard() {
         aside={<SpendScope window={spendWindow} onWindow={setSpendWindow} />}
       >
         {live ? <HostMeters live={live} spark={spark} /> : <p className="text-sm text-zinc-500">{meta?.dockerError || "Sampling Docker…"}</p>}
-        <HostCharts spark={spark} since={since} now={Date.now()} />
-        <p className="mt-2 text-[11px] text-zinc-600">Window {fmtSpendWindow(spendWindow)}. Host samples cap at 7 days.</p>
+        <Suspense fallback={<ChartSkeleton n={4} className="mt-3 grid gap-3 md:grid-cols-2" />}>
+          <HostCharts spark={spark} since={since} now={now} timeZone={meta?.observe?.timezone} />
+        </Suspense>
+        <p className="mt-2 text-[11px] text-zinc-600">Window {fmtSpendWindow(spendWindow)}. Host samples cap at {meta?.observe?.hostRetainDays ?? 7} days.</p>
       </DashFold>
 
       {mutate ? (

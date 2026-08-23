@@ -3,9 +3,11 @@ import {
   alignBucket,
   bucketsForWindow,
   combineSpend,
+  estSpendUsd,
   filterSamples,
   fmtEstTokens,
   fmtSpendWindow,
+  fmtUsd,
   monthStart,
   parseSpendWindow,
   rollupTurns,
@@ -20,6 +22,7 @@ import {
   labelSlices,
   spendPace,
   sourceChartSeries,
+  thinChartPoints,
   tokenChartSeries,
   windowStart,
 } from "@/lib/yard/observe/spend";
@@ -88,6 +91,15 @@ describe("fmtEstTokens", () => {
     expect(fmtEstTokens(0)).toBe("0");
     expect(fmtEstTokens(8400)).toBe("8.40k");
     expect(fmtEstTokens(16000)).toBe("16.0k");
+  });
+});
+
+describe("estSpendUsd", () => {
+  it("returns null until a rate is pasted, then is a chars/4 calculator", () => {
+    expect(estSpendUsd(1_000_000, 500_000, null)).toBeNull();
+    expect(estSpendUsd(1_000_000, 500_000, { promptUsdPerMillion: null, genUsdPerMillion: null })).toBeNull();
+    expect(estSpendUsd(1_000_000, 500_000, { promptUsdPerMillion: 0.15, genUsdPerMillion: 0.6 })).toBeCloseTo(0.45);
+    expect(fmtUsd(0.45)).toBe("$0.45");
   });
 });
 
@@ -303,5 +315,19 @@ describe("namesFromOperators", () => {
       { id: "42", turns: 1, estTokens: 10, label: "Ada" },
       { id: "7", turns: 1, estTokens: 3 },
     ]);
+  });
+});
+
+describe("thinChartPoints", () => {
+  it("keeps the ends and caps the middle", () => {
+    const rows = Array.from({ length: 1000 }, (_, i) => i);
+    const thin = thinChartPoints(rows, 5);
+    expect(thin[0]).toBe(0);
+    expect(thin[thin.length - 1]).toBe(999);
+    expect(thin).toHaveLength(5);
+  });
+
+  it("leaves short series alone", () => {
+    expect(thinChartPoints([1, 2, 3], 240)).toEqual([1, 2, 3]);
   });
 });

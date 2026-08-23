@@ -16,6 +16,29 @@ export type TokenChartPoint = {
   turns: number;
 };
 
+export function estSpendUsd(
+  promptEst: number,
+  genEst: number,
+  rates?: { promptUsdPerMillion: number | null; genUsdPerMillion: number | null } | null,
+): number | null {
+  if (!rates || (rates.promptUsdPerMillion == null && rates.genUsdPerMillion == null)) {
+    return null;
+  }
+  const p = rates.promptUsdPerMillion ?? 0;
+  const g = rates.genUsdPerMillion ?? 0;
+  return (promptEst / 1e6) * p + (genEst / 1e6) * g;
+}
+
+export function fmtUsd(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) {
+    return "$0";
+  }
+  if (n < 0.01) {
+    return `$${n.toFixed(4)}`;
+  }
+  return `$${n.toFixed(2)}`;
+}
+
 export function fmtEstTokens(n: number): string {
   if (!Number.isFinite(n) || n <= 0) {
     return "0";
@@ -436,6 +459,25 @@ export function bucketsForWindow(window: SpendWindow): SpendBucket[] {
 
 export function filterSamples<T extends { at: number }>(rows: T[], since: number | null, now?: number): T[] {
   return rows.filter((r) => (since == null || r.at >= since) && (now == null || r.at <= now));
+}
+
+/** Keep first + last. Recharts SVG cost scales with point count, not with operator intent. */
+export function thinChartPoints<T>(rows: T[], max = 240): T[] {
+  if (rows.length <= max) {
+    return rows;
+  }
+  const last = rows.length - 1;
+  const out: T[] = [];
+  let prev = -1;
+  for (let i = 0; i < max; i++) {
+    const idx = Math.round((i * last) / (max - 1));
+    if (idx === prev) {
+      continue;
+    }
+    out.push(rows[idx]);
+    prev = idx;
+  }
+  return out;
 }
 
 export function alignBucket(at: number, bucket: SpendRateBucket): number {

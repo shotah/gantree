@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   filterSamples,
@@ -8,20 +9,23 @@ import {
   hostNetRates,
   SOURCE_ORDER,
   sourceChartSeries,
+  thinChartPoints,
   tokenChartSeries,
   type SpendBucket,
 } from "@/lib/yard/observe/spend";
 import type { HostSample, McpSample, StatSample, TurnSample, UptimeSample } from "@/lib/yard/types";
+import { WhenVisible } from "./WhenVisible";
 
-function fmtTick(at: number, spanMs: number, bucket: SpendBucket): string {
+function fmtTick(at: number, spanMs: number, bucket: SpendBucket, timeZone?: string | null): string {
   const d = new Date(at);
+  const tz = timeZone ? { timeZone } : {};
   if (bucket === "day") {
-    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+    return d.toLocaleDateString([], { month: "short", day: "numeric", ...tz });
   }
   if (spanMs >= 36 * 3600_000) {
-    return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit" });
+    return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", ...tz });
   }
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", ...tz });
 }
 
 function spanOf(rows: { at: number }[]): number {
@@ -58,7 +62,9 @@ function ChartFrame({
         <p className="py-8 text-center text-xs text-zinc-600">{hint ?? "no samples yet — leave this page open"}</p>
       ) : (
         <>
-          <div className="h-40 max-sm:h-52">{children}</div>
+          <div className="h-40 max-sm:h-52">
+            <WhenVisible>{children}</WhenVisible>
+          </div>
           {caption ? <p className="mt-1.5 text-[10px] text-zinc-600">{caption}</p> : null}
         </>
       )}
@@ -66,7 +72,7 @@ function ChartFrame({
   );
 }
 
-export function MetricCharts({
+export const MetricCharts = memo(function MetricCharts({
   host,
   turns,
   mcp,
@@ -74,6 +80,7 @@ export function MetricCharts({
   bucket,
   since,
   now,
+  timeZone,
 }: {
   host: StatSample[];
   turns: TurnSample[];
@@ -82,6 +89,7 @@ export function MetricCharts({
   bucket: SpendBucket;
   since: number | null;
   now: number;
+  timeZone?: string | null;
 }) {
   const hostIn = filterSamples(host, since, now);
   const turnsIn = filterSamples(turns, since, now);
@@ -94,8 +102,8 @@ export function MetricCharts({
   const tokenSpan = spanOf(tokenPts);
   const mcpSpan = spanOf(mcpIn);
   const uptimeSpan = spanOf(uptimeIn);
-  const hostRows = hostIn.map((s) => ({
-    t: fmtTick(s.at, hostSpan, "hour"),
+  const hostRows = thinChartPoints(hostIn).map((s) => ({
+    t: fmtTick(s.at, hostSpan, "hour", timeZone),
     cpu: s.cpuPercent == null ? null : Number(s.cpuPercent.toFixed(1)),
     mem: s.memBytes == null ? null : Number((s.memBytes / 1024 / 1024).toFixed(1)),
     rx: mib(s.netRxBytes),
@@ -104,46 +112,44 @@ export function MetricCharts({
     blkWrite: mib(s.blkWriteBytes),
     disk: mib(s.diskBytes),
   }));
-  const tokenRows = tokenPts.map((s) => ({
-    t: fmtTick(s.at, tokenSpan, bucket),
+  const tokenRows = thinChartPoints(tokenPts).map((s) => ({
+    t: fmtTick(s.at, tokenSpan, bucket, timeZone),
     tokens: s.tokens,
     prompt: s.prompt,
     gen: s.gen,
   }));
   const sourceSpan = spanOf(sourcePts);
-  const sourceRows = sourcePts.map((s) => ({
-    t: fmtTick(s.at, sourceSpan, bucket),
+  const sourceRows = thinChartPoints(sourcePts).map((s) => ({
+    t: fmtTick(s.at, sourceSpan, bucket, timeZone),
     user: s.user,
     cron: s.cron,
     watch: s.watch,
     reaction: s.reaction,
     unknown: s.unknown,
   }));
-  const turnRows = [...turnsIn]
-    .sort((a, b) => a.at - b.at)
-    .map((s) => ({
-      t: fmtTick(s.at, turnSpan, bucket),
-      rounds: s.rounds,
-      recoveries: s.recoveries,
-      durationS: s.durationMs == null ? null : Number((s.durationMs / 1000).toFixed(2)),
-    }));
-  const mcpRows = mcpIn.map((s) => ({
-    t: fmtTick(s.at, mcpSpan, "hour"),
+  const turnRows = thinChartPoints([...turnsIn].sort((a, b) => a.at - b.at)).map((s) => ({
+    t: fmtTick(s.at, turnSpan, bucket, timeZone),
+    rounds: s.rounds,
+    recoveries: s.recoveries,
+    durationS: s.durationMs == null ? null : Number((s.durationMs / 1000).toFixed(2)),
+  }));
+  const mcpRows = thinChartPoints(mcpIn).map((s) => ({
+    t: fmtTick(s.at, mcpSpan, "hour", timeZone),
     published: s.published,
     skipped: s.skipped,
   }));
-  const uptimeRows = uptimeIn.map((s) => ({
-    t: fmtTick(s.at, uptimeSpan, "hour"),
+  const uptimeRows = thinChartPoints(uptimeIn).map((s) => ({
+    t: fmtTick(s.at, uptimeSpan, "hour", timeZone),
     uptimeMin: s.uptimeSeconds == null ? null : Number((s.uptimeSeconds / 60).toFixed(1)),
     restarts: s.restartCount,
   }));
   const tooltip = { background: "#18181b", border: "1px solid #3f3f46" };
-  const hasSplit = tokenRows.some((r) => r.prompt > 0 || r.gen > 0);
+  const hasSplit = tokenPts.some((r) => r.prompt > 0 || r.gen > 0);
   const tokenLine = bucket === "cumulative" ? "stepAfter" : "monotone";
-  const hasNet = hostRows.some((r) => r.rx != null || r.tx != null);
-  const hasBlk = hostRows.some((r) => r.blkRead != null || r.blkWrite != null);
-  const hasDisk = hostRows.some((r) => r.disk != null);
-  const hasDuration = turnRows.some((r) => r.durationS != null);
+  const hasNet = hostIn.some((s) => s.netRxBytes != null || s.netTxBytes != null);
+  const hasBlk = hostIn.some((s) => s.blkReadBytes != null || s.blkWriteBytes != null);
+  const hasDisk = hostIn.some((s) => s.diskBytes != null);
+  const hasDuration = turnsIn.some((t) => t.durationMs != null);
   const hasSource = turnsIn.some((t) => t.source);
   const sourceKeys = SOURCE_ORDER.filter((k) => sourceRows.some((r) => r[k] > 0));
   const sourceStroke: Record<(typeof SOURCE_ORDER)[number], string> = {
@@ -346,22 +352,26 @@ export function MetricCharts({
       </ChartFrame>
     </div>
   );
-}
+});
 
-export function HostCharts({
+export const HostCharts = memo(function HostCharts({
   spark,
   since,
   now,
+  timeZone,
 }: {
   spark: HostSample[];
   since: number | null;
   now: number;
+  timeZone?: string | null;
 }) {
-  const cpuRows = filterSamples(spark, since, now).map((s) => {
+  const sparkIn = filterSamples(spark, since, now);
+  const sparkSpan = spanOf(sparkIn);
+  const cpuRows = thinChartPoints(sparkIn).map((s) => {
     const cap = s.ncpu * 100;
     const span = cap > 0 ? cap : 1;
     return {
-      t: fmtTick(s.at, spanOf(spark), "hour"),
+      t: fmtTick(s.at, sparkSpan, "hour", timeZone),
       agents: Number(((s.craneCpu / span) * 100).toFixed(2)),
       dashboard: Number(((s.consoleCpu / span) * 100).toFixed(2)),
       other: Number(((s.otherCpu / span) * 100).toFixed(2)),
@@ -371,8 +381,9 @@ export function HostCharts({
     };
   });
   const kib = (n: number) => Number((n / 1024).toFixed(2));
-  const netRows = filterSamples(hostNetRates(spark), since, now).map((s) => ({
-    t: fmtTick(s.at, spanOf(spark), "hour"),
+  const netRates = filterSamples(hostNetRates(spark), since, now);
+  const netRows = thinChartPoints(netRates).map((s) => ({
+    t: fmtTick(s.at, spanOf(netRates), "hour", timeZone),
     agentsRx: kib(s.craneRx),
     dashboardRx: kib(s.consoleRx),
     otherRx: kib(s.otherRx),
@@ -448,4 +459,5 @@ export function HostCharts({
       </ChartFrame>
     </div>
   );
-}
+});
+

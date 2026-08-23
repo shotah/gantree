@@ -100,6 +100,7 @@ describe("HostDashboard", () => {
     render(<HostDashboard />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "paddleboy" })).toBeTruthy());
     expect(screen.getByText("NET")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText("CPU % of host")).toBeTruthy());
     expect(screen.getByText(/16\.0 GiB · home/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "← shipping yard" })).toHaveProperty("href", expect.stringMatching(/\/$/));
 

@@ -44,6 +44,8 @@ beforeEach(() => {
   clearObserveRings();
   const root = mkdtempSync(join(tmpdir(), "gantree-mem-"));
   dirs.push(root);
+  process.env.GANTREE_ROOT = root;
+  process.env.GANTREE_TOML = join(root, "gantree.toml");
   process.env.GANTREE_DB = join(root, "gantree.db");
 });
 
@@ -53,6 +55,9 @@ afterEach(() => {
   for (const d of dirs.splice(0)) {
     rmSync(d, { recursive: true, force: true });
   }
+  delete process.env.GANTREE_ROOT;
+  delete process.env.GANTREE_TOML;
+  delete process.env.GANTREE_DB;
 });
 
 describe("yard memory", () => {

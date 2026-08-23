@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { OPERATOR_ROLES, ROLE_BLURB, roleNeedsCrane } from "@/lib/yard/door/access";
 import type { OperatorRole } from "@/lib/yard/door/channels";
+import type { ObservePrefs } from "@/lib/yard/types";
 import { yardFetch } from "../lib/yardFetch";
 import { OperatorAvatar } from "./OperatorAvatar";
 
@@ -35,6 +36,7 @@ export function YardSettings() {
   const [err, setErr] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pane, setPane] = useState<"people" | "yard">("people");
 
   const admin = you?.role === "admin";
 
@@ -93,12 +95,35 @@ export function YardSettings() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Settings</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          {admin
-            ? "Who is on this yard, and what they can touch. Your photo and passphrase are on Profile."
-            : "Your role is assigned by an admin. Photo and passphrase are on Profile."}
+          {pane === "yard"
+            ? "Retain, timezone, default pin, optional $/1M. Session idle stays in the door — not this table."
+            : admin
+              ? "Who is on this yard, and what they can touch. Your photo and passphrase are on Profile."
+              : "Your role is assigned by an admin. Photo and passphrase are on Profile."}
         </p>
       </div>
 
+      <div className="flex gap-1 border-b border-zinc-800 pb-px">
+        <button
+          type="button"
+          className={`rounded-t px-3 py-1.5 text-sm ${pane === "people" ? "border border-b-transparent border-zinc-700 bg-zinc-950 text-stone-100" : "text-zinc-500 hover:text-zinc-300"}`}
+          onClick={() => setPane("people")}
+        >
+          People
+        </button>
+        <button
+          type="button"
+          className={`rounded-t px-3 py-1.5 text-sm ${pane === "yard" ? "border border-b-transparent border-zinc-700 bg-zinc-950 text-stone-100" : "text-zinc-500 hover:text-zinc-300"}`}
+          onClick={() => setPane("yard")}
+        >
+          Yard
+        </button>
+      </div>
+
+      {pane === "yard" ? <YardPane admin={admin} /> : null}
+
+      {pane === "people" ? (
+      <>
       <ul className="grid gap-3 text-sm sm:grid-cols-3">
         {OPERATOR_ROLES.map((role) => (
           <li key={role} className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2">
@@ -328,7 +353,173 @@ export function YardSettings() {
           </button>
         </form>
       ) : null}
+      </>
+      ) : null}
     </section>
+  );
+}
+
+
+function YardPane({ admin }: { admin: boolean }) {
+  const [prefs, setPrefs] = useState<ObservePrefs | null>(null);
+  const [hostDays, setHostDays] = useState(7);
+  const [turnDays, setTurnDays] = useState(32);
+  const [timezone, setTimezone] = useState("");
+  const [image, setImage] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [gen, setGen] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    yardFetch("/api/observe")
+      .then((r) => r.json())
+      .then((d: { observe?: ObservePrefs; error?: string }) => {
+        if (d.error || !d.observe) {
+          setErr(d.error || "could not load observe prefs");
+          return;
+        }
+        setPrefs(d.observe);
+        setHostDays(d.observe.hostRetainDays);
+        setTurnDays(d.observe.turnRetainDays);
+        setTimezone(d.observe.timezone ?? "");
+        setImage(d.observe.defaultImage);
+        setPrompt(d.observe.promptUsdPerMillion != null ? String(d.observe.promptUsdPerMillion) : "");
+        setGen(d.observe.genUsdPerMillion != null ? String(d.observe.genUsdPerMillion) : "");
+      })
+      .catch((e: unknown) => setErr(e instanceof Error ? e.message : String(e)));
+  }, []);
+
+  const shrink = Boolean(prefs && (hostDays < prefs.hostRetainDays || turnDays < prefs.turnRetainDays));
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setErr(null);
+    setNotice(null);
+    const res = await yardFetch("/api/observe", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        confirm: true,
+        hostRetainDays: hostDays,
+        turnRetainDays: turnDays,
+        timezone: timezone.trim() || null,
+        defaultImage: image.trim(),
+        promptUsdPerMillion: prompt.trim() === "" ? null : Number(prompt),
+        genUsdPerMillion: gen.trim() === "" ? null : Number(gen),
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; observe?: ObservePrefs };
+    setBusy(false);
+    if (!res.ok) {
+      setErr(data.error || res.statusText);
+      return;
+    }
+    if (data.observe) {
+      setPrefs(data.observe);
+    }
+    setConfirm(false);
+    setNotice("yard prefs saved to gantree.toml");
+  }
+
+  if (!prefs) {
+    return <p className="text-sm text-zinc-500">{err || "loading yard prefs…"}</p>;
+  }
+
+  return (
+    <form className="flex max-w-lg flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4" onSubmit={save}>
+      {err ? <p className="text-sm text-amber-200">{err}</p> : null}
+      {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
+      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        host retain days
+        <input
+          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          type="number"
+          min={1}
+          max={90}
+          value={hostDays}
+          disabled={!admin}
+          onChange={(e) => setHostDays(Number(e.target.value))}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        turn retain days
+        <input
+          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          type="number"
+          min={1}
+          max={120}
+          value={turnDays}
+          disabled={!admin}
+          onChange={(e) => setTurnDays(Number(e.target.value))}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        timezone
+        <input
+          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          value={timezone}
+          disabled={!admin}
+          placeholder="America/Los_Angeles — blank = local"
+          onChange={(e) => setTimezone(e.target.value)}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        default image pin
+        <input
+          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          value={image}
+          disabled={!admin}
+          onChange={(e) => setImage(e.target.value)}
+        />
+        <span>New cranes only. Existing compose tags stay until you pin/recreate.</span>
+      </label>
+      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        prompt $/1M
+        <input
+          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          value={prompt}
+          disabled={!admin}
+          inputMode="decimal"
+          placeholder="calculator only — not a bill"
+          onChange={(e) => setPrompt(e.target.value)}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        gen $/1M
+        <input
+          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          value={gen}
+          disabled={!admin}
+          inputMode="decimal"
+          placeholder="optional"
+          onChange={(e) => setGen(e.target.value)}
+        />
+      </label>
+      <p className="text-[11px] text-zinc-600">
+        Session idle (7 days) and absolute (30 days) stay in the door code — not toml. See docs/security.md.
+      </p>
+      {admin ? (
+        <>
+          <label className="flex items-center gap-2 text-xs text-amber-200">
+            <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
+            {shrink ? "I am shortening retain — older sqlite samples will be deleted" : "I am saving yard observe prefs"}
+          </label>
+          <button
+            type="submit"
+            disabled={busy || !confirm}
+            className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50"
+          >
+            Save yard prefs
+          </button>
+        </>
+      ) : (
+        <p className="text-xs text-zinc-500">Rates are visible so spend $ matches. Only admin can write.</p>
+      )}
+    </form>
   );
 }
 
