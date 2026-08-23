@@ -1,4 +1,4 @@
-import { doorAuthBody, loginOperator, sessionCookieHeader } from "@/lib/yard/door";
+import { doorAuthBody, loginOperator, recordYardEvent, sessionCookieHeader } from "@/lib/yard/door";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       { status: result.status ?? 401 },
     );
   }
+  recordYardEvent({ kind: "login", operatorId: result.operator.id, detail: result.operator.name });
   return Response.json(
     { ok: true, operator: result.operator },
     { headers: { "Set-Cookie": sessionCookieHeader(result.token, req) } },

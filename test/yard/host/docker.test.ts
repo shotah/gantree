@@ -6,13 +6,16 @@ import {
   craneUser,
   dockerErrorMessage,
   hostBindPath,
+  looksLikeConsole,
   looksLikeGantry,
   mergeBinds,
   cranePath,
   normalizeName,
   ownerUserSpec,
+  pickConsoleWorkload,
   stateOf,
   usableUserSpec,
+  workloadRole,
 } from "@/lib/yard/host/docker";
 
 describe("looksLikeGantry", () => {
@@ -23,6 +26,27 @@ describe("looksLikeGantry", () => {
 
   it("skips the console itself", () => {
     expect(looksLikeGantry("gantree:local", ["gantree"])).toBe(false);
+  });
+});
+
+describe("looksLikeConsole and workloadRole", () => {
+  it("classifies the dashboard, tunnel, and cranes", () => {
+    expect(looksLikeConsole("shotah/gantree:latest", ["gantree-gantree-1"])).toBe(true);
+    expect(looksLikeConsole("cloudflare/cloudflared:latest", ["gantree-cloudflared-1"])).toBe(false);
+    expect(workloadRole({ name: "gantry-tim", image: "shotah/ai-gantry:latest", craneNames: ["gantry-tim"] })).toBe("crane");
+    expect(workloadRole({ name: "gantree-gantree-1", image: "shotah/gantree:latest", craneNames: ["gantry-tim"] })).toBe(
+      "console",
+    );
+    expect(workloadRole({ name: "gantree-cloudflared-1", image: "cloudflare/cloudflared:latest", craneNames: ["gantry-tim"] })).toBe(
+      "other",
+    );
+    expect(workloadRole({ name: "gantry-tim", image: "shotah/ai-gantry:latest", craneNames: [] })).toBe("crane");
+    expect(
+      pickConsoleWorkload([
+        { name: "gantry-tim", image: "shotah/ai-gantry:latest", running: true },
+        { name: "gantree-gantree-1", image: "shotah/gantree:latest", running: true },
+      ])?.name,
+    ).toBe("gantree-gantree-1");
   });
 });
 
@@ -146,6 +170,29 @@ describe("cpuMemFromStats", () => {
 
   it("leaves cpu null when system delta is zero", () => {
     expect(cpuMemFromStats({}).cpuPercent).toBeNull();
+    expect(cpuMemFromStats({}).netRxBytes).toBeNull();
+    expect(cpuMemFromStats({}).blkReadBytes).toBeNull();
+  });
+
+  it("sums network and blkio counters when docker reports them", () => {
+    const out = cpuMemFromStats({
+      networks: {
+        eth0: { rx_bytes: 100, tx_bytes: 20 },
+        eth1: { rx_bytes: 5, tx_bytes: 7 },
+      },
+      blkio_stats: {
+        io_service_bytes_recursive: [
+          { op: "Read", value: 10 },
+          { op: "Write", value: 3 },
+          { op: "Read", value: 2 },
+          { op: "Total", value: 15 },
+        ],
+      },
+    });
+    expect(out.netRxBytes).toBe(105);
+    expect(out.netTxBytes).toBe(27);
+    expect(out.blkReadBytes).toBe(12);
+    expect(out.blkWriteBytes).toBe(3);
   });
 });
 

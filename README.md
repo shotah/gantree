@@ -20,15 +20,11 @@
 You opened the yard repo. **The product is a long-horizon AI harness.**
 
 <p align="center">
-  <img src="assets/login.png" alt="Log in — the door to the yard, not the chat" width="400">
-</p>
-
-<p align="center">
-  <img src="assets/yard.png" alt="The yard — Ada and Jules running, MCP published vs skipped">
-</p>
-
-<p align="center">
-  <img src="assets/metrics.png" alt="Ada’s metrics — live CPU, RAM, MCP, and uptime from Docker. Token charts wait for a chat.">
+  <img src="assets/login-phone.png" alt="Log in — the door to the yard, not the chat" width="220">
+  &nbsp;
+  <img src="assets/yard-phone.png" alt="The yard on a phone — Ada, Jules, host" width="220">
+  &nbsp;
+  <img src="assets/crane-phone.png" alt="Jules on a phone — start/stop and boxed folds" width="220">
 </p>
 
 ---

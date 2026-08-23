@@ -87,7 +87,7 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | Alive, image, restart | Docker inspect / compose |
 | Visual logs (per instance) | `docker logs` stream, structured in the UI |
 | CPU / RAM graphs | sampled `docker stats` / cgroup (ring + yard sqlite, 7d cap) |
-| Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`) — same sqlite so a bounce keeps last week |
+| Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`) — same sqlite so a bounce keeps this billing month (local 1st) |
 | Published vs skipped MCP | `mcp.toml` + `gantry status` JSON (`mcp.servers[].reason`: `no_binary` / `no_key` / `no_oauth`) |
 | Persona, secrets | `PERSONA.md`, `avatar.jpg`, `.env`, `data/` on disk |
 | Telegram bot | Bot API `getMe` / `setMy*` after a token exists. Allowlist is `.env`. Never `getUpdates`. |
@@ -125,13 +125,15 @@ gantree/                    this repo — shipping yard
 ├── app/icon.svg            tab icon (SVG)
 ├── app/favicon.ico         tab icon (browsers that still ask for .ico)
 ├── assets/setup.png        operators.md: first-boot operator
-├── assets/login.png        operators.md: log in
+├── assets/setup-phone.png  operators.md: first-boot on a phone
+├── assets/login.png        operators.md / install: log in
+├── assets/login-phone.png  README: log in on a phone
 ├── assets/profile.png      operators.md: operator profile
 ├── assets/settings.png     operators.md: roles and operators
-├── assets/yard.png         console.md: board with avatars
-├── assets/crane-metrics.png console.md: Ada dashboard graphs + logs
-├── assets/metrics.png      console.md: six-tile live charts (tokens wait for a chat)
-├── assets/crane-photo.png  console.md: upload photo
+├── assets/yard-phone.png   README + console.md: board on a phone
+├── assets/crane-phone.png  README + console.md: Jules on a phone
+├── assets/phone-preview.png operators.md: 390px frame, no DevTools
+├── scripts/shot.mjs        headless Chrome recapture
 ├── lib/yard/               host I/O (not RSC)
 │   ├── door/               operators, session, audit events
 │   ├── host/               dockerode, files, .env, avatar, telegram, logs
@@ -170,27 +172,37 @@ home-only (mDNS / host network). Custom servers:
 
 ---
 
-## v1 vs v2 vs later
+## v1 vs v2 vs v3 vs later
 
 **v1:** this Node process on the Docker host, or the Hub image
-`shotah/gantree` with `docker.sock`. Board, per-crane dashboard,
+`shotah/gantree` with `docker.sock`. Board, per-crane dashboard, host
+page (`gantree.toml` + yard sqlite),
 build wizard, MCP toggles, auth hop, start / stop / recreate, image pin.
 Telegram + Hub `shotah/ai-gantry`. Bind localhost (LAN publish is a
 home choice). `npm run release` tags and publishes
 the console image (same Hub secrets as the harness).
 
-**v2:** a door on that process (setup + login + session on every API
-and log SSE), a handful of operators in yard `gantree.db` (independent
-of each crane’s `gantry.db`; admin sees every crane, user / readonly their assigned), board nags for skipped MCP / needs-auth,
+**v2 (delivered):** a door on that process (setup + login + session on
+every API and log SSE), a handful of operators in yard `gantree.db`
+(independent of each crane’s `gantry.db`; admin sees every crane, user /
+readonly their assigned), board nags for skipped MCP / needs-auth,
 sqlite so graphs survive a bounce, audit of who mutated what. What that
-door checks: [security.md](security.md). Last walk:
-the same `app/` on Workers as a portal — host keeps `docker.sock`,
-portal never grows a Docker client.
-End state and walk: [todo.md](../todo.md) (**v2 looks like**).
+door checks: [security.md](security.md). Portal (Workers skin) is a
+parallel / last walk with mobile — not a blocker for calling the door
+done. Walk: [todo.md](../todo.md) (**v2 looks like**).
+
+**v3:** the yard you live in. Settings beyond people (retain, timezone,
+default pin, optional $/1M). Richer pull-only graphs (net, disk, turn
+duration when slog has it). Profile chat ids label spend and can be
+pushed onto a crane allowlist. Backup is a loop (list / restore /
+prune); retire a tryout. Compare overlay and a filterable audit.
+Inventory still toml. Still pull, never a `/metrics` port on the crane.
+Mobile / phone layout is someone else’s track. Walk: [todo.md](../todo.md)
+(**v3 looks like**).
 
 **Later:** systemd yards; a `gantree` CLI only if `npm` scripts are
 genuinely not enough (still TypeScript); Prometheus; billed-provider
-invoices.
+invoices; SSO.
 
 **Not the product:** hosted Gantree SaaS, Kubernetes, Cloud Run / Lambda,
 a shared family brain, pairing the *agent* through the console, anything

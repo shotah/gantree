@@ -34,6 +34,8 @@ import {
 import { listYardEvents, recordFromRequest, recordYardEvent } from "@/lib/yard/door/events";
 import { readOperatorAvatar, saveOperatorAvatar } from "@/lib/yard/door/profile";
 import { GET as listEvents } from "@/app/api/events/route";
+import { POST as postLogin } from "@/app/api/login/route";
+import { POST as postLogout } from "@/app/api/logout/route";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -89,6 +91,7 @@ describe("yard sqlite", () => {
       "operator",
       "operator_session",
       "sample_host",
+      "sample_machine",
       "sample_mcp",
       "sample_turn",
       "sample_uptime",
@@ -401,10 +404,79 @@ describe("audit", () => {
     expect(events[0]?.operatorName).toBe("kit");
     expect(listYardEvents({ slug: "jules" }).map((e) => e.kind)).toEqual(["grant"]);
     expect(listYardEvents().map((e) => e.kind)).toEqual(["grant", "recreate", "setup"]);
+    expect(listYardEvents({ kind: "recreate" }).map((e) => e.kind)).toEqual(["recreate"]);
 
     const handler = withDoor(async () => Response.json({ events: listYardEvents() }));
     expect((await handler(req())).status).toBe(401);
     expect((await handler(authed)).status).toBe(200);
+  });
+
+  it("records login and logout for admin, and hides them from other operators", async () => {
+    const created = setupOperator("kit", "a-long-enough-pass");
+    expect(created.ok).toBe(true);
+    if (!created.ok) {
+      return;
+    }
+    const user = addOperator("ada", "a-long-enough-pass", "user", "kit");
+    expect(user.ok).toBe(true);
+    if (!user.ok) {
+      return;
+    }
+
+    const miss = await postLogin(
+      new Request("http://127.0.0.1/api/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "ada", passphrase: "wrong-passphrase-here" }),
+      }),
+    );
+    expect(miss.status).toBe(401);
+    expect(listYardEvents().map((e) => e.kind)).not.toContain("login");
+
+    const loginRes = await postLogin(
+      new Request("http://127.0.0.1/api/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "ada", passphrase: "a-long-enough-pass" }),
+      }),
+    );
+    expect(loginRes.status).toBe(200);
+    const token = (loginRes.headers.get("set-cookie") ?? "").match(new RegExp(`${SESSION_COOKIE}=([^;]+)`))?.[1];
+    expect(token).toBeTruthy();
+
+    recordYardEvent({ kind: "recreate", slug: "kit", operatorId: created.operator.id });
+
+    const logoutRes = await postLogout(
+      new Request("http://127.0.0.1/api/logout", {
+        method: "POST",
+        headers: { cookie: `${SESSION_COOKIE}=${token}` },
+      }),
+    );
+    expect(logoutRes.status).toBe(200);
+    expect(listYardEvents().map((e) => e.kind)).toEqual(["logout", "recreate", "login"]);
+    expect(listYardEvents({ includeSession: false }).map((e) => e.kind)).toEqual(["recreate"]);
+
+    const adminList = await listEvents(req("http://127.0.0.1/api/events", created.token));
+    expect(adminList.status).toBe(200);
+    const adminKinds = ((await adminList.json()) as { events: { kind: string }[] }).events.map((e) => e.kind);
+    expect(adminKinds).toEqual(["logout", "recreate", "login"]);
+
+    const jsonl = await listEvents(req("http://127.0.0.1/api/events?format=jsonl", created.token));
+    expect(jsonl.status).toBe(200);
+    expect(jsonl.headers.get("content-type")).toMatch(/ndjson/);
+    expect(await jsonl.text()).toContain('"kind":"recreate"');
+
+    const ada = loginOperator("ada", "a-long-enough-pass");
+    expect(ada.ok).toBe(true);
+    if (!ada.ok) {
+      return;
+    }
+    const adaList = await listEvents(req("http://127.0.0.1/api/events", ada.token));
+    expect(adaList.status).toBe(200);
+    const adaKinds = ((await adaList.json()) as { events: { kind: string }[] }).events.map((e) => e.kind);
+    expect(adaKinds).toEqual(["recreate"]);
+    const peek = await listEvents(req("http://127.0.0.1/api/events?kind=login", ada.token));
+    expect(((await peek.json()) as { events: unknown[] }).events).toEqual([]);
   });
 });
 

@@ -1,4 +1,5 @@
-import { denyUnlessCraneRead, withDoor } from "@/lib/yard/door";
+import { denyUnlessCraneRead, listOperators, withDoor } from "@/lib/yard/door";
+import { namesFromOperators } from "@/lib/yard/observe/spend";
 import { sampleHost, sampleMcp, sampleTurns, sampleUptime } from "@/lib/yard/observe/stats";
 
 export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
@@ -13,5 +14,5 @@ export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: 
     sampleMcp(slug),
     sampleUptime(slug),
   ]);
-  return Response.json({ host, turns, mcp, uptime });
+  return Response.json({ host, turns, mcp, uptime, userNames: namesFromOperators(listOperators()) });
 });

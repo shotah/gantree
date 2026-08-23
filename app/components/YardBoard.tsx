@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
-import { fmtEstTokens, type SpendWindow } from "@/lib/yard/observe/spend";
+import { DEFAULT_SPEND_WINDOW, fmtAgo, fmtEstTokens, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BuildCrane } from "./BuildCrane";
 import { CraneAvatar } from "./CraneAvatar";
 import { useDoor } from "./DoorShell";
 import { EventStrip } from "./EventStrip";
+import { HostCard } from "./HostCard";
 import { SpendBoard } from "./SpendBoard";
 import { yardFetch } from "../lib/yardFetch";
 
@@ -60,11 +61,33 @@ function Spark({ samples }: { samples: StatSample[] | undefined }) {
   );
 }
 
+function RecoverySpark({ n }: { n: number }) {
+  if (n <= 0) {
+    return null;
+  }
+  const bars = Math.min(n, 8);
+  const w = 36;
+  const h = 16;
+  const gap = 2;
+  const bw = (w - gap * (bars - 1)) / bars;
+  return (
+    <svg width={w} height={h} className="shrink-0 text-red-400/80" aria-label={`${n} ${n === 1 ? "recovery" : "recoveries"}`}>
+      {Array.from({ length: bars }, (_, i) => (
+        <rect key={i} x={i * (bw + gap)} y={2} width={bw} height={h - 4} rx={0.5} fill="currentColor" />
+      ))}
+    </svg>
+  );
+}
+
+function craneRecoveries(yard: YardInventory, slug: string): number {
+  return yard.spend?.cranes.find((c) => c.slug === slug)?.trajectory.recoveries ?? 0;
+}
+
 export function YardBoard() {
   const { operator } = useDoor();
   const [yard, setYard] = useState<YardInventory | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [spendWindow, setSpendWindow] = useState<SpendWindow>("24h");
+  const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
   const eventsSlug = operator?.role === "admin" || (operator?.cranes.length ?? 0) !== 1 ? undefined : operator?.cranes[0];
 
   const load = useCallback(() => {
@@ -91,7 +114,7 @@ export function YardBoard() {
 
   return (
     <section className="flex flex-col gap-6" data-shot="yard">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Shipping yard</h1>
           <p className="mt-1 text-sm text-zinc-500">
@@ -119,23 +142,25 @@ export function YardBoard() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {yard ? <HostCard host={yard.host} dockerError={yard.dockerError} /> : null}
         {yard?.gantries.map((g) => (
           <Link
             key={g.slug}
             href={`/gantries/${g.slug}`}
-            className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70"
+            className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70 max-sm:p-5"
           >
             <div className="flex items-start justify-between gap-2">
-              <h2 className="flex items-center gap-2 font-semibold text-stone-100">
+              <h2 className="flex items-center gap-2 font-semibold text-stone-100 max-sm:text-lg">
                 <CraneAvatar slug={g.slug} rev={g.avatarRev} />
                 {g.slug}
               </h2>
               <div className="flex items-center gap-2">
                 <Spark samples={yard.sparks?.[g.slug]} />
+                <RecoverySpark n={craneRecoveries(yard, g.slug)} />
                 <Badge state={g.state} />
               </div>
             </div>
-            <dl className="mt-3 space-y-1 text-xs text-zinc-400">
+            <dl className="mt-3 space-y-1 text-xs text-zinc-400 max-sm:space-y-1.5 max-sm:text-sm">
               <div className="flex justify-between gap-2">
                 <dt>model</dt>
                 <dd className="text-zinc-200">{g.model ?? "—"}</dd>
@@ -157,7 +182,7 @@ export function YardBoard() {
               <div className="flex justify-between gap-2">
                 <dt>last turn</dt>
                 <dd className="truncate text-zinc-200" title={g.lastTurn ?? ""}>
-                  {g.lastTurn ? new Date(g.lastTurn).toLocaleTimeString() : "—"}
+                  {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
                 </dd>
               </div>
               <div className="flex justify-between gap-2">

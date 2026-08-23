@@ -4,6 +4,9 @@ import type { YardEvent } from "../types";
 
 const EVENT_CAP = 2000;
 
+/** Door session events. Listed only for admin — not crane-scoped. */
+export const SESSION_EVENT_KINDS = ["login", "logout"] as const;
+
 export type RecordEventInput = {
   kind: string;
   slug?: string | null;
@@ -39,49 +42,40 @@ export function recordFromRequest(req: Request, kind: string, slug?: string | nu
   });
 }
 
-export function listYardEvents(opts?: { slug?: string; slugs?: string[]; limit?: number }): YardEvent[] {
+export function listYardEvents(opts?: {
+  slug?: string;
+  slugs?: string[];
+  kind?: string;
+  limit?: number;
+  includeSession?: boolean;
+}): YardEvent[] {
   const limit = Math.min(Math.max(opts?.limit ?? 40, 1), 200);
   const slugs = opts?.slugs?.filter(Boolean) ?? [];
+  const where: string[] = [];
+  const args: (string | number)[] = [];
   if (opts?.slug) {
-    return mapEvents(
-      yardDb()
-        .prepare(
-          `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
+    where.push("e.slug = ?");
+    args.push(opts.slug);
+  } else if (slugs.length > 0) {
+    where.push(`e.slug IN (${slugs.map(() => "?").join(",")})`);
+    args.push(...slugs);
+  }
+  if (opts?.kind) {
+    where.push("e.kind = ?");
+    args.push(opts.kind);
+  }
+  if (opts?.includeSession === false) {
+    where.push(`e.kind NOT IN (${SESSION_EVENT_KINDS.map(() => "?").join(",")})`);
+    args.push(...SESSION_EVENT_KINDS);
+  }
+  const sql = `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
            FROM yard_event e
            LEFT JOIN operator o ON o.id = e.operator_id
-           WHERE e.slug = ?
+           ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
            ORDER BY e.id DESC
-           LIMIT ?`,
-        )
-        .all(opts.slug, limit) as EventRow[],
-    );
-  }
-  if (slugs.length > 0) {
-    const placeholders = slugs.map(() => "?").join(",");
-    return mapEvents(
-      yardDb()
-        .prepare(
-          `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
-           FROM yard_event e
-           LEFT JOIN operator o ON o.id = e.operator_id
-           WHERE e.slug IN (${placeholders})
-           ORDER BY e.id DESC
-           LIMIT ?`,
-        )
-        .all(...slugs, limit) as EventRow[],
-    );
-  }
-  return mapEvents(
-    yardDb()
-      .prepare(
-        `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
-         FROM yard_event e
-         LEFT JOIN operator o ON o.id = e.operator_id
-         ORDER BY e.id DESC
-         LIMIT ?`,
-      )
-      .all(limit) as EventRow[],
-  );
+           LIMIT ?`;
+  args.push(limit);
+  return mapEvents(yardDb().prepare(sql).all(...args) as EventRow[]);
 }
 
 function mapEvents(rows: EventRow[]): YardEvent[] {

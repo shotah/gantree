@@ -5,16 +5,46 @@ import { mcpSnapshot } from "../tools/mcp";
 import type { McpSample, StatSample, TurnSample, UptimeSample, YardSpend } from "../types";
 import { persistHost, persistMcp, persistTurn, persistUptime, recallSamples } from "./memory";
 import { combineSpend, filterSamples, rollupTurns } from "./spend";
+import { clearMachineRing, rememberedCraneNames, sampleMachine } from "./machine";
 
 const HOST_MAX = 720;
-const TURN_TAIL = 1500;
-const TURN_MAX = 400;
+/** Docker log tail. Regular sampling only needs new lines; this is the restart backfill. */
+const TURN_TAIL = 5000;
+const TURN_MAX = 10_000;
 const MCP_MAX = 200;
+const SPEND_SAMPLE_MS = 15_000;
 const hostRing = new Map<string, StatSample[]>();
 const turnRing = new Map<string, TurnSample[]>();
 const mcpRing = new Map<string, McpSample[]>();
 const uptimeRing = new Map<string, UptimeSample[]>();
 const hydrated = new Set<string>();
+let spendTimer: ReturnType<typeof setInterval> | null = null;
+
+function inObserveTests(): boolean {
+  return Boolean(process.env.VITEST);
+}
+
+/** Keep scraping turn perf after the board tab closes, so sqlite does not stall. */
+export function ensureSpendSampler(): void {
+  if (spendTimer || inObserveTests()) {
+    return;
+  }
+  spendTimer = setInterval(() => {
+    void tickSpendSampler();
+  }, SPEND_SAMPLE_MS);
+  spendTimer.unref?.();
+}
+
+async function tickSpendSampler(): Promise<void> {
+  const slugs = new Set([...hydrated, ...turnRing.keys()]);
+  await Promise.all([...slugs].map((slug) => sampleTurns(slug).catch(() => [])));
+  await sampleMachine(rememberedCraneNames()).catch(() => null);
+}
+
+/** Test helper: true when the keep-alive turn scraper is armed. */
+export function spendSamplerArmed(): boolean {
+  return spendTimer != null;
+}
 
 function push<T>(map: Map<string, T[]>, slug: string, sample: T, max: number): T[] {
   const cur = map.get(slug) ?? [];
@@ -53,6 +83,7 @@ export function clearObserveRings(): void {
   mcpRing.clear();
   uptimeRing.clear();
   hydrated.clear();
+  clearMachineRing();
 }
 
 export async function sampleHost(slug: string): Promise<StatSample[]> {
@@ -63,8 +94,8 @@ export async function sampleHost(slug: string): Promise<StatSample[]> {
   }
   try {
     const raw = (await containerStatsOnce(g.containerId)) as Parameters<typeof cpuMemFromStats>[0];
-    const { cpuPercent, memBytes, memLimitBytes } = cpuMemFromStats(raw);
-    const sample = { at: Date.now(), cpuPercent, memBytes, memLimitBytes };
+    const io = cpuMemFromStats(raw);
+    const sample = { at: Date.now(), ...io };
     push(hostRing, slug, sample, HOST_MAX);
     persistHost(slug, sample);
   } catch {
@@ -74,6 +105,7 @@ export async function sampleHost(slug: string): Promise<StatSample[]> {
 }
 
 export async function sampleTurns(slug: string): Promise<TurnSample[]> {
+  ensureSpendSampler();
   ensureHydrated(slug);
   const g = await getGantry(slug);
   if (!g?.containerId) {

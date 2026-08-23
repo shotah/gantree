@@ -47,19 +47,19 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4" data-shot={setup ? "setup" : "login"}>
+    <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4 max-sm:gap-5" data-shot={setup ? "setup" : "login"}>
       <div className="flex items-start gap-3">
-        <GantreeMark tiled className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-zinc-800" />
+        <GantreeMark tiled className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-zinc-800 max-sm:h-14 max-sm:w-14" />
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-100">{setup ? "First operator" : "Log in"}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-100 max-sm:text-3xl">{setup ? "First operator" : "Log in"}</h1>
+          <p className="mt-1 text-sm text-zinc-500 max-sm:text-base">
             {setup
               ? "This yard has no door yet. Create the operator who owns the box. Passphrase ≥10 characters — not blank, not your name, not a common password. Forgot later: sqlite3 gantree.db, delete from operator."
               : "Same yard. Same files. Chat still stays Telegram."}
           </p>
         </div>
       </div>
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+      <label className="flex flex-col gap-1.5 text-xs text-zinc-500 max-sm:text-sm">
         name
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
@@ -72,7 +72,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
           pattern="[a-zA-Z0-9._-]{2,32}"
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+      <label className="flex flex-col gap-1.5 text-xs text-zinc-500 max-sm:text-sm">
         passphrase
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
@@ -86,7 +86,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
         />
       </label>
       {setup ? (
-        <label className="flex flex-col gap-1 text-xs text-zinc-500">
+        <label className="flex flex-col gap-1.5 text-xs text-zinc-500 max-sm:text-sm">
           confirm
           <input
             className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
@@ -104,7 +104,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
       <button
         type="submit"
         disabled={busy}
-        className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50"
+        className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50 max-sm:min-h-12 max-sm:text-base"
       >
         {busy ? "…" : setup ? "Create operator" : "Log in"}
       </button>

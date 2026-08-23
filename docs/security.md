@@ -96,7 +96,8 @@ is UX. **The APIs are the lock.** Pages do not load `.env` or logs in
 the HTML; they fetch after a session exists.
 
 Mutations that already existed (grant, recreate, env, operators) also
-write a small audit row (who, what). Not a SIEM.
+write a small audit row (who, what). Login and logout do too; only
+admin can read those. Not a SIEM.
 
 ---
 

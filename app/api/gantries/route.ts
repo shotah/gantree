@@ -1,7 +1,8 @@
-import { canBuildCrane, denyUnlessAdmin, operatorFromRequest, scopeYard, withDoor } from "@/lib/yard/door";
+import { canBuildCrane, denyUnlessAdmin, listOperators, operatorFromRequest, scopeYard, withDoor } from "@/lib/yard/door";
 import { listYard } from "@/lib/yard/crane/inventory";
 import { buildCrane, type BuildInput } from "@/lib/yard/crane/build";
-import { parseSpendWindow, windowStart } from "@/lib/yard/observe/spend";
+import { peekMachine, sampleMachine } from "@/lib/yard/observe/machine";
+import { labelSpend, namesFromOperators, parseSpendWindow, windowStart } from "@/lib/yard/observe/spend";
 import { kickYardSamples, peekYardSpend, sampleTurns } from "@/lib/yard/observe/stats";
 
 export const GET = withDoor(async (req: Request) => {
@@ -12,11 +13,18 @@ export const GET = withDoor(async (req: Request) => {
     const yard = you ? scopeYard(listed, you) : listed;
     const slugs = yard.gantries.map((g) => g.slug);
     const running = yard.gantries.filter((g) => g.state === "running").map((g) => g.slug);
-    await Promise.all(slugs.map((s) => sampleTurns(s).catch(() => [])));
+    const craneNames = yard.gantries.map((g) => g.containerName);
+    await Promise.all([
+      ...slugs.map((s) => sampleTurns(s).catch(() => [])),
+      sampleMachine(craneNames).catch(() => null),
+    ]);
+    const userNames = namesFromOperators(listOperators());
     return Response.json({
       ...yard,
       sparks: kickYardSamples(running),
-      spend: peekYardSpend(slugs, windowStart(window)),
+      spend: labelSpend(peekYardSpend(slugs, windowStart(window)), userNames),
+      host: peekMachine(),
+      userNames,
       canBuild: Boolean(you && canBuildCrane(you)),
     });
   } catch (err) {

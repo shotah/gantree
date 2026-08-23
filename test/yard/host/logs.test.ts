@@ -26,7 +26,7 @@ describe("parseLogLine", () => {
 
   it("reads ai-gantry turn perf prompt+gen tokens", () => {
     const line = parseLogLine(
-      '{"time":"2026-08-22T18:00:00.000Z","level":"INFO","msg":"turn perf","source":"user","user_id":"42","session_id":"s-1","iterations":2,"recoveries":0,"prompt_est_tokens":8000,"gen_est_tokens":400,"outcome":"ok"}',
+      '{"time":"2026-08-22T18:00:00.000Z","level":"INFO","msg":"turn perf","source":"user","user_id":"42","session_id":"s-1","iterations":2,"recoveries":0,"prompt_est_tokens":8000,"gen_est_tokens":400,"outcome":"ok","duration_ms":1500}',
     );
     expect(line.kind).toBe("turn");
     const t = turnFromLog(line);
@@ -38,6 +38,7 @@ describe("parseLogLine", () => {
     expect(t?.source).toBe("user");
     expect(t?.userId).toBe("42");
     expect(t?.sessionId).toBe("s-1");
+    expect(t?.durationMs).toBe(1500);
   });
 
   it("ignores boot schema est_tokens", () => {

@@ -2,6 +2,7 @@ export {
   bindIsOpen,
   closeYardDb,
   dbPath,
+  inspectYardDb,
   warnOpenBindIfEmpty,
   yardDb,
 } from "./store";
@@ -69,4 +70,4 @@ export {
 } from "./access";
 export type { AccessSubject } from "./access";
 export { operatorAvatarRev, readOperatorAvatar, removeOperatorAvatar, saveOperatorAvatar } from "./profile";
-export { listYardEvents, recordFromRequest, recordYardEvent } from "./events";
+export { listYardEvents, recordFromRequest, recordYardEvent, SESSION_EVENT_KINDS } from "./events";

@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { DoorShell } from "./components/DoorShell";
 import "./globals.css";
 
@@ -13,6 +14,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#09090b",
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
@@ -21,7 +29,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className="min-h-screen bg-zinc-950 text-stone-200">
-        <DoorShell>{children}</DoorShell>
+        <Suspense fallback={<p className="px-6 py-10 text-sm text-zinc-500">opening the door…</p>}>
+          <DoorShell>{children}</DoorShell>
+        </Suspense>
       </body>
     </html>
   );

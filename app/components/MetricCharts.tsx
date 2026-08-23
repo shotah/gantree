@@ -5,10 +5,12 @@ import {
   filterSamples,
   fmtEstTokens,
   fmtSpendBucketTitle,
+  SOURCE_ORDER,
+  sourceChartSeries,
   tokenChartSeries,
   type SpendBucket,
 } from "@/lib/yard/observe/spend";
-import type { McpSample, StatSample, TurnSample, UptimeSample } from "@/lib/yard/types";
+import type { HostSample, McpSample, StatSample, TurnSample, UptimeSample } from "@/lib/yard/types";
 
 function fmtTick(at: number, spanMs: number, bucket: SpendBucket): string {
   const d = new Date(at);
@@ -26,6 +28,13 @@ function spanOf(rows: { at: number }[]): number {
     return 0;
   }
   return rows[rows.length - 1].at - rows[0].at;
+}
+
+function mib(bytes: number | null | undefined): number | null {
+  if (bytes == null) {
+    return null;
+  }
+  return Number((bytes / 1024 / 1024).toFixed(2));
 }
 
 function ChartFrame({
@@ -48,7 +57,7 @@ function ChartFrame({
         <p className="py-8 text-center text-xs text-zinc-600">{hint ?? "no samples yet — leave this page open"}</p>
       ) : (
         <>
-          <div className="h-40">{children}</div>
+          <div className="h-40 max-sm:h-52">{children}</div>
           {caption ? <p className="mt-1.5 text-[10px] text-zinc-600">{caption}</p> : null}
         </>
       )}
@@ -78,6 +87,7 @@ export function MetricCharts({
   const mcpIn = filterSamples(mcp, since, now);
   const uptimeIn = filterSamples(uptime, since, now);
   const tokenPts = tokenChartSeries(turns, { bucket, since, now });
+  const sourcePts = sourceChartSeries(turns, { bucket, since, now });
   const hostSpan = spanOf(hostIn);
   const turnSpan = spanOf(turnsIn);
   const tokenSpan = spanOf(tokenPts);
@@ -87,6 +97,10 @@ export function MetricCharts({
     t: fmtTick(s.at, hostSpan, "hour"),
     cpu: s.cpuPercent == null ? null : Number(s.cpuPercent.toFixed(1)),
     mem: s.memBytes == null ? null : Number((s.memBytes / 1024 / 1024).toFixed(1)),
+    rx: mib(s.netRxBytes),
+    tx: mib(s.netTxBytes),
+    blkRead: mib(s.blkReadBytes),
+    blkWrite: mib(s.blkWriteBytes),
   }));
   const tokenRows = tokenPts.map((s) => ({
     t: fmtTick(s.at, tokenSpan, bucket),
@@ -94,12 +108,22 @@ export function MetricCharts({
     prompt: s.prompt,
     gen: s.gen,
   }));
+  const sourceSpan = spanOf(sourcePts);
+  const sourceRows = sourcePts.map((s) => ({
+    t: fmtTick(s.at, sourceSpan, bucket),
+    user: s.user,
+    cron: s.cron,
+    watch: s.watch,
+    reaction: s.reaction,
+    unknown: s.unknown,
+  }));
   const turnRows = [...turnsIn]
     .sort((a, b) => a.at - b.at)
     .map((s) => ({
       t: fmtTick(s.at, turnSpan, bucket),
       rounds: s.rounds,
       recoveries: s.recoveries,
+      durationS: s.durationMs == null ? null : Number((s.durationMs / 1000).toFixed(2)),
     }));
   const mcpRows = mcpIn.map((s) => ({
     t: fmtTick(s.at, mcpSpan, "hour"),
@@ -114,6 +138,18 @@ export function MetricCharts({
   const tooltip = { background: "#18181b", border: "1px solid #3f3f46" };
   const hasSplit = tokenRows.some((r) => r.prompt > 0 || r.gen > 0);
   const tokenLine = bucket === "cumulative" ? "stepAfter" : "monotone";
+  const hasNet = hostRows.some((r) => r.rx != null || r.tx != null);
+  const hasBlk = hostRows.some((r) => r.blkRead != null || r.blkWrite != null);
+  const hasDuration = turnRows.some((r) => r.durationS != null);
+  const hasSource = turnsIn.some((t) => t.source);
+  const sourceKeys = SOURCE_ORDER.filter((k) => sourceRows.some((r) => r[k] > 0));
+  const sourceStroke: Record<(typeof SOURCE_ORDER)[number], string> = {
+    user: "#34d399",
+    cron: "#f59e0b",
+    watch: "#38bdf8",
+    reaction: "#a78bfa",
+    unknown: "#71717a",
+  };
 
   return (
     <div className="grid gap-3 md:grid-cols-2" data-shot="metrics">
@@ -139,6 +175,44 @@ export function MetricCharts({
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
+      {hostRows.length > 0 ? (
+        <>
+          <ChartFrame
+            title="Network (MiB since start)"
+            empty={!hasNet}
+            hint="Docker omitted network counters"
+            caption="cumulative rx/tx · resets when the container is recreated"
+          >
+            <ResponsiveContainer>
+              <AreaChart data={hostRows}>
+                <CartesianGrid stroke="#27272a" />
+                <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+                <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+                <Tooltip contentStyle={tooltip} />
+                <Area dataKey="rx" name="rx" type="monotone" stroke="#38bdf8" fill="#38bdf822" connectNulls />
+                <Area dataKey="tx" name="tx" type="monotone" stroke="#818cf8" fill="#818cf822" connectNulls />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartFrame>
+          <ChartFrame
+            title="Disk I/O (MiB since start)"
+            empty={!hasBlk}
+            hint="Docker omitted blkio counters"
+            caption="cumulative read/write · resets when the container is recreated"
+          >
+            <ResponsiveContainer>
+              <AreaChart data={hostRows}>
+                <CartesianGrid stroke="#27272a" />
+                <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+                <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+                <Tooltip contentStyle={tooltip} />
+                <Area dataKey="blkRead" name="read" type="monotone" stroke="#fbbf24" fill="#fbbf2422" connectNulls />
+                <Area dataKey="blkWrite" name="write" type="monotone" stroke="#fb923c" fill="#fb923c22" connectNulls />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartFrame>
+        </>
+      ) : null}
       <ChartFrame
         title={fmtSpendBucketTitle(bucket)}
         empty={tokenRows.length === 0}
@@ -182,6 +256,46 @@ export function MetricCharts({
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
+      {hasSource ? (
+        <ChartFrame
+          title="Turns by source"
+          empty={sourceRows.length === 0}
+          caption="user / cron / watch / reaction · from slog source"
+        >
+          <ResponsiveContainer>
+            <AreaChart data={sourceRows}>
+              <CartesianGrid stroke="#27272a" />
+              <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={28} allowDecimals={false} />
+              <Tooltip contentStyle={tooltip} />
+              {sourceKeys.map((k) => (
+                <Area
+                  key={k}
+                  dataKey={k}
+                  name={k}
+                  type={tokenLine}
+                  stroke={sourceStroke[k]}
+                  fill={`${sourceStroke[k]}22`}
+                  stackId="src"
+                />
+              ))}
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+      ) : null}
+      {hasDuration ? (
+        <ChartFrame title="Turn duration (s)" empty={false} caption="from slog duration_ms when present">
+          <ResponsiveContainer>
+            <AreaChart data={turnRows}>
+              <CartesianGrid stroke="#27272a" />
+              <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+              <Tooltip contentStyle={tooltip} />
+              <Area dataKey="durationS" name="seconds" type="monotone" stroke="#c084fc" fill="#c084fc22" connectNulls />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartFrame>
+      ) : null}
       <ChartFrame title="MCP published vs skipped" empty={mcpRows.length === 0}>
         <ResponsiveContainer>
           <AreaChart data={mcpRows}>
@@ -203,6 +317,61 @@ export function MetricCharts({
             <Tooltip contentStyle={tooltip} />
             <Area dataKey="uptimeMin" type="monotone" stroke="#a78bfa" fill="#a78bfa22" />
             <Area dataKey="restarts" type="monotone" stroke="#f87171" fill="#f8717122" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+    </div>
+  );
+}
+
+export function HostCharts({
+  spark,
+  since,
+  now,
+}: {
+  spark: HostSample[];
+  since: number | null;
+  now: number;
+}) {
+  const rows = filterSamples(spark, since, now).map((s) => {
+    const cap = s.ncpu * 100;
+    const span = cap > 0 ? cap : 1;
+    return {
+      t: fmtTick(s.at, spanOf(spark), "hour"),
+      agents: Number(((s.craneCpu / span) * 100).toFixed(2)),
+      dashboard: Number(((s.consoleCpu / span) * 100).toFixed(2)),
+      other: Number(((s.otherCpu / span) * 100).toFixed(2)),
+      agentsGiB: Number((s.craneMem / 1024 ** 3).toFixed(3)),
+      dashboardGiB: Number((s.consoleMem / 1024 ** 3).toFixed(3)),
+      otherGiB: Number((s.otherMem / 1024 ** 3).toFixed(3)),
+    };
+  });
+  const tooltip = { background: "#18181b", border: "1px solid #3f3f46" };
+  return (
+    <div className="mt-3 grid gap-3 md:grid-cols-2" data-shot="host-metrics">
+      <ChartFrame title="CPU % of host" empty={rows.length === 0} caption="Docker share stacked · leftover is the OS">
+        <ResponsiveContainer>
+          <AreaChart data={rows}>
+            <CartesianGrid stroke="#27272a" />
+            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+            <Tooltip contentStyle={tooltip} />
+            <Area dataKey="agents" type="monotone" stackId="cpu" stroke="#f59e0b" fill="#f59e0b33" />
+            <Area dataKey="dashboard" type="monotone" stackId="cpu" stroke="#38bdf8" fill="#38bdf833" />
+            <Area dataKey="other" type="monotone" stackId="cpu" stroke="#71717a" fill="#71717a33" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+      <ChartFrame title="RAM (GiB)" empty={rows.length === 0} caption="agents / dashboard / other in Docker">
+        <ResponsiveContainer>
+          <AreaChart data={rows}>
+            <CartesianGrid stroke="#27272a" />
+            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+            <Tooltip contentStyle={tooltip} />
+            <Area dataKey="agentsGiB" name="agents" type="monotone" stackId="mem" stroke="#f59e0b" fill="#f59e0b33" />
+            <Area dataKey="dashboardGiB" name="dashboard" type="monotone" stackId="mem" stroke="#38bdf8" fill="#38bdf833" />
+            <Area dataKey="otherGiB" name="other" type="monotone" stackId="mem" stroke="#71717a" fill="#71717a33" />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>

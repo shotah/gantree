@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { emptyTrajectory } from "@/lib/yard/observe/spend";
 import type { SpendRollup, YardSpend } from "@/lib/yard/types";
 import { CraneSpend, SpendBoard, SpendScope } from "./SpendBoard";
 
@@ -19,6 +20,8 @@ function crane(partial: Partial<SpendRollup> & Pick<SpendRollup, "slug">): Spend
     byUser: [],
     bySource: [{ id: "user", turns: 1, estTokens: 100 }],
     unattributedTurns: 0,
+    lastTurn: { at: 1, source: "user", outcome: "ok", estTokens: 100, rounds: 1 },
+    trajectory: emptyTrajectory(),
     ...partial,
   };
 }
@@ -28,6 +31,13 @@ const yard: YardSpend = {
   promptEst: 240,
   genEst: 60,
   estTokens: 300,
+  lastAt: 1,
+  lastTurn: { at: 1, source: "user", outcome: "ok", estTokens: 200, rounds: 2 },
+  bySource: [
+    { id: "user", turns: 3, estTokens: 300 },
+  ],
+  trajectory: emptyTrajectory(),
+  sampledAt: 1,
   cranes: [
     crane({
       slug: "ada",
@@ -51,6 +61,7 @@ describe("SpendBoard", () => {
     const toggle = screen.getByRole("button", { name: /Est\. token spend · last 24h/ });
     expect(toggle).toHaveProperty("ariaExpanded", "false");
     expect(screen.getByText("2 cranes — expand for ranking")).toBeTruthy();
+    expect(screen.getByText("user 300")).toBeTruthy();
     expect(screen.queryByRole("link", { name: "ada" })).toBeNull();
     expect(screen.queryByText("by user")).toBeNull();
   });
@@ -97,6 +108,11 @@ describe("SpendBoard", () => {
     expect(onWindow).toHaveBeenCalledWith("6h");
     expect(screen.queryByRole("link", { name: "ada" })).toBeNull();
   });
+
+  it("names the calendar month window for billing", () => {
+    render(<SpendBoard spend={yard} window="month" onWindow={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /Est\. token spend · this month/ })).toBeTruthy();
+  });
 });
 
 describe("SpendScope", () => {
@@ -107,6 +123,8 @@ describe("SpendScope", () => {
     expect(screen.getByRole("group", { name: "Time window" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "7d" }));
     expect(onWindow).toHaveBeenCalledWith("7d");
+    fireEvent.click(screen.getByRole("button", { name: "month" }));
+    expect(onWindow).toHaveBeenCalledWith("month");
   });
 
   it("hides bucket pills until handlers are passed", () => {
@@ -148,5 +166,51 @@ describe("CraneSpend", () => {
     expect(screen.queryByText("bob")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /2 users/ }));
     expect(screen.getByText("bob")).toBeTruthy();
+  });
+
+  it("prefers an operator display name on the top user", () => {
+    render(
+      <CraneSpend
+        scope="last 24h"
+        rollup={crane({
+          slug: "ada",
+          turns: 1,
+          estTokens: 200,
+          byUser: [{ id: "42", turns: 1, estTokens: 200, label: "Ada" }],
+        })}
+      />,
+    );
+    expect(screen.getByText("Ada")).toBeTruthy();
+    expect(screen.getByTitle("42")).toBeTruthy();
+  });
+
+  it("shows source mix, trajectory, and per-human-turn cost", () => {
+    render(
+      <CraneSpend
+        scope="this month"
+        rollup={crane({
+          slug: "tim",
+          turns: 4,
+          estTokens: 400,
+          bySource: [
+            { id: "user", turns: 2, estTokens: 300 },
+            { id: "cron", turns: 2, estTokens: 100 },
+          ],
+          trajectory: {
+            medianRounds: 3,
+            recoveries: 1,
+            byOutcome: [{ id: "ok", turns: 4, estTokens: 400 }],
+            userTurns: 2,
+            userEst: 300,
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByText("source mix")).toBeTruthy();
+    expect(screen.getByText(/user 300/)).toBeTruthy();
+    expect(screen.getByText(/median 3 rounds · 1 recovery/)).toBeTruthy();
+    expect(screen.getByText("150")).toBeTruthy();
+    expect(screen.getByText(/2 user turns · background 100/)).toBeTruthy();
   });
 });

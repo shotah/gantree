@@ -34,6 +34,7 @@ export function TelegramBot({
   const [allow, setAllow] = useState<string[]>([]);
   const [addId, setAddId] = useState("");
   const [addErr, setAddErr] = useState<string | null>(null);
+  const [operators, setOperators] = useState<{ name: string; displayName: string; telegram: string[] }[]>([]);
 
   const load = useCallback(() => {
     yardFetch(`/api/gantries/${slug}/telegram`)
@@ -51,6 +52,18 @@ export function TelegramBot({
         setAllow(d.allowlist);
       })
       .catch(() => undefined);
+    yardFetch("/api/operators")
+      .then((r) => r.json())
+      .then((d: { operators?: { name: string; displayName: string; channels?: { telegram?: string[] } }[] }) => {
+        setOperators(
+          (d.operators ?? []).map((o) => ({
+            name: o.name,
+            displayName: o.displayName,
+            telegram: o.channels?.telegram ?? [],
+          })),
+        );
+      })
+      .catch(() => undefined);
   }, [slug]);
 
   useEffect(() => {
@@ -62,7 +75,12 @@ export function TelegramBot({
   }
 
   const allowSet = new Set(allow);
-  const seenNew = (snap.seen ?? []).filter((s) => !allowSet.has(s.id));
+  const operatorNew = operators.flatMap((op) => {
+    const label = op.displayName.trim() || op.name;
+    return op.telegram.filter((id) => id && !allowSet.has(id)).map((id) => ({ id, label }));
+  });
+  const operatorIds = new Set(operatorNew.map((o) => o.id));
+  const seenNew = (snap.seen ?? []).filter((s) => !allowSet.has(s.id) && !operatorIds.has(s.id));
   const locked = busy || readOnly;
 
   function addNumeric(raw: string) {
@@ -108,7 +126,6 @@ export function TelegramBot({
       title="Telegram"
       persistKey={craneFoldKey(slug, "telegram")}
       shot="telegram"
-      className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
       summary={snap.bot?.username ? `@${snap.bot.username}` : snap.tokenSet ? "token set" : "no token"}
       hint="profile, commands, allowlist"
       aside={
@@ -237,6 +254,27 @@ export function TelegramBot({
             </li>
           ))}
         </ul>
+        {operatorNew.length ? (
+          <div className="mt-2">
+            <p className="text-[10px] uppercase tracking-wide text-zinc-600">operators</p>
+            <p className="mt-0.5 text-[11px] text-zinc-600">from Profile — save allowlist, then recreate</p>
+            <ul className="mt-1 flex flex-wrap gap-1.5">
+              {operatorNew.map((o) => (
+                <li key={`${o.label}:${o.id}`}>
+                  <button
+                    type="button"
+                    disabled={locked}
+                    onClick={() => addNumeric(o.id)}
+                    className="rounded border border-amber-900/70 bg-amber-950/30 px-2 py-0.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
+                  >
+                    add {o.label}
+                    <span className="ml-1 text-zinc-500">{o.id}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {seenNew.length ? (
           <div className="mt-2">
             <p className="text-[10px] uppercase tracking-wide text-zinc-600">seen talking</p>

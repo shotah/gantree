@@ -4,10 +4,9 @@
 #   CLOUDFLARE_TUNNEL_TOKEN=... docker compose -f compose.cloudflare.yml up -d
 #   (or put the token in .env — compose loads it)
 #
-# Zero Trust → Networks → Tunnels → Docker token.
-# Public hostname origin: http://gantree:3000 (compose DNS, not localhost).
-#
-# LAN still publishes :80. Do not forward 80/443 on the router.
+# Zero Trust → Networks → Tunnels → public hostname:
+#   Type HTTP. URL http://gantree:3000  (service name + PORT, not host :80)
+# LAN still publishes host:container 80:3000. Do not forward 80/443 on the router.
 # Keep gantree: in sync with compose.yml.
 
 services:
@@ -23,6 +22,7 @@ services:
       GANTREE_HOST_ROOT: ${GANTREE_HOST_ROOT:-${PWD}}
       GANTREE_DB: /app/var/gantree.db
     ports:
+      # host:container — LAN only. Cloudflare does not use this mapping.
       - "${GANTREE_LISTEN:-0.0.0.0}:80:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

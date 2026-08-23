@@ -34,6 +34,7 @@ import {
   sampleMcp,
   sampleTurns,
   sampleUptime,
+  spendSamplerArmed,
 } from "@/lib/yard/observe/stats";
 import { closeYardDb } from "@/lib/yard/door/store";
 
@@ -100,6 +101,7 @@ describe("sampleTurns", () => {
     const first = await sampleTurns("turns-ok");
     expect(first).toHaveLength(1);
     expect(first[0]?.estTokens).toBe(12);
+    expect(spendSamplerArmed()).toBe(false);
 
     vi.mocked(containerLogsBuffer).mockResolvedValue(Buffer.from(line));
     expect(await sampleTurns("turns-ok")).toHaveLength(1);

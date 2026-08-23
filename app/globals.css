@@ -8,8 +8,63 @@
     IBM Plex Sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+}
+
+/* Phone only — desktop type, density, and tap targets stay as-is. */
+@media (max-width: 639px) {
+  html {
+    font-size: 20px;
+  }
+
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .text-\[10px\],
+  .text-\[11px\] {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 1rem !important;
+    min-height: 3.25rem !important;
+    padding-block: 0.75rem;
+    padding-inline: 0.85rem;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 1.375rem;
+    height: 1.375rem;
+    accent-color: #f59e0b;
+  }
+
+  button.rounded,
+  label.rounded {
+    min-height: 3rem;
+    padding-inline: 0.9rem;
+    touch-action: manipulation;
+  }
+
+  button[aria-expanded] {
+    min-height: 3rem;
+    touch-action: manipulation;
+  }
 }
 
 a {

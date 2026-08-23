@@ -26,6 +26,10 @@ there. A second setup is `409 already set up`.
 
 ![Log in with name and passphrase](../assets/login.png)
 
+![First operator on a phone](../assets/setup-phone.png)
+
+![Log in on a phone](../assets/login-phone.png)
+
 Name is `2–32` letters, digits, `.` `_` `-`. Passphrase ≥10 characters,
 not blank, not your name, not a common password. Failed logins back off
 (8 per name / 15 minutes). Full rules:
@@ -34,6 +38,10 @@ not blank, not your name, not a common password. Failed logins back off
 Local screenshots / `npm run dev`: `GANTREE_DEV=1` plus operator +
 passphrase in `.env` ([.env.example](../.env.example)). Loopback only —
 compose `HOST=0.0.0.0` ignores the flag. Unset it to photograph `/login`.
+On a wide screen, the phone mark in the header is a 390px preview
+(`?phone=1`) — no DevTools. Recapture: `node scripts/shot.mjs`.
+
+![Phone preview — 390px frame in a desktop tab](../assets/phone-preview.png)
 
 ---
 
@@ -77,6 +85,8 @@ or remove.
 Setup always creates an admin. **user** and **readonly** need at least
 one crane — without any they see an empty board. Tick more than one
 when a person covers two bots. Only **admin** sees every crane.
+Admin sees logins and logouts on the yard events strip; other roles
+do not.
 Do not share an admin login the way you would share a read-only
 dashboard. A partner who only pastes keys is **user** on their crane(s).
 Compose: they hit LAN `:80` or the hostname file you chose, not a published

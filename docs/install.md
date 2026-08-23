@@ -40,6 +40,8 @@ in `.env` ([.env.example](../.env.example)). Loopback only — compose
 
 ![Log in](../assets/login.png)
 
+![Log in on a phone](../assets/login-phone.png)
+
 Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
 That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the
 passphrase: delete it and run `/setup` again. Add a partner from **Settings**

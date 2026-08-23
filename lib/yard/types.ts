@@ -56,6 +56,11 @@ export type StatSample = {
   cpuPercent: number | null;
   memBytes: number | null;
   memLimitBytes: number | null;
+  /** Cumulative bytes since the container started. Null when Docker omitted networks. */
+  netRxBytes?: number | null;
+  netTxBytes?: number | null;
+  blkReadBytes?: number | null;
+  blkWriteBytes?: number | null;
 };
 
 export type TurnSample = {
@@ -71,12 +76,33 @@ export type TurnSample = {
   userId: string | null;
   sessionId: string | null;
   outcome: string | null;
+  /** Turn wall time in ms when slog has duration_ms / elapsed_ms. */
+  durationMs?: number | null;
 };
 
 export type SpendSlice = {
   id: string;
   turns: number;
   estTokens: number;
+  /** Operator display name when id matches a profile chat id. */
+  label?: string;
+};
+
+export type LastTurn = {
+  at: number;
+  source: string | null;
+  outcome: string | null;
+  estTokens: number;
+  rounds: number | null;
+  durationMs?: number | null;
+};
+
+export type SpendTrajectory = {
+  medianRounds: number | null;
+  recoveries: number;
+  byOutcome: SpendSlice[];
+  userTurns: number;
+  userEst: number;
 };
 
 export type SpendRollup = {
@@ -86,9 +112,11 @@ export type SpendRollup = {
   genEst: number;
   estTokens: number;
   lastAt: number | null;
+  lastTurn: LastTurn | null;
   byUser: SpendSlice[];
   bySource: SpendSlice[];
   unattributedTurns: number;
+  trajectory: SpendTrajectory;
 };
 
 export type YardSpend = {
@@ -96,7 +124,43 @@ export type YardSpend = {
   promptEst: number;
   genEst: number;
   estTokens: number;
+  lastAt: number | null;
+  lastTurn: LastTurn | null;
+  bySource: SpendSlice[];
+  trajectory: SpendTrajectory;
+  sampledAt: number;
   cranes: SpendRollup[];
+};
+
+export type HostRole = "crane" | "console" | "other";
+
+export type HostProc = {
+  name: string;
+  role: HostRole;
+  cpuPercent: number | null;
+  memBytes: number | null;
+};
+
+export type HostSample = {
+  at: number;
+  ncpu: number;
+  memTotalBytes: number;
+  craneCpu: number;
+  consoleCpu: number;
+  otherCpu: number;
+  craneMem: number;
+  consoleMem: number;
+  otherMem: number;
+};
+
+export type HostSnapshot = HostSample & {
+  hostname: string;
+  procs: HostProc[];
+};
+
+export type HostLive = {
+  live: HostSnapshot | null;
+  spark: HostSample[];
 };
 
 export type YardEvent = {
@@ -169,6 +233,26 @@ export type CatalogEntry = {
   blurb: string;
 };
 
+export type MaskedEnv = Record<string, { set: boolean; secret: boolean; value: string }>;
+
+export type HostRuntime = {
+  hostname: string;
+  bind: string;
+  bindOpen: boolean;
+  root: string;
+  tomlPath: string;
+  dbPath: string;
+  craneUser: string | null;
+  env: MaskedEnv;
+};
+
+export type YardDbInspect = {
+  path: string;
+  sizeBytes: number | null;
+  journal: string | null;
+  tables: { name: string; rows: number }[];
+};
+
 export type YardInventory = {
   source: "gantree.toml" | "docker-discover";
   yard: string;
@@ -178,6 +262,8 @@ export type YardInventory = {
   sparks?: Record<string, StatSample[]>;
   /** Est. token spend from JSON slog — filled by the list API, not listYard. */
   spend?: YardSpend;
+  /** Host CPU/RAM vs the Mini — filled by the list API, not listYard. */
+  host?: HostLive;
   /** True when this session may build a crane — filled by the list API. */
   canBuild?: boolean;
 };

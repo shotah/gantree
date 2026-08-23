@@ -39,5 +39,10 @@ describe("OperatorProfile", () => {
     expect(screen.getByRole("button", { name: "Update passphrase" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Add operator" })).toBeNull();
     expect(screen.queryByText("Settings")).toBeNull();
+    const you = screen.getByRole("button", { name: "Save profile" }).closest("form");
+    const pass = screen.getByRole("button", { name: "Update passphrase" }).closest("form");
+    expect(you?.parentElement).toBe(pass?.parentElement);
+    expect(you?.parentElement?.className).toMatch(/flex-wrap/);
+    expect(you?.parentElement?.className).toMatch(/items-start/);
   });
 });

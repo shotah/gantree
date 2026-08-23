@@ -11,9 +11,14 @@ KISS / MLP: just enough to run the yard. Vinext + TypeScript only.
 `npm start` is the process. No `gantree` CLI and no second language
 until a real gap forces it.
 
-v1 walk: milestones 0–11. v2 walk: after the heading **v2 looks like**.
-The door (v2 M0) may overlap leftover v1 walks — home LAN already
-publishes `:3000` with no login.
+v1 walk: milestones 0–11. v2 walk: after **v2 looks like** — **delivered**
+(host-yard loop: door → operators → nags → memory → audit). v3 walk:
+after **v3 looks like**. Mobile / phone layout is a **parallel** track,
+not v3. Portal (v2 M5) stays with that track; it does not block v3.
+
+Leftover v1 walks (live Google OAuth, recreate-while-Telegram-answers,
+stranger hello) are still how a stranger knows v1 is real. They are
+not the v3 product.
 
 Status: **now** · **next** · **later** · **not this version**
 A milestone is done when a stranger can do the **walk** without our house git.
@@ -316,8 +321,9 @@ Same console. Host chosen at build / init time.
 - [x] Hub image `shotah/gantree` (Actions → Docker Hub + GHCR); `npm run release`
 - [ ] **Walk (home):** stranger clones this repo, `npm start`, builds
       one crane in the UI, grants search, chats on Telegram.
-- [ ] **Walk (cloud):** same from a laptop over Tailscale. No Cast.
-      Agents have no inbound ports.
+- [x] **Walk (cloud):** same from a laptop over Cloudflare Tunnel
+      (`compose.cloudflare.yml`) or Tailscale. No Cast. Agents have
+      no inbound ports. Login is still Gantree’s door on the host.
 
 ---
 
@@ -465,15 +471,19 @@ blocker for calling the door done.
 
 ## v2 now
 
-**M0–M4** are in the tree (door, operators, board nags, sqlite graph
-memory, audit). Close leftover v1 walks (live Google OAuth,
-recreate-while-Telegram-answers, stranger hello) as you go — they
-are still how a stranger knows v1 is real. Pitch shots (live board,
-crane metrics, Telegram trajectory): see **Now**. Portal (M5) is the
-last walk.
+**Delivered.** M0–M4 walks are done on the live Mini (door, operators,
+board nags, sqlite graph memory, audit). Friends reach the same host
+through **Cloudflare Tunnel** (`compose.cloudflare.yml`) — login still
+lives on the Node process; agents still have no inbound ports. That is
+the v2 cloud story. Portal (M5) is a *Workers skin*, not the tunnel;
+it stays with the phone track and does not block v3.
+
+Leftover v1 walks (live Google OAuth, recreate-while-Telegram-answers,
+stranger hello) stay open as you go — they are still how a stranger
+knows v1 is real. Pitch shots: see **Now**.
 
 Home compose publishes `:80` on the LAN *behind* login. First boot is
-`/setup`. Cloud VM still `GANTREE_LISTEN=127.0.0.1`.
+`/setup`. Cloud VM still `GANTREE_LISTEN=127.0.0.1` plus the tunnel.
 
 ---
 
@@ -503,7 +513,7 @@ page. One operator, a login page, every mutation gated.
       compose comments. LAN is OK *behind* login. Cloud VM still
       `GANTREE_LISTEN=127.0.0.1`. Screenshots: `assets/setup.png`,
       `assets/login.png` (README + install + headless).
-- [ ] **Walk:** compose on the Mini, LAN IP, logged-out browser
+- [x] **Walk:** compose on the Mini, LAN IP, logged-out browser
       cannot read logs or `.env`. Setup one operator. Login. Board
       works. Restart. Must log in again.
 
@@ -521,7 +531,7 @@ You and a partner. Not a user-admin product.
 - [x] Three roles: `admin` (everything), `user` / `readonly` (assigned
       cranes; readonly look-only). Only admin sees every crane.
       Settings (cog) assigns them. Last admin cannot be demoted or deleted.
-- [ ] **Walk:** add a partner. They log in on a phone. Same yard.
+- [x] **Walk:** add a partner. They log in on a phone. Same yard.
       Remove them. Their next request is 401. Add a user on Kit; they
       see only Kit’s card. Add a readonly on Kit; they see Kit and
       cannot recreate. They cannot open another crane.
@@ -538,7 +548,7 @@ The board tells you before 11pm. Still pull-only.
       signals as today, surfaced).
 - [x] Consume richer `gantry status` JSON when present (parse, do not regex
       `"ok":false`). File-based hints remain until the Hub pin ships it.
-- [ ] **Walk:** yank `google-oauth.json` (or ungrant). Board nags
+- [x] **Walk:** yank `google-oauth.json` (or ungrant). Board nags
       on Kit. Re-auth hop. Badge clears.
 
 ---
@@ -554,7 +564,7 @@ Graphs that survive a bounce. Inventory still toml.
       Missing data stays empty — don’t fake a line.
 - [x] Retention cap (7 days, plus per-slug row caps). This is a Mini,
       not a metrics company. No Prometheus in v2.
-- [ ] **Walk:** use Kit for a day, `docker compose restart`, open
+- [x] **Walk:** use Kit for a day, `docker compose restart`, open
       Kit: last day’s turns are still there. `gantree.toml` still
       lists the slugs.
 
@@ -568,7 +578,7 @@ Mutations have an operator, not just a timestamp.
       save, operator edits, setup. Actor = session operator.
 - [x] Small UI: last N on the crane page and a yard events
       strip. Not a SIEM.
-- [ ] **Walk:** partner recreates Kit. You see their name on that
+- [x] **Walk:** partner recreates Kit. You see their name on that
       event. Logged-out, the audit API is 401.
 
 ---
@@ -576,6 +586,10 @@ Mutations have an operator, not just a timestamp.
 ## v2 Milestone 5 — portal (last)
 
 Second skin. Same operators story. Socket stays on the host.
+**Not v3.** Phone layout / mobile experience is a parallel track.
+This milestone is the Workers skin *if* that track still wants a
+remote `app/` — it is not the v3 product and it does not gate M0
+below.
 
 - [ ] Host exposes a **machine** token (file / env, not an
       operator password) for the portal. Browser cookies never
@@ -585,26 +599,265 @@ Second skin. Same operators story. Socket stays on the host.
       dockerode.
 - [ ] Login lives at the portal when that is the public-ish URL.
       Host can bind loopback only.
-- [ ] Cloud docs: tunnel *or* portal, not “open 3000 and hope
-      login is enough.”
+- [x] Cloud docs: tunnel *or* portal, not “open 3000 and hope
+      login is enough.” (`compose.cloudflare.yml` is the share path.)
 - [ ] **Walk:** laptop → Worker → Mini on `127.0.0.1`. Board,
       login, grant, recreate. Agents still have no inbound ports.
       Kill the Worker: host UI still works on loopback.
 
 ---
 
-## Later (after v2)
+## v3 looks like (the end)
+
+v1 is a yard you can *see*. v2 is a yard you can *share* (a door on
+the LAN). v3 is a yard you **live in** — you can tune it and read a
+week without opening sqlite or grepping slog. Chat still stays
+Telegram. Agents still open zero inbound ports. Still your box.
+
+Mobile / phone layout is **not this version** (parallel track).
+The portal is not this version. Prometheus is not this version.
+
+**Home.** Open the Mini. The cog is no longer only people: retention,
+timezone, default image pin, an optional $/1M so spend can show a
+household number (still an estimate). Kit’s graphs include disk, net,
+and how long a turn actually took — empty if Docker / slog didn’t
+say, never invented. Bob on Profile is a *name* on the spend bar,
+and “put me on Kit’s allowlist” writes `TELEGRAM_ALLOWED_USERS`. A
+tryout you don’t want: retire it (container + directory + toml row).
+A Thursday you do want: restore `gantry.db` + `SELF.md`, never `.env`.
+
+**Cloud.** Same app. Still loopback + tunnel. No billing API. No
+Grafana sidecar.
+
+**Operator loop that must work end-to-end**
+
+1. Admin opens Settings. Not only operators: keep 30d of turns, set
+   the yard timezone, paste a Flash rate if you want a $ column.
+2. Partner saves their Telegram id on Profile. Spend says their
+   *name*. One confirm-scary writes that id onto Kit’s allowlist.
+3. Kit dashboard: CPU / RAM plus net, data-dir bytes, turn duration,
+   tool skips. Missing slog fields stay blank.
+4. Overlay Kit vs tryout tokens for the week. Kit is still Kit’s
+   page — the compare is a fold, not a mixed fleet dump.
+5. Backup. Restore last Thursday’s memory. Recreate. Telegram still
+   answers. `.env` did not come back from the stamp.
+6. Retire tryout: container gone, directory gone, row gone from
+   `gantree.toml`. Confirm-scary. Kit is untouched.
+
+If that loop is “we added Grafana and a second inventory,” we missed.
+The product is a household ops surface that still **pulls**.
+
+---
+
+## v3 fit gates
+
+v1 and v2 gates still hold. Deltas:
+
+1. **Inventory stays files.** Yard prefs live in `gantree.toml`
+   (a `[observe]` / `[yard]` table: retain days, timezone, default
+   pin, optional token rate). Do not mint a settings table that
+   duplicates slugs. Operators stay sqlite — people are not
+   inventory.
+2. **Chat ids write `.env`, they don’t merge brains.** Profile
+   channels label spend. Pushing an id onto a crane is an explicit
+   edit of *that* crane’s allowlist. Isolation stays the feature.
+3. **Pull, don’t punch.** Net / blkio from the `docker stats` blob
+   we already fetch (CPU/RAM today; the rest is sitting there). Disk
+   is `du` on `data_dir`. Duration / tool counts from JSON slog when
+   present. If a field isn’t there, the chart stays empty and we ask
+   `ai-gantry` for a stable key — we do not sit in the turn.
+4. **Estimates stay estimates.** A pasted $/1M is a calculator on
+   chars/4. Not a GCP invoice. No provider usage API in v3.
+5. **Three roles still.** Yard prefs are admin. `user` mutates their
+   assigned cranes (allowlist push, backup). Retire is admin.
+   `readonly` looks.
+6. **Restore is memory, not a clone.** Stamp = `gantry.db` +
+   `SELF.md` (+ avatar if we already copy it). Never `.env`, never
+   `mcp.toml`, never oauth files.
+7. **Retire a tryout = delete that directory.** Confirm-scary. Toml
+   row goes with it. Not a soft-delete product.
+8. **Meh yard, tight crane.** The operator can wait 200ms for `du`.
+   The human on Telegram cannot wait for a scrape. If a dashboard
+   want would make `ai-gantry` slower, the want is wrong.
+9. **Not chat. Not mobile. Not a portal. Not Prometheus.**
+
+---
+
+## v3 ships
+
+| Surface | What “done” means |
+| --- | --- |
+| Yard settings | Cog grows a pane: retain days, timezone, default Hub pin, optional $/1M, session idle. Admin. Written to toml (idle may stay code-default if toml is the wrong home — pick one, don’t split). |
+| People → cranes | Profile chat ids label spend (`user_id` → display name). Confirm-scary “add to this crane’s allowlist” writes `.env` and nags recreate. |
+| More series | Host: net I/O, blkio, data-dir bytes. Turns: duration, outcome, tool skip/error **when slog has them**. Empty otherwise. |
+| Compare | Overlay a handful of cranes on the board (tokens / CPU). Still pull. Still one page per instance for logs. |
+| Backup loop | List `backups/`. Restore `gantry.db` + `SELF.md`. Prune old stamps. Recreate after restore. |
+| Retire | Admin deletes a tryout: stop, rm container, rm directory, drop toml row. Kit survives. |
+| Audit | Filter last N by kind / slug / who. jsonl download. Still not a SIEM. |
+
+**Not v3:** Workers portal, phone layout, Prometheus, billed
+invoices, SSO, systemd, a `gantree` CLI, pairing chat through the
+console, a shared family brain.
+
+v3 *ships* when the household loop (settings → named spend → richer
+graphs → backup/restore → retire) is a stranger walk. Compare and
+audit-filter can land in the same walk; they are not a second
+product.
+
+---
+
+## v3 now
+
+v2 host-yard loop is delivered. Mobile is someone else. **M0 is
+still the settings cog** (people only). A first slice of M1/M2/M4
+is in: Profile chat ids label spend, Telegram can queue an
+operator id onto a crane allowlist, Docker net/blkio and slog
+`duration_ms` chart when present, turns-by-source when slog has
+`source`, last-turn age + recovery spark on the board, the event
+strip filters by kind and downloads jsonl. Still missing: yard
+`[observe]` prefs, `du` on data-dir, compare overlay, backup
+list/restore, retire.
+
+Push into `ai-gantry` only when every consumer benefits (same rule
+as v1): stable `turn perf` fields for duration and tool
+counts if they are not already there. Parse here. Do not invent a
+dashboard hook.
+
+---
+
+## v3 Milestone 0 — the cog is a yard
+
+First useful v3 product: Settings is not only who is on the box.
+Admin can tune the yard without editing toml by hand.
+
+- [ ] `gantree.toml` grows a `[observe]` (or `[yard]`) table: retain
+      days (host vs turns), timezone for charts, default image pin
+      for *new* cranes. Optional token rate ($/1M, prompt + gen)
+      used only as a spend calculator. No secrets in that table.
+- [ ] Settings page: operators stay the first pane; **Yard** is the
+      second. Admin-only writes. Confirm-scary on retain-days
+      (prunes sqlite). `user` / `readonly` can read the rates so
+      spend $ matches what they see.
+- [ ] Session idle / absolute stay documented. Expose them only if
+      we can do it without a second source of truth (toml *or*
+      env — not both).
+- [ ] Default pin is what the build wizard offers next. Existing
+      cranes keep their compose tag until you pin/recreate.
+- [ ] Tests: non-admin PUT is 403; retain prune respects the new
+      cap; missing table = today’s 7d / 32d defaults.
+- [ ] **Walk:** admin sets timezone + 30d turns + a Flash rate.
+      Refresh Kit: axis labels in that zone, spend shows an est. $
+      column, host samples still cap. Bounce `npm start`. Prefs
+      survived because they are in `gantree.toml`.
+
+---
+
+## v3 Milestone 1 — names on the cranes
+
+Profile chat ids stop being a label that does nothing.
+
+- [x] Spend `by user` shows operator display name when the slog
+      `user_id` matches a profile channel id. Unknown ids stay
+      raw (don’t invent a person).
+- [x] On a crane’s Telegram (or channel) panel: “add this
+      operator’s id to the allowlist” — queues the numeric id;
+      Save allowlist still writes `TELEGRAM_ALLOWED_USERS` and
+      nags recreate. Never a silent merge across cranes.
+- [x] Suggest ids seen in slog that are not on the allowlist yet.
+      Suggest ≠ write.
+- [x] `readonly` can see names. Only `user` / admin on that crane
+      can push an id.
+- [ ] **Walk:** partner saves a Telegram id on Profile. Kit spend
+      says their name, not `123456`. Admin adds them to Kit’s
+      allowlist. Recreate. They can talk to Kit. Tryout’s
+      allowlist did not change.
+
+---
+
+## v3 Milestone 2 — more of what we already pull
+
+Richer graphs. Same pull. No new harness port.
+
+**Host** (Docker stats + disk — Mini can wait)
+
+- [x] Parse net I/O + blkio from the stats blob `cpuMemFromStats`
+      already receives. Sample into sqlite next to CPU/RAM.
+      Missing cgroup fields stay empty.
+- [ ] Data-dir bytes (`du` on `data_dir`, periodic, not per-request
+      on the board). Chart + a number on the card when it’s fat.
+- [ ] Retain respects M0. Don’t keep 30d of 1Hz CPU on a Mini by
+      accident — host cadence stays sparse.
+
+**Turns** (slog — parse, don’t fake)
+
+- [x] Consume duration when `turn perf` (or a neighbor line) has
+      `duration_ms` / `elapsed_ms`. Outcome already has a column.
+      Tool skip-error still needs a stable harness field if absent.
+- [x] Completer vs chat vs cron as a series when `source` is on
+      the line (spend already slices it; the chart doesn’t).
+- [x] Board: last-turn age and a quiet recovery spark. Empty
+      until a chat. Don’t invent a line.
+
+- [ ] **Walk:** talk to Kit for an hour. Dashboard shows net +
+      data-dir size. If the image emits duration, a latency chart
+      fills; if not, it stays honest-empty. `docker stats` is
+      still the host source — no `/metrics` on the crane.
+
+---
+
+## v3 Milestone 3 — backup is a loop
+
+Backup is already a button (`gantry.db` + `SELF.md`). v3 is list,
+restore, prune, and a way to kill a tryout.
+
+- [ ] List stamps under `backups/` (or `backups/<slug>/` if we
+      already nest — don’t reshape without a reason).
+- [ ] Restore: copy `gantry.db` + `SELF.md` back, then recreate.
+      Refuse `.env` / `mcp.toml` / oauth files even if a curious
+      stamp contains them.
+- [ ] Prune: keep last N or last retain-days, admin. Confirm-scary.
+- [ ] **Retire** a crane (admin): stop, remove container, delete
+      that directory, drop the `gantree.toml` row. Confirm-scary
+      (type the slug). Kit is another directory — it survives.
+      Audit: who retired what.
+- [ ] **Walk:** backup Kit. Chat. Restore Thursday’s stamp.
+      Recreate. Kit remembers Thursday, not the chat after.
+      Token in `.env` is still the live one. Retire tryout: gone
+      from the board and from disk. Kit still answers.
+
+---
+
+## v3 Milestone 4 — compare + ask the audit
+
+The board already ranks spend. v3 is overlay and a filter, not a
+metrics company.
+
+- [x] Kind filter on the event strip (`?kind=`). jsonl download for
+      the same query. Not a full audit page yet: no who-filter, not
+      a SIEM.
+- [ ] Compare fold on the yard home: pick 2–3 cranes, overlay
+      tokens (and CPU if we have samples). Logs stay per-instance.
+- [ ] Audit page extras: who, last N, jsonl download for the same
+      query. Still not a SIEM.
+- [ ] **Walk:** overlay Kit vs tryout for 7d — Kit burned more.
+      Filter events to “recreate” + partner’s name. Export jsonl.
+      Logged-out, those APIs are 401.
+
+---
+
+## Later (after v3)
 
 - systemd yards, not only compose
 - A `gantree` CLI (only if the UI + `npm` scripts are genuinely not
   enough — still TypeScript, not a Go Makefile)
 - Prometheus / long-retention metrics store
-- GCP / provider usage pull (billed $). v1/v2 spend is chars/4
-  estimates from `turn perf` — good for “who burned the budget”,
-  not an invoice.
-- Cross-agent compare view beyond the board spend ranking
+- GCP / provider usage pull (billed $). v1–v3 spend is chars/4
+  (plus an optional pasted rate) — good for “who burned the
+  budget”, not an invoice.
 - SSO / OIDC / “log in with GitHub” — not needed while operators
   are a handful of hashed passphrases on disk
+- Workers portal — only if the mobile track still wants a remote
+  `app/` (v2 M5)
 
 ## Not the product
 

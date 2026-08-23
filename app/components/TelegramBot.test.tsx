@@ -50,4 +50,38 @@ describe("TelegramBot", () => {
     expect(screen.getByText(/add 9/)).toBeTruthy();
     expect((screen.getByPlaceholderText("numeric id") as HTMLInputElement).value).toBe("");
   });
+
+  it("offers Profile telegram ids that are not on the allowlist", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (url) => {
+      if (String(url).includes("/api/operators")) {
+        return {
+          json: async () => ({
+            operators: [{ name: "ada", displayName: "Ada", channels: { telegram: ["99"], slack: [], discord: [] } }],
+          }),
+        } as Response;
+      }
+      return {
+        json: async () => ({
+          enabled: true,
+          tokenSet: true,
+          bot: { id: 99, username: "kit_bot", firstName: "Kit" },
+          name: "Kit",
+          description: "blurb",
+          shortDescription: "about",
+          commands: [{ command: "tools", description: "list granted MCP" }],
+          allowlist: [],
+          seen: [{ id: "9", turns: 2, lastAt: 10 }],
+          link: "https://t.me/kit_bot",
+          detail: "@kit_bot",
+        }),
+      } as Response;
+    });
+    render(<TelegramBot slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />);
+    await waitFor(() => expect(screen.getByText("@kit_bot")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
+    await waitFor(() => expect(screen.getByText(/add Ada/)).toBeTruthy());
+    expect(screen.getByText("99")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /add Ada/ }));
+    expect(screen.getByText("99 ×")).toBeTruthy();
+  });
 });

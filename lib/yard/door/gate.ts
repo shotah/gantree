@@ -343,12 +343,14 @@ export function loginOperator(
   return { ok: true, operator: publicOperator(row), token };
 }
 
-export function logoutOperator(req: Request): void {
+export function logoutOperator(req: Request): Operator | null {
   const token = readCookie(req, SESSION_COOKIE);
   if (!token) {
-    return;
+    return null;
   }
+  const you = sessionOperator(token, false);
   yardDb().prepare("DELETE FROM operator_session WHERE token_hash = ?").run(tokenHash(token));
+  return you;
 }
 
 export function listOperators(): OperatorRow[] {

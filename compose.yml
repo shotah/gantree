@@ -28,6 +28,7 @@ services:
       GANTREE_HOST_ROOT: ${GANTREE_HOST_ROOT:-${PWD}}
       GANTREE_DB: /app/var/gantree.db
     ports:
+      # host:container — LAN http://<mini>/ hits Vinext :3000 inside the box.
       - "${GANTREE_LISTEN:-0.0.0.0}:80:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

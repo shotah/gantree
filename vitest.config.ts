@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       "@": resolve(import.meta.dirname),
       "next/link": resolve(import.meta.dirname, "test/next-link.tsx"),
+      "next/navigation": resolve(import.meta.dirname, "test/next-navigation.ts"),
     },
   },
   test: {

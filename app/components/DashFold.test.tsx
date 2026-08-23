@@ -22,6 +22,19 @@ describe("DashFold", () => {
     expect(screen.getByText("avatar")).toBeTruthy();
     expect(screen.getByText("persona/avatar.jpg")).toBeTruthy();
     expect(screen.queryByText("photo body")).toBeNull();
+    expect(toggle.closest("section")?.className).toContain("border-zinc-800");
+    expect(toggle.closest("section")?.className).toContain("rounded-lg");
+    expect(toggle.querySelector("[aria-hidden]")?.className).toContain("rounded-full");
+  });
+
+  it("marks a dangerous fold with a warn chip", () => {
+    render(
+      <DashFold title="Inventory" warn hint="writes the whole yard">
+        <p>toml</p>
+      </DashFold>,
+    );
+    expect(screen.getByText("warn")).toBeTruthy();
+    expect(screen.getByText("writes the whole yard")).toBeTruthy();
   });
 
   it("starts open when defaultOpen is set", () => {

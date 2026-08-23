@@ -84,7 +84,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600"
+        className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 max-sm:w-full max-sm:py-2.5 max-sm:text-sm"
       >
         Build a crane
       </button>
@@ -95,7 +95,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
     <form onSubmit={submit} className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-4 text-sm">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-medium text-stone-100">New crane</h2>
-        <button type="button" className="text-xs text-zinc-500" onClick={() => setOpen(false)}>
+        <button type="button" className="text-xs text-zinc-500 max-sm:min-h-11 max-sm:px-2 max-sm:text-sm" onClick={() => setOpen(false)}>
           cancel
         </button>
       </div>

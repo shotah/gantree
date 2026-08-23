@@ -1,7 +1,8 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { yardRoot } from "../host/files";
+import type { YardDbInspect } from "../types";
 
 let db: DatabaseSync | null = null;
 let openedPath: string | null = null;
@@ -113,6 +114,18 @@ function migrate(d: DatabaseSync): void {
       restart_count INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_sample_uptime_slug_at ON sample_uptime(slug, at);
+    CREATE TABLE IF NOT EXISTS sample_machine (
+      at INTEGER NOT NULL,
+      ncpu INTEGER,
+      mem_total_bytes INTEGER,
+      crane_cpu REAL,
+      console_cpu REAL,
+      other_cpu REAL,
+      crane_mem INTEGER,
+      console_mem INTEGER,
+      other_mem INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_sample_machine_at ON sample_machine(at);
   `);
   ensureColumn(d, "operator", "display_name", "TEXT");
   ensureColumn(d, "operator", "email", "TEXT NOT NULL DEFAULT ''");
@@ -120,6 +133,11 @@ function migrate(d: DatabaseSync): void {
   ensureColumn(d, "operator", "role", "TEXT NOT NULL DEFAULT 'admin'");
   ensureColumn(d, "operator", "crane_slug", "TEXT");
   ensureColumn(d, "operator", "channels", "TEXT NOT NULL DEFAULT '{}'");
+  ensureColumn(d, "sample_host", "net_rx_bytes", "INTEGER");
+  ensureColumn(d, "sample_host", "net_tx_bytes", "INTEGER");
+  ensureColumn(d, "sample_host", "blk_read_bytes", "INTEGER");
+  ensureColumn(d, "sample_host", "blk_write_bytes", "INTEGER");
+  ensureColumn(d, "sample_turn", "duration_ms", "REAL");
 }
 
 function ensureColumn(d: DatabaseSync, table: string, name: string, ddl: string): void {
@@ -128,6 +146,36 @@ function ensureColumn(d: DatabaseSync, table: string, name: string, ddl: string)
     return;
   }
   d.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${ddl}`);
+}
+
+const TABLE_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Counts only — never row contents (operators hold pass hashes). */
+export function inspectYardDb(): YardDbInspect {
+  const path = dbPath();
+  let sizeBytes: number | null = null;
+  try {
+    sizeBytes = statSync(path).size;
+  } catch {
+    sizeBytes = null;
+  }
+  const db = yardDb();
+  const journalRow = db.prepare("PRAGMA journal_mode").get() as Record<string, unknown> | undefined;
+  const names = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+  ).all() as { name: string }[];
+  const tables = names
+    .filter((t) => TABLE_NAME.test(t.name))
+    .map((t) => {
+      const row = db.prepare(`SELECT COUNT(*) AS n FROM "${t.name}"`).get() as { n: number } | undefined;
+      return { name: t.name, rows: Number(row?.n ?? 0) };
+    });
+  return {
+    path,
+    sizeBytes,
+    journal: journalRow ? String(Object.values(journalRow)[0] ?? "") || null : null,
+    tables,
+  };
 }
 
 export function warnOpenBindIfEmpty(empty: boolean): void {

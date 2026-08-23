@@ -182,6 +182,7 @@ export function turnFromLog(line: LogLine): {
   userId: string | null;
   sessionId: string | null;
   outcome: string | null;
+  durationMs: number | null;
 } | null {
   if (!line.json) {
     return null;
@@ -212,6 +213,7 @@ export function turnFromLog(line: LogLine): {
     userId: str(line.json.user_id ?? line.json.userId),
     sessionId: str(line.json.session_id ?? line.json.sessionId),
     outcome: str(line.json.outcome),
+    durationMs: num(line.json.duration_ms ?? line.json.elapsed_ms ?? line.json.latency_ms ?? line.json.ms),
   };
 }
 

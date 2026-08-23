@@ -61,6 +61,7 @@ export function DashFold({
   shot,
   defaultOpen = false,
   persistKey,
+  warn = false,
 }: {
   title: string;
   summary?: ReactNode;
@@ -71,6 +72,7 @@ export function DashFold({
   shot?: string;
   defaultOpen?: boolean;
   persistKey?: string;
+  warn?: boolean;
 }) {
   const [localOpen, setLocalOpen] = useState(defaultOpen);
   const stored = useSyncExternalStore(
@@ -89,23 +91,38 @@ export function DashFold({
     }
   }
 
+  const box = "rounded-lg border border-zinc-800 bg-zinc-900/60 p-4";
+
   return (
-    <section data-shot={shot} className={className}>
+    <section data-shot={shot} className={className ? `${box} ${className}` : box}>
       <div className={`flex flex-wrap items-start justify-between gap-3 ${open ? "mb-3" : ""}`}>
         <button
           type="button"
           aria-expanded={open}
           onClick={toggle}
-          className="min-w-0 flex-1 cursor-pointer text-left"
+          className="group min-w-0 flex-1 cursor-pointer py-0.5 text-left max-sm:py-1"
         >
-          <span className="flex flex-wrap items-baseline gap-2">
-            <span className="text-xs text-zinc-500" aria-hidden>
-              {open ? "▾" : "▸"}
+          <span className="flex flex-wrap items-center gap-2">
+            <span
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-500 group-hover:border-zinc-500 group-hover:text-zinc-400 max-sm:h-8 max-sm:w-8"
+              aria-hidden
+            >
+              <svg
+                viewBox="0 0 12 12"
+                className={`block h-4 w-4 origin-center fill-current ${open ? "rotate-90" : ""} max-sm:h-5 max-sm:w-5`}
+              >
+                <path d="M3.4 2.6v6.8L8.6 6z" />
+              </svg>
             </span>
-            <span className="text-sm font-medium text-zinc-400">{title}</span>
-            {summary ? <span className="text-xs text-zinc-500">{summary}</span> : null}
+            <span className="text-sm font-medium text-zinc-400 max-sm:text-base">{title}</span>
+            {warn ? (
+              <span className="rounded border border-amber-900/70 bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-200">
+                warn
+              </span>
+            ) : null}
+            {summary ? <span className="text-xs text-zinc-500 max-sm:text-sm">{summary}</span> : null}
           </span>
-          {!open && hint ? <span className="mt-1 block pl-5 text-[11px] text-zinc-600">{hint}</span> : null}
+          {!open && hint ? <span className="mt-1 block pl-9 text-[11px] text-zinc-600 max-sm:pl-10 max-sm:text-xs">{hint}</span> : null}
         </button>
         {aside}
       </div>

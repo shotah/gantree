@@ -142,10 +142,11 @@ export function OperatorProfile() {
       {err ? <p className="text-sm text-amber-200">{err}</p> : null}
       {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
 
-      {you ? (
-        <form
-          className="flex max-w-lg flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
-          onSubmit={async (e) => {
+      <div className="flex flex-wrap items-start gap-8">
+        {you ? (
+          <form
+            className="flex max-w-full min-w-[min(100%,28rem)] grow basis-[28rem] flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+            onSubmit={async (e) => {
             e.preventDefault();
             if (
               await post({
@@ -251,11 +252,11 @@ export function OperatorProfile() {
             Save profile
           </button>
         </form>
-      ) : null}
+        ) : null}
 
-      <form
-        className="flex max-w-lg flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
-        onSubmit={async (e) => {
+        <form
+          className="flex max-w-full min-w-[min(100%,28rem)] grow basis-[28rem] flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+          onSubmit={async (e) => {
           e.preventDefault();
           if (next !== nextConfirm) {
             setErr("new passphrases do not match");
@@ -319,7 +320,8 @@ export function OperatorProfile() {
         >
           Update passphrase
         </button>
-      </form>
+        </form>
+      </div>
     </section>
   );
 }

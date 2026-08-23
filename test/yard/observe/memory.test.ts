@@ -23,7 +23,15 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
 
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { closeYardDb } from "@/lib/yard/door/store";
-import { persistHost, persistMcp, persistTurn, persistUptime, recallSamples, RETAIN_MS } from "@/lib/yard/observe/memory";
+import {
+  persistHost,
+  persistMcp,
+  persistTurn,
+  persistUptime,
+  recallSamples,
+  RETAIN_MS,
+  TURN_RETAIN_MS,
+} from "@/lib/yard/observe/memory";
 import { clearObserveRings, peekTurns, sampleTurns } from "@/lib/yard/observe/stats";
 import { containerLogsBuffer } from "@/lib/yard/host/docker";
 
@@ -61,9 +69,10 @@ describe("yard memory", () => {
       userId: null,
       sessionId: null,
       outcome: null,
+      durationMs: 1500,
     });
     persistTurn("kit", {
-      at: Date.now() - RETAIN_MS - 5_000,
+      at: Date.now() - TURN_RETAIN_MS - 5_000,
       key: "turn-old",
       rounds: 1,
       recoveries: 0,
@@ -75,13 +84,25 @@ describe("yard memory", () => {
       sessionId: null,
       outcome: null,
     });
-    persistHost("kit", { at: Date.now(), cpuPercent: 12, memBytes: 100, memLimitBytes: 200 });
+    persistHost("kit", {
+      at: Date.now(),
+      cpuPercent: 12,
+      memBytes: 100,
+      memLimitBytes: 200,
+      netRxBytes: 50,
+      netTxBytes: 9,
+      blkReadBytes: 3,
+      blkWriteBytes: 4,
+    });
     persistMcp("kit", { at: Date.now(), published: 1, skipped: 1 });
     persistUptime("kit", { at: Date.now(), uptimeSeconds: 12, restartCount: 0 });
 
     const recalled = recallSamples("kit", { host: 720, turns: 400, mcp: 200, uptime: 720 });
     expect(recalled.turns.map((t) => t.key)).toEqual(["turn-now"]);
     expect(recalled.host).toHaveLength(1);
+    expect(recalled.host[0]?.netRxBytes).toBe(50);
+    expect(recalled.host[0]?.blkWriteBytes).toBe(4);
+    expect(recalled.turns[0]?.durationMs).toBe(1500);
     expect(recalled.mcp[0]?.skipped).toBe(1);
     expect(recalled.uptime[0]?.restartCount).toBe(0);
 
@@ -93,6 +114,28 @@ describe("yard memory", () => {
     closeYardDb();
     clearObserveRings();
     expect(peekTurns("kit").some((t) => t.estTokens === 12)).toBe(true);
+  });
+
+  it("keeps turns older than the host week so this month still adds up", () => {
+    const aged = Date.now() - RETAIN_MS - 5_000;
+    persistTurn("kit", {
+      at: aged,
+      key: "turn-week-plus",
+      rounds: 1,
+      recoveries: 0,
+      estTokens: 40,
+      promptEstTokens: 30,
+      genEstTokens: 10,
+      source: null,
+      userId: null,
+      sessionId: null,
+      outcome: null,
+    });
+    persistHost("kit", { at: aged, cpuPercent: 12, memBytes: 100, memLimitBytes: 200 });
+
+    const recalled = recallSamples("kit", { host: 720, turns: 400, mcp: 200, uptime: 720 });
+    expect(recalled.turns.map((t) => t.key)).toEqual(["turn-week-plus"]);
+    expect(recalled.host).toEqual([]);
   });
 
   it("keeps Kit's samples off Jules and ignores a duplicate turn key", () => {

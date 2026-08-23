@@ -40,6 +40,8 @@ again. No email reset. Click your name for **Profile**; the cog is
 
 ![Log in with name and passphrase](../assets/login.png)
 
+![Log in on a phone](../assets/login-phone.png)
+
 ---
 
 ## Board
@@ -48,6 +50,8 @@ A handful of named pets, not a Kubernetes dashboard. Each card: name, alive
 or not, model, channel, published vs skipped MCP. **Nags** (dead process,
 skipped grant, needs-auth) sit on the card — you do not have to open Tools.
 Click through. Kit’s page is **Kit** — graphs and log, not a mixed fleet dump.
+The host card (CPU bubble) is the Mini itself: metrics, `gantree.toml`, yard
+sqlite, and how this process was started. People (roles) stay on the cog.
 
 Build a crane from the board (yard type first: home Mini or cloud VM).
 Telegram: **Create with BotFather** copies `/newbot`, opens the chat, and
@@ -59,13 +63,9 @@ numeric ids (slog `user_id` after someone talks — not `@username`). Grant
 a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 `/tools` is the crane’s mouth; this page is the operator’s.
 
-![Shipping yard board with crane avatars](../assets/yard.png)
+![The yard on a phone](../assets/yard-phone.png)
 
-![Ada’s page — CPU/RAM, MCP, uptime; Kit’s page is only Kit](../assets/crane-metrics.png)
-
-![Metrics on Ada: live CPU, RAM, MCP, uptime; token charts empty until a chat](../assets/metrics.png)
-
-![Crane page with avatar and upload photo](../assets/crane-photo.png)
+![Jules on a phone — start/stop and boxed folds](../assets/crane-phone.png)
 
 Pin: `shotah/ai-gantry:latest` (Hub). Nested `repos/ai-gantry` is **dev
 only** — do not copy `.env` or `data/` from a private checkout.
@@ -108,7 +108,8 @@ inspect`, `docker logs`, sampled stats, JSON slog). Parse what the harness
 already emits. Do not tax parallel tool calls so a chart looks nicer.
 Samples and turns land in yard sqlite (7-day cap) so bouncing `npm start`
 does not wipe Kit’s graphs. Mutations (grant, recreate, env, operators)
-show *who* on a small events strip — not a SIEM.
+show *who* on a small events strip — not a SIEM. Admin also sees logins
+and logouts there; other operators do not.
 
 Doctor says why a tool is skipped (no binary / no key / no OAuth). Recreate
 keeps the host `user` that owns `data/` (never Distroless `65532`),
@@ -120,7 +121,7 @@ keeps the host `user` that owns `data/` (never Distroless `65532`),
 
 1. `npm start` (or compose) on the Docker host
 2. Board shows every gantry in `gantree.toml` — alive or not
-3. Click a card: per-instance graphs + visual logs
+3. Click a card: per-instance graphs + visual logs. Host card: Mini metrics + `gantree.toml`
 4. Build a crane (yard type → slug → model → channel → profile)
 5. Grant / revoke MCP; files update; container recreates
 6. Watch *that* agent’s log and metrics until the grant is real

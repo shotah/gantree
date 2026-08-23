@@ -7,8 +7,10 @@ import {
   bucketsForWindow,
   filterSamples,
   fmtSpendWindow,
+  labelRollup,
   rollupTurns,
   windowStart,
+  DEFAULT_SPEND_WINDOW,
   type SpendBucket,
   type SpendWindow,
 } from "@/lib/yard/observe/spend";
@@ -43,6 +45,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [turns, setTurns] = useState<TurnSample[]>([]);
   const [mcp, setMcp] = useState<McpSample[]>([]);
   const [uptime, setUptime] = useState<UptimeSample[]>([]);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<Files | null>(null);
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [persona, setPersona] = useState("");
@@ -55,7 +58,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [authDetail, setAuthDetail] = useState<string | null>(null);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [authCode, setAuthCode] = useState("");
-  const [spendWindow, setSpendWindow] = useState<SpendWindow>("24h");
+  const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
   const [spendBucket, setSpendBucket] = useState<SpendBucket>("cumulative");
 
   const refresh = useCallback(() => {
@@ -81,11 +84,12 @@ export function AgentDashboard({ slug }: { slug: string }) {
       .catch(() => undefined);
     yardFetch(`/api/gantries/${slug}/stats`)
       .then((r) => r.json())
-      .then((s: { host: StatSample[]; turns: TurnSample[]; mcp: McpSample[]; uptime: UptimeSample[] }) => {
+      .then((s: { host: StatSample[]; turns: TurnSample[]; mcp: McpSample[]; uptime: UptimeSample[]; userNames?: Record<string, string> }) => {
         setHost(s.host ?? []);
         setTurns(s.turns ?? []);
         setMcp(s.mcp ?? []);
         setUptime(s.uptime ?? []);
+        setUserNames(s.userNames ?? {});
       })
       .catch(() => undefined);
     yardFetch(`/api/gantries/${slug}/files`)
@@ -198,7 +202,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   if (denied) {
     return (
       <section className="flex flex-col gap-3">
-        <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500">
+        <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
           ← shipping yard
         </Link>
         <p className="text-sm text-amber-200">No crane here, or it is not in your access.</p>
@@ -208,28 +212,28 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
   return (
     <section className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
         <div className="flex items-start gap-3">
           <CraneAvatar slug={slug} rev={gantry?.avatarRev ?? null} size="lg" />
           <div>
-            <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500">
+            <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
               ← shipping yard
             </Link>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight">{slug}</h1>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-500 max-sm:break-words">
               {gantry ? `${gantry.state} · ${gantry.model ?? "no model"} · ${gantry.channel ?? "no channel"}` : "loading…"}
             </p>
           </div>
         </div>
         {mutate ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-sm:grid max-sm:w-full max-sm:grid-cols-2">
             {(["start", "stop", "recreate", "backup"] as const).map((a) => (
               <button
                 key={a}
                 type="button"
                 disabled={busy}
                 onClick={() => act(a)}
-                className="rounded border border-zinc-700 px-3 py-1.5 text-xs capitalize text-stone-200 hover:border-amber-700 disabled:opacity-50"
+                className="rounded border border-zinc-700 px-3 py-1.5 text-xs capitalize text-stone-200 hover:border-amber-700 disabled:opacity-50 max-sm:text-sm"
               >
                 {a}
               </button>
@@ -250,7 +254,6 @@ export function AgentDashboard({ slug }: { slug: string }) {
         title="Photo"
         persistKey={craneFoldKey(slug, "photo")}
         shot="photo"
-        className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
         hint="persona/avatar.jpg — Telegram uses the same picture"
       >
         <p className="mb-3 text-xs text-zinc-600">
@@ -305,7 +308,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
           />
         }
       >
-        <CraneSpend rollup={rollupTurns(slug, turnsInWindow)} scope={fmtSpendWindow(spendWindow)} />
+        <CraneSpend rollup={labelRollup(rollupTurns(slug, turnsInWindow), userNames)} scope={fmtSpendWindow(spendWindow)} />
         <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} bucket={bucket} since={since} now={Date.now()} />
       </DashFold>
 
@@ -520,7 +523,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
           waits for doctor. Recreate without pull does the same uid keep — it does not docker pull.
         </p>
         <div className="flex flex-wrap gap-2">
-          <input className="min-w-64 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs" value={pin} onChange={(e) => setPin(e.target.value)} disabled={!mutate} />
+          <input className="min-w-64 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs max-sm:min-w-0 max-sm:w-full max-sm:text-sm" value={pin} onChange={(e) => setPin(e.target.value)} disabled={!mutate} />
           <button
             type="button"
             disabled={busy || !mutate}

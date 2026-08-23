@@ -3,7 +3,7 @@ import { isAbsolute, relative, resolve, sep } from "node:path";
 import Dockerode from "dockerode";
 import { yardRoot } from "./files";
 import { decodeDockerLogs } from "./logs";
-import type { GantryState } from "../types";
+import type { GantryState, HostRole } from "../types";
 
 let client: Dockerode | null = null;
 
@@ -218,6 +218,65 @@ export function looksLikeGantry(image: string, names: string[]): boolean {
   return /ai-gantry|\/gantry:|(^|[\s/])gantry/.test(`${image} ${n}`);
 }
 
+/** The console image (shotah/gantree), not cloudflared or a crane. */
+export function looksLikeConsole(image: string, names: string[]): boolean {
+  const blob = `${image} ${names.map(normalizeName).join(" ")}`.toLowerCase();
+  if (blob.includes("cloudflared")) {
+    return false;
+  }
+  return /\bgantree\b/.test(blob);
+}
+
+export function workloadRole(opts: { name: string; image: string; craneNames: Iterable<string> }): HostRole {
+  const want = new Set([...opts.craneNames].map(normalizeName));
+  if (want.has(normalizeName(opts.name))) {
+    return "crane";
+  }
+  if (looksLikeConsole(opts.image, [opts.name])) {
+    return "console";
+  }
+  if (looksLikeGantry(opts.image, [opts.name])) {
+    return "crane";
+  }
+  return "other";
+}
+
+export async function dockerHostInfo(): Promise<{ hostname: string; ncpu: number; memTotalBytes: number }> {
+  const info = (await docker().info()) as { Name?: string; NCPU?: number; MemTotal?: number };
+  return {
+    hostname: (info.Name || "host").trim() || "host",
+    ncpu: typeof info.NCPU === "number" && info.NCPU > 0 ? info.NCPU : 1,
+    memTotalBytes: typeof info.MemTotal === "number" && info.MemTotal > 0 ? info.MemTotal : 0,
+  };
+}
+
+export async function listRunningWorkloads(): Promise<{ id: string; name: string; image: string }[]> {
+  const all = await docker().listContainers({ all: false });
+  return all.map((c) => ({
+    id: c.Id,
+    name: normalizeName((c.Names ?? [])[0] || c.Id.slice(0, 12)),
+    image: c.Image ?? "",
+  }));
+}
+
+export type ConsoleWorkload = { id: string; name: string; image: string; running: boolean };
+
+export function pickConsoleWorkload<T extends { name: string; image: string; running: boolean }>(rows: T[]): T | null {
+  const hits = rows.filter((r) => looksLikeConsole(r.image, [r.name]));
+  return hits.find((h) => h.running) ?? hits[0] ?? null;
+}
+
+export async function findConsoleWorkload(): Promise<ConsoleWorkload | null> {
+  const all = await docker().listContainers({ all: true });
+  const rows: ConsoleWorkload[] = all.map((c) => ({
+    id: c.Id,
+    name: normalizeName((c.Names ?? [])[0] || c.Id.slice(0, 12)),
+    image: c.Image ?? "",
+    running: (c.State || "").toLowerCase() === "running",
+  }));
+  return pickConsoleWorkload(rows);
+}
+
 export type ListedContainer = {
   id: string;
   name: string;
@@ -326,12 +385,71 @@ export async function execStatus(id: string): Promise<string | null> {
   return result?.text || null;
 }
 
-export type CpuMem = { cpuPercent: number | null; memBytes: number | null; memLimitBytes: number | null };
+export type CpuMem = {
+  cpuPercent: number | null;
+  memBytes: number | null;
+  memLimitBytes: number | null;
+  netRxBytes: number | null;
+  netTxBytes: number | null;
+  blkReadBytes: number | null;
+  blkWriteBytes: number | null;
+};
+
+type BlkioRow = { op?: string; value?: number };
+
+function sumNet(networks?: Record<string, { rx_bytes?: number; tx_bytes?: number }>): {
+  rx: number | null;
+  tx: number | null;
+} {
+  if (!networks) {
+    return { rx: null, tx: null };
+  }
+  let rx = 0;
+  let tx = 0;
+  let any = false;
+  for (const n of Object.values(networks)) {
+    if (typeof n?.rx_bytes === "number" && Number.isFinite(n.rx_bytes)) {
+      rx += n.rx_bytes;
+      any = true;
+    }
+    if (typeof n?.tx_bytes === "number" && Number.isFinite(n.tx_bytes)) {
+      tx += n.tx_bytes;
+      any = true;
+    }
+  }
+  return any ? { rx, tx } : { rx: null, tx: null };
+}
+
+function sumBlkio(rows?: BlkioRow[] | null): { read: number | null; write: number | null } {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return { read: null, write: null };
+  }
+  let read = 0;
+  let write = 0;
+  let any = false;
+  for (const row of rows) {
+    const op = (row.op ?? "").toLowerCase();
+    const v = row.value;
+    if (typeof v !== "number" || !Number.isFinite(v)) {
+      continue;
+    }
+    if (op === "read") {
+      read += v;
+      any = true;
+    } else if (op === "write") {
+      write += v;
+      any = true;
+    }
+  }
+  return any ? { read, write } : { read: null, write: null };
+}
 
 export function cpuMemFromStats(stats: {
   cpu_stats?: { cpu_usage?: { total_usage?: number }; system_cpu_usage?: number; online_cpus?: number };
   precpu_stats?: { cpu_usage?: { total_usage?: number }; system_cpu_usage?: number };
   memory_stats?: { usage?: number; limit?: number };
+  networks?: Record<string, { rx_bytes?: number; tx_bytes?: number }>;
+  blkio_stats?: { io_service_bytes_recursive?: BlkioRow[] | null };
 }): CpuMem {
   const memBytes = stats.memory_stats?.usage ?? null;
   const memLimitBytes = stats.memory_stats?.limit ?? null;
@@ -342,5 +460,15 @@ export function cpuMemFromStats(stats: {
   if (sysDelta > 0 && cpuDelta >= 0) {
     cpuPercent = (cpuDelta / sysDelta) * ncpu * 100;
   }
-  return { cpuPercent, memBytes, memLimitBytes };
+  const net = sumNet(stats.networks);
+  const blk = sumBlkio(stats.blkio_stats?.io_service_bytes_recursive);
+  return {
+    cpuPercent,
+    memBytes,
+    memLimitBytes,
+    netRxBytes: net.rx,
+    netTxBytes: net.tx,
+    blkReadBytes: blk.read,
+    blkWriteBytes: blk.write,
+  };
 }
