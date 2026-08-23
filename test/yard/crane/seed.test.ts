@@ -21,6 +21,8 @@ describe("persona seed", () => {
     expect(text).toContain("## Voice");
     expect(text).toContain("## Directives");
     expect(text).toContain("self_note");
+    expect(text).toContain("mcp_enable");
+    expect(text).toContain("Review `[mcp prefixes]` on vs off");
     expect(text).toContain("Seeded from ai-gantry PERSONA.example.md.");
     expect(selfMarkdown()).toContain("Who You Are Becoming");
   });
