@@ -2,12 +2,22 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { secretKeysForGrant } from "@/lib/yard/packages";
-import { rollupTurns } from "@/lib/yard/spend";
+import { secretKeysForGrant } from "@/lib/yard/tools/packages";
+import {
+  bucketsForWindow,
+  filterSamples,
+  fmtSpendWindow,
+  rollupTurns,
+  windowStart,
+  type SpendBucket,
+  type SpendWindow,
+} from "@/lib/yard/observe/spend";
 import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, type McpSample, type McpServer, type StatSample, type TurnSample, type UptimeSample } from "@/lib/yard/types";
+import { CraneAvatar } from "./CraneAvatar";
 import { LogViewer } from "./LogViewer";
 import { MetricCharts } from "./MetricCharts";
-import { CraneSpend } from "./SpendBoard";
+import { CraneSpend, SpendScope } from "./SpendBoard";
+import { yardFetch } from "../lib/yardFetch";
 
 type EnvRow = { set: boolean; secret: boolean; value: string };
 type Files = {
@@ -38,9 +48,11 @@ export function AgentDashboard({ slug }: { slug: string }) {
   const [authDetail, setAuthDetail] = useState<string | null>(null);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
   const [authCode, setAuthCode] = useState("");
+  const [spendWindow, setSpendWindow] = useState<SpendWindow>("24h");
+  const [spendBucket, setSpendBucket] = useState<SpendBucket>("cumulative");
 
   const refresh = useCallback(() => {
-    fetch(`/api/gantries/${slug}`)
+    yardFetch(`/api/gantries/${slug}`)
       .then((r) => r.json())
       .then((g: GantryCard & { error?: string }) => {
         if (!g.error) {
@@ -51,11 +63,11 @@ export function AgentDashboard({ slug }: { slug: string }) {
         }
       })
       .catch(() => undefined);
-    fetch(`/api/gantries/${slug}/doctor`)
+    yardFetch(`/api/gantries/${slug}/doctor`)
       .then((r) => r.json())
       .then((d: DoctorReport) => setDoctor(d))
       .catch(() => undefined);
-    fetch(`/api/gantries/${slug}/stats`)
+    yardFetch(`/api/gantries/${slug}/stats`)
       .then((r) => r.json())
       .then((s: { host: StatSample[]; turns: TurnSample[]; mcp: McpSample[]; uptime: UptimeSample[] }) => {
         setHost(s.host ?? []);
@@ -64,7 +76,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
         setUptime(s.uptime ?? []);
       })
       .catch(() => undefined);
-    fetch(`/api/gantries/${slug}/files`)
+    yardFetch(`/api/gantries/${slug}/files`)
       .then((r) => r.json())
       .then((f: Files) => {
         setFiles(f);
@@ -73,7 +85,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
         }
       })
       .catch(() => undefined);
-    fetch(`/api/gantries/${slug}/grant`)
+    yardFetch(`/api/gantries/${slug}/grant`)
       .then((r) => r.json())
       .then((c: { catalog: CatalogEntry[] }) => setCatalog(c.catalog ?? []))
       .catch(() => undefined);
@@ -88,7 +100,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   async function act(action: string) {
     setBusy(true);
     setNotice(action === "recreate" || action === "pin" ? "recreating — waiting for doctor…" : null);
-    const res = await fetch(`/api/gantries/${slug}/run`, {
+    const res = await yardFetch(`/api/gantries/${slug}/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, image: action === "pin" ? pin : undefined }),
@@ -102,7 +114,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
   async function authOp(server: string, op: "start" | "exchange" | "wait") {
     setBusy(true);
     setAuthFor(server);
-    const res = await fetch(`/api/gantries/${slug}/auth`, {
+    const res = await yardFetch(`/api/gantries/${slug}/auth`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ server, op, code: op === "exchange" ? authCode : undefined }),
@@ -120,7 +132,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
   async function toggleGrant(name: string, on: boolean) {
     setBusy(true);
-    const res = await fetch(`/api/gantries/${slug}/grant`, {
+    const res = await yardFetch(`/api/gantries/${slug}/grant`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, op: on ? "grant" : "revoke" }),
@@ -131,9 +143,26 @@ export function AgentDashboard({ slug }: { slug: string }) {
     refresh();
   }
 
+  async function uploadPhoto(file: File) {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const jpeg = await jpegFromFile(file);
+      const body = new FormData();
+      body.append("file", jpeg, "avatar.jpg");
+      const res = await yardFetch(`/api/gantries/${slug}/avatar`, { method: "POST", body });
+      const data = (await res.json()) as { detail?: string; error?: string };
+      setNotice(data.detail || data.error || res.statusText);
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : String(err));
+    }
+    setBusy(false);
+    refresh();
+  }
+
   async function savePersona() {
     setBusy(true);
-    const res = await fetch(`/api/gantries/${slug}/files`, {
+    const res = await yardFetch(`/api/gantries/${slug}/files`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ persona }),
@@ -144,18 +173,25 @@ export function AgentDashboard({ slug }: { slug: string }) {
   }
 
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
+  const since = windowStart(spendWindow);
+  const allowedBuckets = bucketsForWindow(spendWindow);
+  const bucket = allowedBuckets.includes(spendBucket) ? spendBucket : "cumulative";
+  const turnsInWindow = filterSamples(turns, since);
 
   return (
     <section className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500">
-            ← shipping yard
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{slug}</h1>
-          <p className="text-sm text-zinc-500">
-            {gantry ? `${gantry.state} · ${gantry.model ?? "no model"} · ${gantry.channel ?? "no channel"}` : "loading…"}
-          </p>
+        <div className="flex items-start gap-3">
+          <CraneAvatar slug={slug} rev={gantry?.avatarRev ?? null} size="lg" />
+          <div>
+            <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500">
+              ← shipping yard
+            </Link>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">{slug}</h1>
+            <p className="text-sm text-zinc-500">
+              {gantry ? `${gantry.state} · ${gantry.model ?? "no model"} · ${gantry.channel ?? "no channel"}` : "loading…"}
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {(["start", "stop", "recreate", "backup"] as const).map((a) => (
@@ -174,10 +210,52 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       {notice ? <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300">{notice}</p> : null}
 
+      <section data-shot="photo" className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+        <h2 className="mb-1 text-sm font-medium text-zinc-400">Photo</h2>
+        <p className="mb-3 text-xs text-zinc-600">
+          Saved as <code className="text-zinc-500">persona/avatar.jpg</code>. Telegram bots get the same picture.
+        </p>
+        <div className="flex flex-wrap items-center gap-4">
+          <CraneAvatar slug={slug} rev={gantry?.avatarRev ?? null} size="xl" />
+          <div className="flex flex-col gap-2">
+            <label
+              className={`inline-flex w-fit rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 ${
+                busy || !gantry?.personaDir ? "opacity-50" : "cursor-pointer"
+              }`}
+            >
+              Choose photo
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                disabled={busy || !gantry?.personaDir}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) {
+                    void uploadPhoto(f);
+                  }
+                }}
+              />
+            </label>
+            <p className="text-[11px] text-zinc-600">JPEG, PNG, WebP, or GIF. PNG/WebP are converted on upload.</p>
+          </div>
+        </div>
+      </section>
+
       <section>
-        <h2 className="mb-3 text-sm font-medium text-zinc-400">Metrics</h2>
-        <CraneSpend rollup={rollupTurns(slug, turns)} />
-        <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} />
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-sm font-medium text-zinc-400">Metrics</h2>
+          <SpendScope
+            window={spendWindow}
+            onWindow={setSpendWindow}
+            bucket={bucket}
+            onBucket={setSpendBucket}
+            buckets={allowedBuckets}
+          />
+        </div>
+        <CraneSpend rollup={rollupTurns(slug, turnsInWindow)} scope={fmtSpendWindow(spendWindow)} />
+        <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} bucket={bucket} since={since} now={Date.now()} />
       </section>
 
       <section>
@@ -208,7 +286,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
             disabled={busy}
             onClick={async () => {
               setBusy(true);
-              const res = await fetch(`/api/gantries/${slug}/grant`, {
+              const res = await yardFetch(`/api/gantries/${slug}/grant`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ op: "fetch" }),
@@ -317,7 +395,9 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       <section>
         <h2 className="mb-1 text-sm font-medium text-zinc-400">Persona</h2>
-        <p className="mb-2 text-xs text-zinc-600">SELF.md is harness-written — prune, don’t treat it as config.</p>
+        <p className="mb-2 text-xs text-zinc-600">
+          SELF.md is harness-written — prune, don’t treat it as config.
+        </p>
         {files?.self ? <pre className="mb-3 max-h-40 overflow-auto rounded border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-400">{files.self}</pre> : null}
         <textarea
           className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"
@@ -372,7 +452,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
           disabled={busy || !files?.writable}
           onClick={async () => {
             setBusy(true);
-            const res = await fetch(`/api/gantries/${slug}/files`, {
+            const res = await yardFetch(`/api/gantries/${slug}/files`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ env: secretDraft, confirmToken }),
@@ -409,4 +489,38 @@ export function AgentDashboard({ slug }: { slug: string }) {
       </section>
     </section>
   );
+}
+
+const AVATAR_EDGE = 1280;
+
+async function jpegFromFile(file: File): Promise<Blob> {
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("could not read that image");
+  }
+  try {
+    const scale = Math.min(1, AVATAR_EDGE / Math.max(bitmap.width, bitmap.height));
+    if (file.type === "image/jpeg" && scale === 1 && file.size <= 5 * 1024 * 1024) {
+      return file;
+    }
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("could not encode jpeg");
+    }
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    if (!blob) {
+      throw new Error("could not encode jpeg");
+    }
+    return blob;
+  } finally {
+    bitmap.close();
+  }
 }

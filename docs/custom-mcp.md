@@ -88,7 +88,7 @@ Doctor / skip hints follow missing env and `auth_args`.
 
 ### Yard catalog (optional)
 
-The toggle grid reads `lib/yard/packages.ts`. Add a row there if this yard
+The toggle grid reads `lib/yard/tools/packages.ts`. Add a row there if this yard
 should offer the server to every crane (name, `command`, GitHub
 `downloadUrl`, clone `repo` for `go run . host-manifest`). Shape still
 comes from the binary. Do not hardcode `env_keys` in gantree.

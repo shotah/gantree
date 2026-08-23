@@ -24,6 +24,8 @@ export type GantryCard = {
   personaDir: string | null;
   mcpManifest: string | null;
   envFile: string | null;
+  /** mtime of persona/avatar.jpg (or png/webp). Null if none. */
+  avatarRev: number | null;
 };
 
 export type LogLine = {

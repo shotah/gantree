@@ -1,9 +1,10 @@
+import { withDoor } from "@/lib/yard/door";
 import { resolve } from "node:path";
-import { loadEnvFile, maskEnv, mergeEnv, writeEnvFile } from "@/lib/yard/envfile";
-import { parseMcpToml, readText, writeText } from "@/lib/yard/files";
-import { getGantry } from "@/lib/yard/inventory";
+import { loadEnvFile, maskEnv, mergeEnv, writeEnvFile } from "@/lib/yard/host/envfile";
+import { parseMcpToml, readText, writeText } from "@/lib/yard/host/files";
+import { getGantry } from "@/lib/yard/crane/inventory";
 
-export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
+export const GET = withDoor(async (_req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
   const g = await getGantry(slug);
   if (!g) {
@@ -18,9 +19,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
     env: maskEnv(env),
     writable: Boolean(g.personaDir || g.mcpManifest || g.envFile),
   });
-}
+});
 
-export async function PUT(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+export const PUT = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
   const g = await getGantry(slug);
   if (!g) {
@@ -55,4 +56,4 @@ export async function PUT(req: Request, ctx: { params: Promise<{ slug: string }>
     writeEnvFile(g.envFile, mergeEnv(loadEnvFile(g.envFile), body.env));
   }
   return Response.json({ ok: true });
-}
+});

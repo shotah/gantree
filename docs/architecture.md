@@ -2,9 +2,10 @@
 
 Gantree is the **operator plane** for
 [ai-gantry](https://github.com/shotah/ai-gantry): a shipping yard, not the
-chat. Pitch and hello live in the [root readme](../README.md). This page
-is how the yard is put together — stack, host I/O, and why the console
-never sits in a chat turn.
+chat. The crane is the product — why the harness is worth operating lives
+in the [root readme](../README.md). What you click on the board:
+[console.md](console.md). This page is how the yard is put together —
+stack, host I/O, and why the console never sits in a chat turn.
 
 Harness-side design note (nested checkout, **dev only**):
 [repos/ai-gantry/docs/gantree.md](../repos/ai-gantry/docs/gantree.md).
@@ -87,7 +88,7 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | CPU / RAM graphs | sampled `docker stats` / cgroup (ring buffer) |
 | Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`) |
 | Published vs skipped MCP | `mcp.toml` + harness `doctor` / `status` |
-| Persona, secrets | `PERSONA.md`, `.env`, `data/` on disk |
+| Persona, secrets | `PERSONA.md`, `avatar.jpg`, `.env`, `data/` on disk |
 
 Files remain the source of truth. The UI is an editor of those files,
 not a second inventory. Secrets never go in git.
@@ -115,7 +116,16 @@ gantree/                    this repo — shipping yard
 ├── app/                    Vinext / Next-shaped UI
 ├── assets/banner.svg       GitHub README banner
 ├── assets/banner.png       Hub overview (Hub does not render SVG)
-├── lib/yard/               Docker + files (not RSC)
+├── assets/setup.png        console.md: first-boot operator
+├── assets/login.png        console.md: log in
+├── assets/yard.png         console.md: board with avatars
+├── assets/crane-photo.png  console.md: upload photo
+├── lib/yard/               host I/O (not RSC)
+│   ├── host/               dockerode, files, .env, avatar, logs
+│   ├── crane/              inventory, build, run, doctor
+│   ├── tools/              catalog, grant, mcp, auth
+│   └── observe/            stats samples, spend rollup
+├── test/yard/              mirrors lib/yard
 └── repos/                  local nested checkouts (gitignored)
     └── ai-gantry/          harness — own remote, own git
         └── repos/          MCP servers — own remotes
@@ -128,7 +138,9 @@ checkout.
 
 `lib/yard` is the host I/O surface: inventory, build, grant/revoke,
 doctor, run (start / stop / recreate), logs, stats, auth hop,
-`tools-fetch`. Import dockerode from here, not from `app/`.
+`tools-fetch`, the operator door (`lib/yard/door`, yard `gantree.db`).
+Tests live in `test/yard/` with the same folders.
+Import dockerode from `lib/yard`, not from `app/`.
 
 ---
 
@@ -145,17 +157,26 @@ home-only (mDNS / host network). Custom servers:
 
 ---
 
-## v1 vs later
+## v1 vs v2 vs later
 
 **v1:** this Node process on the Docker host, or the Hub image
 `shotah/gantree` with `docker.sock`. Board, per-crane dashboard,
 build wizard, MCP toggles, auth hop, start / stop / recreate, image pin.
-Telegram + Hub `shotah/ai-gantry`. Bind localhost. `npm run release` tags
-and publishes the console image (same Hub secrets as the harness).
+Telegram + Hub `shotah/ai-gantry`. Bind localhost (LAN publish is a
+home choice). No operator login. `npm run release` tags and publishes
+the console image (same Hub secrets as the harness).
 
-**Later:** Vinext-on-Workers as a portal in front of one or more host
-agents; systemd yards; a `gantree` CLI only if `npm` scripts are
-genuinely not enough (still TypeScript).
+**v2:** a door on that process (setup + login + session on every API
+and log SSE), a handful of operators in yard `gantree.db` (independent
+of each crane’s `gantry.db`), board nags for skipped MCP / needs-auth,
+sqlite so graphs survive a bounce, audit of who mutated what. Last walk:
+the same `app/` on Workers as a portal — host keeps `docker.sock`,
+portal never grows a Docker client.
+End state and walk: [todo.md](../todo.md) (**v2 looks like**).
+
+**Later:** systemd yards; a `gantree` CLI only if `npm` scripts are
+genuinely not enough (still TypeScript); Prometheus; billed-provider
+invoices.
 
 **Not the product:** hosted Gantree SaaS, Kubernetes, Cloud Run / Lambda,
 a shared family brain, pairing the *agent* through the console, anything

@@ -12,49 +12,81 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/shotah/gantree" alt="License"></a>
 </p>
 
-> **gantree** *(n.)* — the shipping yard. A **gantry** is one crane: one
-> process, one persona, one model, one `data/`. The frame does nothing by
-> itself; the tools and the memory do the work. The yard is where you
-> *operate* those cranes — see them, grant a tool, yank another, recreate,
-> read logs — so each one can **plan on a long horizon**.
+> **gantry** *(n.)* — the rigid frame that holds and positions tools. The
+> frame does nothing by itself; the tools and the memory do the work.
+>
+> **gantree** *(n.)* — the shipping yard those cranes live in.
 
-> Make a yard small enough that an operator can see every crane, careful
-> enough that the chat loop never waits on a dashboard, and personal
-> enough that you, a partner, and a tryout stay three brains. Long-horizon
-> planning lives in the harness. This repo keeps each crane granted, alive,
-> and itself.
+You opened the yard repo. **The product is the runner.**
 
-**Operate your own agents.** Open a board. Build a new crane. Grant Google,
-yank Strava, notice a dead token, recreate. Chat stays in Telegram. Nothing
-in this UI sits in a chat turn.
+---
+
+## The case for the runner
+
+Most “personal agents” are a chatbot with a plugin list. They feel like
+someone after a long thread, then `/new` lobotomizes them. A small local
+model misspells a tool name and the chain dies. A dashboard or a gateway
+sits in the token path, so every message pays a platform tax.
+
+**[ai-gantry](https://github.com/shotah/ai-gantry)** spends the engineering
+budget on the thing you actually talk to. One Distroless Go process. One
+persona. One OpenAI-compat model — Ollama, Gemini, ChatGPT, Grok. Chat
+dials *out* (Telegram, Discord, Slack). Tools if you grant them. Memory
+you can `sqlite3`. Aims that still exist on Thursday.
 
 ```text
-browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
-                                                         gantry  gantry  gantry
+static binary + persona + mcp.toml + any OpenAI-compat LLM  →  outbound chat
 ```
 
-The shipping yard for **[ai-gantry](https://github.com/shotah/ai-gantry)**.
-The harness is a tight Go loop — parallel tool batches, cheap Completer
-rounds, small RSS. **That speed is the product the human feels.** Gantree
-reads Docker and files after the fact. It does not get a vote in the tool
-loop. Agents open **zero** inbound ports. If you expose the console, you
-expose it to yourself.
+Nothing listens. There is no settings page in the process on the phone.
+Health is an exit code, not a port. **No open ports. Ever.**
 
-We spent the engineering budget on the **operator loop** that long-horizon
-agents actually need on week two: a named board, a grant that writes
-`mcp.toml`, a doctor that says why a tool is skipped, recreate that does
-not become SSH folklore at 11pm. Completeness of a platform is not the
-goal. Keeping Kit able to plan — with *its* tools and *its* personality —
-is.
+The thing the human feels is a **trajectory that completes.** Independent
+lookups fan out in one round; the next round uses the results. Pull
+Garmin metrics, write them to a spreadsheet, update Strava — one
+conversation, not three broken chats. Pull contacts, check shared
+calendars for a hole, create the event with those people on it. Parallel
+tool calls, then multi-step, and *many* turns that actually finish. The
+Gemini *app* cannot even do that. We run it on **Gemini Flash** through
+GCP. Same family of model; this loop is the difference.
 
-If you need a team inbox, a multi-agent router, or “ChatGPT for work” on
-day one, this is the wrong repo — and that’s fine.
+The loop itself was hardened on **Gemma 12B** (and the 7–12B class):
+typos, printed JSON, think-stalls. Quality was there. On a memory-bound
+Mini it was too slow to live with — that is RAM and prefill, not a
+missing repair. Point the runner at Ollama when the box can feed it;
+Flash when you want the trajectory now.
+
+This repository is the board that appears when you run more than one of
+those. It is a by-product. If a chart would make the runner slower, the
+chart is wrong.
+
+One crane, no yard: `docker compose up` in
+**[ai-gantry](https://github.com/shotah/ai-gantry)**. Start there if you
+want a bot tonight.
+
+| You get | Why it holds |
+| --- | --- |
+| The same person next week | `SELF.md` + inspectable SQLite. `/new` distills; it does not wipe who they are. |
+| Many turns that finish | Mid-chain does not die. Garmin → sheet → Strava is one thread. |
+| Parallel, then chain | Fan out what is independent (contacts *and* free/busy). Sequence what is not (then create the event). |
+| Aims that outlive the chat | Cron, quiet watches, a spark of life — the Completer only runs when something actually changed. |
+| A box you can own | Distroless, outbound-only, env + mounts. MCP listed in `mcp.toml` is the grant. Omit it and it does not exist. |
+
+Want another brain? Another process. Not another tab. Chat, memory, and
+cron work with **zero** tools. The frame hosts binaries; it does not
+become a zoo.
+
+The internals —
+[design](https://github.com/shotah/ai-gantry/blob/main/docs/design.md) ·
+[features](https://github.com/shotah/ai-gantry/blob/main/docs/features.md) ·
+[mcp](https://github.com/shotah/ai-gantry/blob/main/docs/mcp.md).
 
 ---
 
 ## Hello
 
-Docker on the same Linux host.
+Docker on the same Linux host. **Node 22.** First boot is **`/setup`**
+(one operator). After that, **`/login`**. Chat stays Telegram.
 
 ```bash
 git clone https://github.com/shotah/gantree.git
@@ -65,75 +97,51 @@ npm run build
 npm start                 # http://127.0.0.1:3000
 ```
 
-Need **Node 22**. Headless host + attach existing agents:
-**[docs/headless.md](docs/headless.md)**.
+<p align="center">
+  <img src="assets/login.png" alt="Log in — the door to the yard, not the chat">
+</p>
 
-Build a crane from the board (yard type first: home Mini or cloud VM).
-Click the card for graphs + logs. Grant a tool, recreate, watch *that*
-crane’s doctor. Message it on Telegram. `/tools` is the crane’s mouth;
-this page is the operator’s.
+Open the board. Build a crane. Grant a tool. Message it on your phone.
+The UI never sits in a chat turn.
 
-Pin: `shotah/ai-gantry:0.1.66` (Hub). Nested `repos/ai-gantry` is **dev
+<p align="center">
+  <img src="assets/yard.png" alt="The yard — a handful of named cranes, not a fleet dump">
+</p>
+
+Cranes pin `shotah/ai-gantry:0.1.66`. Nested `repos/ai-gantry` is **dev
 only** — do not copy `.env` or `data/` from a private checkout.
 
-Walkthrough: **[docs/install.md](docs/install.md)**.
+One crane, no board:
+**[ai-gantry deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)**.
 
-### Other ways to run
+Home Mini vs cloud VM, tunnels, attach existing dirs:
+**[docs/install.md](docs/install.md)** ·
+**[docs/headless.md](docs/headless.md)**. Grants, doctor, avatars:
+**[docs/console.md](docs/console.md)**.
 
 | Path | When |
 | --- | --- |
 | `npm start` | Console on this host (`127.0.0.1`) |
-| `docker compose up -d` | Hub image `shotah/gantree` (`GANTREE_CRANE_USER=$(id -u):$(id -g)`) |
-| `docker compose up -d --build` | Same console, build this checkout |
-| **[docs/headless.md](docs/headless.md)** | Headless host: Node 22, attach existing dirs, SSH tunnel |
-| **[docs/install.md](docs/install.md)** | Home Mini (LAN `:3000`) vs cloud VM (loopback + tunnel) |
-| **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard — `docker compose up` in that repo |
+| `docker compose up -d` | Hub image `shotah/gantree` |
+| **[ai-gantry](https://github.com/shotah/ai-gantry)** | One crane, no yard |
 
 ```bash
 npm run dev               # still 127.0.0.1
 ```
 
----
+Agents open **zero** inbound ports. If you expose this console, you
+expose it to yourself.
 
-## Chat stays the crane’s mouth
+```text
+browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
+                                                         gantry  gantry  gantry
+```
 
-Ops for the *human* live in Telegram (`/status`, `/tools`, `/auth`).
-Gantree is for the person who owns the box: a handful of named pets, not
-a Kubernetes dashboard. Click Kit and you get **Kit’s** graphs and
-**Kit’s** log — not a mixed fleet dump.
+The yard is allowed to be a bit meh. It is JS, in a browser, for an
+operator who clicks a few named pets. The runner is not.
 
-The crane does not grow a `/metrics` port. The yard **pulls** (`docker
-inspect`, `docker logs`, sampled stats, JSON slog). Parse what the harness
-already emits. Do not tax parallel tool calls so a chart looks nicer.
-
----
-
-## Grant is how it stays personal
-
-Long-horizon is useless if the container is “healthy” with zero tools and
-a dead token. MCP **is** the grant.
-
-Toggle on → write `[[server]]`, fetch the binary, recreate, wait until
-`/tools` shows the prefix. Toggle off → omit from the manifest. “Needs
-auth” is a button (laptop hop or paste a code from `/auth` in chat).
-Hand-editing `mcp.toml` still works; the UI is a structured editor of the
-same file, not a second inventory.
-
-Your own binary: **[docs/custom-mcp.md](docs/custom-mcp.md)**.
-
-### Two files, not a catalog
-
-Planning that survives `/new` is still the crane’s job. Most agents *feel*
-like someone after a long chat, then the session dies.
-
-| File | Who writes it |
-| --- | --- |
-| `PERSONA.md` | You — who it should be, who you are |
-| `SELF.md` | The agent — voice, rituals, north-star aims that survive `/new` |
-
-Gantree edits those files (and `.env`, and `mcp.toml`). It does not merge
-memories across cranes. Isolation is the feature: one human, one bot, one
-directory, one `data/`. Delete a tryout = delete that directory.
+If you need a team inbox, a multi-agent router, or “ChatGPT for work” on
+day one, this is the wrong stack — and that’s fine.
 
 ---
 
@@ -141,16 +149,15 @@ directory, one `data/`. Delete a tryout = delete that directory.
 
 | If you want… | Go here |
 | --- | --- |
+| The runner | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
+| One crane, Docker hello | **[deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)** |
+| The board, grants, login | **[docs/console.md](docs/console.md)** |
 | Home Mini vs cloud VM | **[docs/install.md](docs/install.md)** |
-| Headless host + attach existing agents | **[docs/headless.md](docs/headless.md)** |
+| Headless host + attach | **[docs/headless.md](docs/headless.md)** |
 | A custom MCP binary | **[docs/custom-mcp.md](docs/custom-mcp.md)** |
-| How the yard is put together (Vinext, Docker, files) | **[docs/architecture.md](docs/architecture.md)** |
-| The crane — loop, memory, long-horizon contract | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
-| Walk order | **[todo.md](todo.md)** |
+| How the yard is put together | **[docs/architecture.md](docs/architecture.md)** |
 
-The yard is allowed to be a bit meh. It is JS, in a browser, for an
-operator who clicks a few cranes. The crane is not. Never sit in the
-token path.
+Never sit in the token path.
 
 ## License
 

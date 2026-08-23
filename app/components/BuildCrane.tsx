@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { yardFetch } from "../lib/yardFetch";
 
 export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [open, setOpen] = useState(false);
@@ -23,7 +24,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
       env.TELEGRAM_BOT_TOKEN = token;
       env.TELEGRAM_ALLOWED_USERS = allow;
     }
-    const res = await fetch("/api/gantries", {
+    const res = await yardFetch("/api/gantries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug, yard, profile, model, channel, env }),

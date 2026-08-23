@@ -1,10 +1,11 @@
-import { containerLogsBuffer, containerLogsFollow, dockerErrorMessage } from "@/lib/yard/docker";
-import { getGantry } from "@/lib/yard/inventory";
-import { createLogDemuxer, decodeDockerLogs, parseLogLine, parseLogText, splitLogLines } from "@/lib/yard/logs";
+import { withDoor } from "@/lib/yard/door";
+import { containerLogsBuffer, containerLogsFollow, dockerErrorMessage } from "@/lib/yard/host/docker";
+import { getGantry } from "@/lib/yard/crane/inventory";
+import { createLogDemuxer, decodeDockerLogs, parseLogLine, parseLogText, splitLogLines } from "@/lib/yard/host/logs";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
   const g = await getGantry(slug);
   if (!g?.containerId) {
@@ -62,4 +63,4 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
       Connection: "keep-alive",
     },
   });
-}
+});

@@ -11,7 +11,8 @@ dev only — do not copy `.env` or `data/` from a private checkout.
 Docker on the box. Cast / `life-cast` is allowed (mDNS, TV on the LAN).
 Need **Node 22** (`node -v`). Distro `apt install npm` is often Node 20 and
 will fail. Headless host, attach existing agents, tunnel, gotchas:
-**[headless.md](headless.md)**.
+**[headless.md](headless.md)**. What the board is for:
+**[console.md](console.md)**.
 
 ```bash
 git clone https://github.com/shotah/gantree.git
@@ -19,14 +20,23 @@ cd gantree
 cp gantree.toml.example gantree.toml
 npm install
 npm run build
-npm start          # http://127.0.0.1:3000 — or HOST=0.0.0.0 npm start for LAN
-# or Hub / compose (LAN :3000):
-GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d
+npm start          # http://127.0.0.1:3000 — first boot is /setup
+# or Hub / compose (LAN :80 → container :3000):
+docker compose up -d
 ```
 
-Open the board at `http://<pc-lan-ip>:3000` or
-`http://<headless-lan-ip>:3000`. Build a crane (yard = home). Grant search.
+Open the board at `http://<pc-lan-ip>/` or
+`http://<headless-lan-ip>/` (compose). Create the first operator, then
+build a crane (yard = home). `npm start` stays `:3000`. Grant search.
 Chat is Telegram — not this UI.
+
+![First operator — create the person who owns the box](../assets/setup.png)
+
+![Log in](../assets/login.png)
+
+Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
+That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the
+passphrase: delete it and run `/setup` again.
 
 ## Cloud (your GCE / EC2)
 
@@ -40,7 +50,7 @@ sudo git clone https://github.com/shotah/gantree.git /opt/gantree
 cd /opt/gantree
 cp gantree.toml.example gantree.toml
 # gantree.toml: yard = "cloud"
-GANTREE_LISTEN=127.0.0.1 GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d
+GANTREE_LISTEN=127.0.0.1 docker compose up -d
 ```
 
 On a cloud VM pin the publish to loopback (`GANTREE_LISTEN=127.0.0.1`).
@@ -50,13 +60,13 @@ is not a public load balancer. Do not open a cloud firewall port to the world.
 Reach it from a laptop:
 
 **Tailscale** (preferred): install Tailscale on the VM, then Serve or an
-SSH tunnel to `127.0.0.1:3000`. Do not open a cloud firewall port to the
+SSH tunnel to `127.0.0.1:80` (compose). Do not open a cloud firewall port to the
 world.
 
 **Cloudflare Tunnel** (console only — never the agents):
 
 ```bash
-cloudflared tunnel --url http://127.0.0.1:3000
+cloudflared tunnel --url http://127.0.0.1:80
 ```
 
 OAuth is always the laptop hop: **needs auth** → start hop or `/auth` in
@@ -73,10 +83,10 @@ New cranes use `shotah/ai-gantry:0.1.66`. Override per crane with **pull +
 recreate**. `:latest` and `:edge` move; prefer a `0.x.y` tag.
 
 **pull + recreate** runs `docker pull` then replaces the container as the
-**host user that owns `data/`** (the same account as `npm start`, or
-`GANTREE_CRANE_USER`). Distroless default uid `65532` cannot open a
-`gantry.db` written by your login — that is `session store open failed`.
-Recreate without pull keeps that uid too; it does not fetch a new image.
+**host user that owns `data/`** (file owner, then the compose shell `UID`).
+Distroless default uid `65532` cannot open a `gantry.db` written by your
+login — that is `session store open failed`. Recreate without pull keeps that
+uid too; it does not fetch a new image. Do not delete `data/` or re-import.
 
 Console-in-Docker (sock + same-path binds): [headless.md](headless.md#8-console-in-docker).
 Hub image: `shotah/gantree` (`latest` / `edge` / `0.x.y`). Same secrets as

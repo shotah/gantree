@@ -3,8 +3,9 @@
 ![gantree — shipping yard for personal agents](https://raw.githubusercontent.com/shotah/gantree/main/assets/banner.png)
 
 **Operate your own [ai-gantry](https://hub.docker.com/r/shotah/ai-gantry) agents.**
-This image is the shipping yard — a localhost board. Spawn a crane, grant MCP,
-read logs, recreate. Chat stays Telegram. Agents open **zero inbound ports.**
+The crane is the product (long-horizon Go harness, outbound chat, no ports).
+This image is the shipping yard around it — a localhost board. Spawn a crane,
+grant MCP, read logs, recreate. Chat stays Telegram. Agents open **zero inbound ports.**
 
 ```text
 browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
@@ -19,16 +20,18 @@ Source: [github.com/shotah/gantree](https://github.com/shotah/gantree)
 
 ```bash
 docker pull shotah/gantree:latest
-export GANTREE_CRANE_USER="$(id -u):$(id -g)"
 docker compose up -d
 ```
 
 Compose must mount `docker.sock` and the yard files (`gantree.toml`, `gantries/`).
-Home LAN: host `:3000` on all interfaces. Cloud VM: `GANTREE_LISTEN=127.0.0.1`
-and do not open a WAN firewall port.
+Run it from the checkout so `GANTREE_HOST_ROOT` is that directory (recreate
+bind-mounts are host paths). Home LAN: host `:80` on all interfaces *behind*
+login (`/setup` first boot). Cloud VM: `GANTREE_LISTEN=127.0.0.1` and do not
+open a WAN firewall port. Mount `./var` for yard `gantree.db`.
 
-Cranes must run as the host user that owns `data/` — Distroless default uid
-`65532` cannot open `gantry.db`. That is what `GANTREE_CRANE_USER` is for.
+Cranes run as the host user that owns `data/`. Compose picks that up from
+your shell `UID` (or the files on disk). Distroless default uid `65532`
+cannot open `gantry.db` — recreate infers the login; do not tear agents down.
 
 Walkthrough: [docs/headless.md](https://github.com/shotah/gantree/blob/main/docs/headless.md)
 
@@ -52,8 +55,8 @@ Also on GHCR: `ghcr.io/shotah/gantree` (same tags). `linux/amd64` only.
 - **Operator plane**, not the chat. Node 22 + Vinext. Needs the Docker socket.
 - Spawns and operates [`shotah/ai-gantry`](https://hub.docker.com/r/shotah/ai-gantry)
   cranes (one container, one persona, one `data/` each).
-- Listens on `0.0.0.0` *inside* the container so the port map works.
-  Compose publishes host `:3000` on the LAN (`GANTREE_LISTEN=127.0.0.1` on a VM).
+- Listens on `0.0.0.0:3000` *inside* the container so the port map works.
+  Compose publishes host `:80` on the LAN (`GANTREE_LISTEN=127.0.0.1` on a VM).
 - Does not bake MCP binaries or `gantry.db`. Those stay on the host binds.
 
 Harness image (the cranes): [`shotah/ai-gantry`](https://hub.docker.com/r/shotah/ai-gantry).
@@ -65,7 +68,8 @@ Harness image (the cranes): [`shotah/ai-gantry`](https://hub.docker.com/r/shotah
 This file is what CI publishes to the Docker Hub **overview**
 (`.github/workflows/dockerhub-description.yml` and the Hub overview step in
 `docker.yml`). Keep it pull-first and under Hub’s ~25KB cap. Do **not** paste
-the full root `README.md` here.
+the full root `README.md` here — that file is the harness pitch; this
+overview stays pull-first.
 
 **Categories** (Hub UI only — pencil under the short description, max 3):
 

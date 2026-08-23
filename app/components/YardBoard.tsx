@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
-import { fmtEstTokens } from "@/lib/yard/spend";
+import { fmtEstTokens, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BuildCrane } from "./BuildCrane";
+import { CraneAvatar } from "./CraneAvatar";
 import { SpendBoard } from "./SpendBoard";
+import { yardFetch } from "../lib/yardFetch";
 
 function Badge({ state }: { state: GantryCard["state"] }) {
   const on = state === "running";
@@ -53,9 +55,10 @@ function Spark({ samples }: { samples: StatSample[] | undefined }) {
 export function YardBoard() {
   const [yard, setYard] = useState<YardInventory | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [spendWindow, setSpendWindow] = useState<SpendWindow>("24h");
 
   const load = useCallback(() => {
-    fetch("/api/gantries")
+    yardFetch(`/api/gantries?window=${spendWindow}`)
       .then((r) => r.json())
       .then((data: YardInventory & { error?: string }) => {
         if (data.error) {
@@ -68,7 +71,7 @@ export function YardBoard() {
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : String(err));
       });
-  }, []);
+  }, [spendWindow]);
 
   useEffect(() => {
     load();
@@ -92,7 +95,7 @@ export function YardBoard() {
         <p className="rounded-md border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200">{error}</p>
       ) : null}
 
-      {yard ? <SpendBoard spend={yard.spend} /> : null}
+      {yard ? <SpendBoard spend={yard.spend} window={spendWindow} onWindow={setSpendWindow} /> : null}
 
       {!yard ? <p className="text-sm text-zinc-500">Talking to Docker…</p> : null}
 
@@ -113,8 +116,9 @@ export function YardBoard() {
             className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70"
           >
             <div className="flex items-start justify-between gap-2">
-              <h2 className="font-semibold text-stone-100">
-                <span aria-hidden>🏗️</span> {g.slug}
+              <h2 className="flex items-center gap-2 font-semibold text-stone-100">
+                <CraneAvatar slug={g.slug} rev={g.avatarRev} />
+                {g.slug}
               </h2>
               <div className="flex items-center gap-2">
                 <Spark samples={yard.sparks?.[g.slug]} />

@@ -1,8 +1,9 @@
 # gantree — todo
 
-Work backwards from v1. This file is the build script: what “done” looks
-like, then the milestones in the order we walk them. Pitch lives in
-[README.md](README.md). Stack and host I/O:
+Work backwards from the current ship. This file is the build script:
+what “done” looks like, then the milestones in the order we walk them.
+Pitch (the crane is the product) lives in [README.md](README.md). Board
+walk: [docs/console.md](docs/console.md). Stack and host I/O:
 [docs/architecture.md](docs/architecture.md). Harness-side note:
 [repos/ai-gantry/docs/gantree.md](repos/ai-gantry/docs/gantree.md).
 
@@ -10,7 +11,11 @@ KISS / MLP: just enough to run the yard. Vinext + TypeScript only.
 `npm start` is the process. No `gantree` CLI and no second language
 until a real gap forces it.
 
-Status: **now** · **next** · **later** · **not v1**
+v1 walk: milestones 0–11. v2 walk: after the heading **v2 looks like**.
+The door (v2 M0) may overlap leftover v1 walks — home LAN already
+publishes `:3000` with no login.
+
+Status: **now** · **next** · **later** · **not this version**
 A milestone is done when a stranger can do the **walk** without our house git.
 
 ---
@@ -95,9 +100,10 @@ If a task fails a gate, it is later or it belongs in `ai-gantry`.
 | Process | `npm start` / `vinext start` (or compose). Bind `127.0.0.1`. |
 | Install | Home Mini compose, or cloud VM like `examples/hosting` |
 
-**Not v1:** `gantree` CLI / Go binary, Workers portal, systemd yards,
-token-expiry nags, hosted SaaS, Kubernetes, shared family brain,
-agent chat in the console.
+**Not v1:** operator login, Workers portal, systemd yards, token-expiry
+nags, yard sqlite, a `gantree` CLI / Go binary, hosted SaaS,
+Kubernetes, shared family brain, agent chat in the console.
+Those that belong here live under **v2** (or **Later**, after v2).
 
 ---
 
@@ -336,20 +342,238 @@ emits. Do not ask the harness to grow dashboard hooks.
 
 ---
 
-## Later (not the walk)
+## v2 looks like (the end)
 
-- Vinext-on-Workers as a portal in front of one or more host agents
+v1 is a yard you can *see* if you can *reach* the process. v2 is the
+same yard with a **door**, a **memory**, and a **nag** before a grant
+goes dark. Chat still stays Telegram. Agents still open zero inbound
+ports. Still your box — not a SaaS.
+
+**Home.** Open `http://<mini-lan-ip>:3000`. A login page. You and one
+other operator (a partner). Same board, same Tools, same recreate.
+Graphs survive bouncing `npm start`. A badge on Kit: Google needs
+re-auth — click through, hop, done. LAN bind is fine; the neighbor’s
+phone is not.
+
+**Cloud.** Same VM, still no WAN firewall hole. Tailscale in, *then*
+login. A stolen laptop on the tailnet is not enough. Optional:
+Cloudflare Access / Tailscale identity in *front*; Gantree still has
+its own session so the Node process is not a naked API.
+
+**Portal (last walk).** The same `app/` on Workers, talking to the
+host console. `docker.sock` never leaves the Mini. The portal is a
+second skin, not a second inventory.
+
+**Operator loop that must work end-to-end**
+
+1. First boot: create the first operator (setup). No operators +
+   listen-on-all-interfaces is fail-closed, not a silent open yard.
+2. Login → httpOnly session. Unauthenticated `/api/*` and log SSE
+   are 401. Logout works.
+3. Add a second operator from the UI (hashed, gitignored). They see
+   the same yard.
+4. Restart the process: session is gone until login; Kit’s charts
+   still have last week’s turns.
+5. Skip Google on purpose: the board nags without opening Tools.
+6. Partner recreates a crane: you can see *who* did it.
+7. (Last.) Laptop hits the Worker; host stays loopback.
+
+If that loop is “basic auth on Caddy and hope,” we missed. The product
+is a yard you can put on a LAN without trusting everyone on it.
+
+---
+
+## v2 fit gates
+
+v1 gates still hold. Deltas:
+
+1. **Inventory stays files.** `gantree.toml` / `mcp.toml` / `.env` /
+   persona are still the cranes. v2 may keep **sessions + an event
+   log** in sqlite. That is not a second inventory. Do not move slugs
+   into sqlite.
+2. **Operators live in yard sqlite.** Hashed passphrases in `gantree.db`
+   (WAL, gitignored, never a crane’s `data/gantry.db`). No signup, no
+   email, no IdP required. Forgot password = delete the operators (or
+   the file) and run setup. `node:crypto` scrypt — don’t write a hash.
+3. **Every route is a door.** Pages, `/api/*`, log SSE. Exceptions:
+   login, setup, static assets. Cookie: httpOnly, SameSite — not a
+   JWT in localStorage.
+4. **Equal operators, tiny yard.** A handful of people who own the
+   box. No teams, no orgs, no SSO. A `view` role is allowed if it is
+   one field; twelve-role RBAC is not v2.
+5. **Open bind needs a door.** `HOST=0.0.0.0` / compose LAN publish
+   without at least one operator (or a live setup that *only* accepts
+   that first create) is dishonest. Login does **not** make
+   WAN-open-3000 a good idea on a cloud VM. Cloud still pins
+   loopback + tunnel; the door is defense in depth.
+6. **Portal does not get the socket.** Workers (or any remote skin)
+   call the host. Host I/O stays `lib/yard` on Node. The portal must
+   not grow a Docker client. Operator cookies authenticate to the
+   *skin*; the host trusts a machine token, not a browser.
+7. **Nags parse, they don’t poll the model.** Skipped MCP / dead
+   OAuth from doctor + files. No new harness hook that taxes a turn.
+
+---
+
+## v2 ships
+
+| Surface | What “done” means |
+| --- | --- |
+| Login | Setup first operator; login; logout; session on every API + SSE |
+| Operators | Add / remove / change passphrase. Cannot delete the last one. |
+| Bind | LAN `:3000` is an explicit choice *behind* login; cloud still loopback |
+| Board nags | Skipped MCP / needs-auth / dead token visible on the yard home |
+| Yard memory | sqlite event log; graphs survive restart; inventory still toml |
+| Audit | Mutations (grant, recreate, env, operator edits) record who |
+| Portal | Last walk: Workers skin, host on loopback, same operators |
+
+**Not v2:** hosted SaaS, Kubernetes, billed-provider invoices,
+Prometheus, a `gantree` CLI, systemd as the install story, pairing
+chat through the console, a shared family brain.
+
+v2 *ships* when the host-yard loop (door → operators → nags → memory
+→ audit) is a stranger walk. The portal is the last milestone, not a
+blocker for calling the door done.
+
+---
+
+## v2 now
+
+**M0 the door** is in the tree. Close leftover v1 walks (live Google
+OAuth, recreate-while-Telegram-answers, stranger hello, board
+screenshot) as you go — they are still how a stranger knows v1 is real.
+
+Home compose publishes `:80` on the LAN *behind* login. First boot is
+`/setup`. Cloud VM still `GANTREE_LISTEN=127.0.0.1`.
+
+---
+
+## v2 Milestone 0 — the door
+
+First useful v2 product: the yard is no longer whoever-can-load-the-
+page. One operator, a login page, every mutation gated.
+
+- [x] Yard `gantree.db` (WAL sqlite, gitignored). Independent of each
+      crane’s `data/gantry.db`. `gantree.toml` stays inventory, no secrets.
+- [x] `node:crypto` scrypt. Never store plaintext. Never log the passphrase.
+- [x] First-boot **setup** page when there are no operators: create the
+      first operator. Until that exists, the only POST that works is
+      setup. Everything else 401s.
+- [x] Login page; logout; session cookie (httpOnly, SameSite,
+      secure-when-HTTPS). Idle 7d / absolute 30d.
+- [x] Gate `app/` pages + `/api/*` + log SSE in one place
+      (`lib/yard/door` — still not dockerode from an RSC).
+- [x] Fail-closed bind: warn when `HOST=0.0.0.0` while operators is
+      empty; setup is the only live door. Forgot password → delete
+      `gantree.db` (or `var/gantree.db` under compose) → setup again.
+      No email reset.
+- [x] Tests: unauthenticated list/recreate/env is 401; setup →
+      login → list is 200; bad password is not a user-enumeration
+      novel.
+- [x] Docs: [install.md](docs/install.md), [headless.md](docs/headless.md),
+      compose comments. LAN is OK *behind* login. Cloud VM still
+      `GANTREE_LISTEN=127.0.0.1`. Screenshots: `assets/setup.png`,
+      `assets/login.png` (README + install + headless).
+- [ ] **Walk:** compose on the Mini, LAN IP, logged-out browser
+      cannot read logs or `.env`. Setup one operator. Login. Board
+      works. Restart. Must log in again.
+
+---
+
+## v2 Milestone 1 — a handful of operators
+
+You and a partner. Not a user-admin product.
+
+- [ ] Operators screen: add, remove, change own passphrase.
+      Confirm-scary, like token push. Hashes never round-trip.
+- [ ] Cannot delete the last operator. Cannot remove yourself if
+      you are the last.
+- [ ] Optional one-field `role = "view"` (read board / logs /
+      doctor; no grant, recreate, env, operators). Skip if it
+      slows the walk — equal operators is enough.
+- [ ] **Walk:** add a partner. They log in on a phone. Same yard.
+      Remove them. Their next request is 401.
+
+---
+
+## v2 Milestone 2 — nags
+
+The board tells you before 11pm. Still pull-only.
+
+- [ ] Yard home: per-card badge for skipped MCP, needs-auth, dead
+      process — without opening Tools.
+- [ ] Token-expiry / oauth-file-missing uses doctor + files (same
+      signals as today, surfaced).
+- [ ] Consume richer `gantry status` when the harness ships it
+      ([Push into ai-gantry](#push-into-ai-gantry-when-every-consumer-benefits)).
+      Until then, file-based hints are honest, not fake-green.
+- [ ] **Walk:** yank `google-oauth.json` (or ungrant). Board nags
+      on Kit. Re-auth hop. Badge clears.
+
+---
+
+## v2 Milestone 3 — yard memory
+
+Graphs that survive a bounce. Inventory still toml.
+
+- [ ] sqlite next to the yard files (gitignored, not in `data/` of
+      a crane). Turns, doctor snapshots, samples. v1 ring buffer
+      can stay as the live window.
+- [ ] Per-crane dashboards read history from sqlite after restart.
+      Missing data stays empty — don’t fake a line.
+- [ ] Retention cap (days or rows). This is a Mini, not a metrics
+      company. No Prometheus in v2.
+- [ ] **Walk:** use Kit for a day, `docker compose restart`, open
+      Kit: last day’s turns are still there. `gantree.toml` still
+      lists the slugs.
+
+---
+
+## v2 Milestone 4 — who did that
+
+Mutations have an operator, not just a timestamp.
+
+- [ ] Audit log in the same sqlite: grant / revoke, recreate, env
+      save, operator edits, setup. Actor = session operator.
+- [ ] Small UI: last N on the crane page and/or a yard events
+      strip. Not a SIEM.
+- [ ] **Walk:** partner recreates Kit. You see their name on that
+      event. Logged-out, the audit API is 401.
+
+---
+
+## v2 Milestone 5 — portal (last)
+
+Second skin. Same operators story. Socket stays on the host.
+
+- [ ] Host exposes a **machine** token (file / env, not an
+      operator password) for the portal. Browser cookies never
+      authenticate cross-origin to `docker.sock`.
+- [ ] Same `app/` on Vinext Workers (or the smallest CF skin that
+      is still this repo). It calls the host. It does not import
+      dockerode.
+- [ ] Login lives at the portal when that is the public-ish URL.
+      Host can bind loopback only.
+- [ ] Cloud docs: tunnel *or* portal, not “open 3000 and hope
+      login is enough.”
+- [ ] **Walk:** laptop → Worker → Mini on `127.0.0.1`. Board,
+      login, grant, recreate. Agents still have no inbound ports.
+      Kill the Worker: host UI still works on loopback.
+
+---
+
+## Later (after v2)
+
 - systemd yards, not only compose
 - A `gantree` CLI (only if the UI + `npm` scripts are genuinely not
   enough — still TypeScript, not a Go Makefile)
-- Token-expiry / skipped-MCP nags
-- sqlite event log (v1 inventory stays `gantree.toml`; v1 graphs are
-  an in-memory ring buffer)
 - Prometheus / long-retention metrics store
-- GCP / provider usage pull (billed $). v1 spend is chars/4 estimates
-  from `turn perf` in docker logs — good for “who burned the budget”,
+- GCP / provider usage pull (billed $). v1/v2 spend is chars/4
+  estimates from `turn perf` — good for “who burned the budget”,
   not an invoice.
 - Cross-agent compare view beyond the board spend ranking
+- SSO / OIDC / “log in with GitHub” — not needed while operators
+  are a handful of hashed passphrases on disk
 
 ## Not the product
 
@@ -358,4 +582,5 @@ emits. Do not ask the harness to grow dashboard hooks.
 - Kubernetes
 - Shared family brain
 - Pairing the agent through the console
+- Multi-tenant orgs, invite links, billing
 - Anything that makes `ai-gantry` slower so this UI looks nicer

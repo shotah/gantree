@@ -1,11 +1,17 @@
-# Console on the Docker host. Home LAN: publish :3000 on all interfaces.
+# Console on the Docker host. Vinext listens on :3000 *inside* the container.
+# Host publish is :80. Home LAN: http://<lan-ip>/
 # Cloud VM: GANTREE_LISTEN=127.0.0.1 — do not open a WAN firewall port.
-# Inside the container Vinext must listen on 0.0.0.0 so the port map works.
 #
-# Cranes must run as the host user that owns data/ (not Distroless 65532).
-# Console-in-Docker is often root, so pass the host uid:
-#   GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose pull && docker compose up -d
-#   GANTREE_CRANE_USER="$(id -u):$(id -g)" docker compose up -d --build
+# Run compose from this checkout so PWD is the yard (or set GANTREE_HOST_ROOT).
+# Recreate bind-mounts are host paths; without GANTREE_HOST_ROOT they become
+# /app/gantries/… on the host and the crane loses mcp.toml + data/.config.
+#
+# Crane uid is inferred (data/ owner, then this compose user). Compose reads
+# UID from your shell (or SUDO_UID if you sudo). Override only if needed:
+#   GANTREE_CRANE_USER=1000:1000 docker compose up -d
+#   docker compose up -d --build
+# First boot is /setup (one operator). Yard sqlite is ./var/gantree.db — not a
+# crane's data/gantry.db. Forgot passphrase: stop, delete var/gantree.db, setup.
 # Attach existing agents by mounting their host paths at the same path
 # (gantree.toml uses those paths for recreate). Example:
 #   - /opt/agents:/opt/agents
@@ -16,14 +22,18 @@ services:
     build: .
     environment:
       HOST: 0.0.0.0
-      PORT: 80
+      PORT: 3000
       DOCKER_SOCKET: /var/run/docker.sock
-      GANTREE_CRANE_USER: ${GANTREE_CRANE_USER:-}
+      GANTREE_CRANE_USER: ${GANTREE_CRANE_USER:-${SUDO_UID:-${UID:-1000}}:${SUDO_GID:-${GID:-1000}}}
+      GANTREE_ROOT: /app
+      GANTREE_HOST_ROOT: ${GANTREE_HOST_ROOT:-${PWD}}
+      GANTREE_DB: /app/var/gantree.db
     ports:
-      - "${GANTREE_LISTEN:-0.0.0.0}:3000:80"
+      - "${GANTREE_LISTEN:-0.0.0.0}:80:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./gantree.toml:/app/gantree.toml
       - ./gantries:/app/gantries
       - ./backups:/app/backups
+      - ./var:/app/var
     restart: unless-stopped

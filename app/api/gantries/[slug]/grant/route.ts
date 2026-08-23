@@ -1,12 +1,13 @@
-import { toolsFetch } from "@/lib/yard/auth";
-import { loadCatalog } from "@/lib/yard/catalog";
-import { grant, revoke } from "@/lib/yard/grant";
+import { withDoor } from "@/lib/yard/door";
+import { toolsFetch } from "@/lib/yard/tools/auth";
+import { loadCatalog } from "@/lib/yard/tools/catalog";
+import { grant, revoke } from "@/lib/yard/tools/grant";
 
-export async function GET() {
+export const GET = withDoor(async (_req: Request) => {
   return Response.json({ catalog: loadCatalog() });
-}
+});
 
-export async function POST(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
   const body = (await req.json()) as { name?: string; op?: "grant" | "revoke" | "fetch" };
   if (body.op === "fetch") {
@@ -18,4 +19,4 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
   }
   const result = body.op === "revoke" ? await revoke(slug, body.name) : await grant(slug, body.name);
   return Response.json(result, { status: result.ok ? 200 : 400 });
-}
+});

@@ -5,7 +5,7 @@ Gantree is **not** a downloadable bin. Clone it onto the **Docker host**,
 Telegram.
 
 This page is the operator walk (Node 22, attach existing dirs, SSH tunnel).
-Stranger hello: [install.md](install.md).
+Stranger hello: [install.md](install.md). Board walk: [console.md](console.md).
 
 ---
 
@@ -127,12 +127,18 @@ You want in the log: `Production server running at http://0.0.0.0:3000`
 
 ## 6. Open it from another machine
 
-The UI has **no login**. Whoever can load the page can read logs, edit
-`.env`, and recreate containers. Default bind is localhost so a cloud
-security group cannot do that by accident.
+The UI has a **login**. First boot is `/setup` (one operator). Sessions
+live in yard `gantree.db` (compose: `var/gantree.db`) — not a crane’s
+`data/gantry.db`. Whoever can log in can read logs, edit `.env`, and
+recreate containers. Forgot the passphrase: stop, delete that sqlite
+file, start, run setup again. No email reset.
 
-**Home LAN only** (no WAN port forward): listen on all interfaces, keep
-port 3000.
+![First operator](../assets/setup.png)
+
+![Log in](../assets/login.png)
+
+**Home LAN only** (no WAN port forward): listen on all interfaces.
+Compose publishes host `:80`. `npm start` stays `:3000`.
 
 ```bash
 # stop the old foreground npm start first (Ctrl-C), then:
@@ -140,19 +146,21 @@ HOST=0.0.0.0 nohup npm start > gantree.log 2>&1 &
 disown
 ```
 
-Browser: `http://<host-lan-ip>:3000`
+Browser: `http://<host-lan-ip>:3000` (`npm start`) or
+`http://<host-lan-ip>/` (compose). Create the operator, then use the board.
 
-Skip port 80. It needs root or `cap_net_bind_service`. Do not run this
-app as root (`docker.sock`).
+Skip binding port 80 as root. Do not run this app as root (`docker.sock`).
 
-**Not on the LAN / cloud VM:** leave the default `127.0.0.1` bind.
+**Not on the LAN / cloud VM:** leave the default `127.0.0.1` bind
+(`GANTREE_LISTEN=127.0.0.1` for compose). Login is defense in depth,
+not a reason to open a WAN firewall port.
 
 ```bash
 ssh -N -L 3000:127.0.0.1:3000 user@host
 ```
 
 Browser: **http://127.0.0.1:3000**. Tailscale Serve to that same loopback
-is the other path. Never open 3000 on a cloud firewall.
+is the other path. Never open 3000 (or 80) on a cloud firewall.
 
 ---
 
@@ -163,7 +171,7 @@ You should see one card per `[[gantry]]`. Click → logs / doctor.
 Start / stop still talks to the existing container. **Recreate** / **pull +
 recreate** now keep:
 
-- `user` — host uid:gid of the Vinext process (or `GANTREE_CRANE_USER`), never
+- `user` — owner of `data/` / `gantry.db`, then the compose shell `UID`, never
   Distroless `65532`
 - `network_mode` (host for Cast)
 - extra binds (sound, extra mounts)
@@ -177,9 +185,10 @@ Older Gantree dropped `user:`. The image default is uid `65532`; `gantry.db`
 is owned by your login (e.g. `1000`). Persona mounts read-only-enough to load;
 SQLite cannot create WAL files. Docker restarts the crash.
 
-1. Rebuild this console (`npm run build`, restart `npm start`).
+1. Rebuild this console (`npm run build`, restart `npm start` — or
+   `docker compose up -d --build`).
 2. On that crane: **recreate** (or **pull + recreate**). Notice should say
-   `as 1000:1000` (your `id -u`:`id -g`).
+   `as 1000:1000` (the owner of `gantry.db`, not Distroless).
 3. Logs should show `session store ready`, not `session store open failed`.
 
 Still looping: `docker inspect <name> --format '{{.Config.User}}'` must match
@@ -194,12 +203,12 @@ Yes. Compose already mounts `docker.sock`, so Gantree can inspect / start /
 recreate **sibling** agent containers. Chat still stays Telegram. Agents still
 open zero ports.
 
-The console container is usually **root** (needs the socket). Cranes must
-still be your host user:
+The console container is usually **root** (needs the socket). Crane uid is
+inferred from `data/` / `gantry.db`, then from the user who ran compose
+(shell `UID`, or `SUDO_UID` if you sudo). You do not pass `id -u`. Do not
+tear down agents — **recreate** keeps `data/`, persona, and `mcp.toml`.
 
 ```bash
-export GANTREE_CRANE_USER="$(id -u):$(id -g)"
-# Hub image (after a release):
 docker compose pull
 docker compose up -d
 # or build this checkout:
@@ -207,7 +216,9 @@ docker compose up -d --build
 ```
 
 `gantree.toml` paths are resolved **inside** the console container. Relative
-`./gantries/<slug>` works (that dir is mounted). Absolute attach paths must
+`./gantries/<slug>` works (that dir is mounted at `/app/gantries`). Recreate
+rewrites those to **host** paths via `GANTREE_HOST_ROOT` (compose sets it to
+`PWD` — run `docker compose` from this checkout). Absolute attach paths must
 exist at the **same path** in the console:
 
 ```yaml
@@ -220,10 +231,12 @@ data_dir = "/opt/agents/kit/data"
 ```
 
 Without that mount, the board can still *see* Docker, but recreate cannot
-bind `/opt/agents/kit/data`.
+bind `/opt/agents/kit/data`. Missing `GANTREE_HOST_ROOT` bind-mounts
+`/app/gantries/…` on the host — the crane then has no `mcp.toml` and no
+`data/.config`.
 
-Home LAN: compose publishes `:3000` on all interfaces
-(`http://<headless-lan-ip>:3000`). Cloud VM: `GANTREE_LISTEN=127.0.0.1` — do
+Home LAN: compose publishes host `:80` → container `:3000`
+(`http://<headless-lan-ip>/`). Cloud VM: `GANTREE_LISTEN=127.0.0.1` — do
 not open a WAN firewall port.
 
 ---

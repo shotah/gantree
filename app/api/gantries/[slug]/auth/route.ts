@@ -1,7 +1,8 @@
-import { loadCatalog } from "@/lib/yard/catalog";
-import { exchangeAuth, kickAuth, waitAuth } from "@/lib/yard/auth";
+import { withDoor } from "@/lib/yard/door";
+import { loadCatalog } from "@/lib/yard/tools/catalog";
+import { exchangeAuth, kickAuth, waitAuth } from "@/lib/yard/tools/auth";
 
-export async function POST(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
   const body = (await req.json()) as { server?: string; op?: "start" | "exchange" | "wait"; code?: string };
   if (!body.server) {
@@ -16,4 +17,4 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
         ? await waitAuth(slug, body.server)
         : await kickAuth(slug, body.server, flow);
   return Response.json(result, { status: result.ok ? 200 : 400 });
-}
+});

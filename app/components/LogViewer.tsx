@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LogLine, LogTurnGroup } from "@/lib/yard/types";
+import { yardFetch } from "../lib/yardFetch";
 
 function groupLogsByTurn(lines: LogLine[]): LogTurnGroup[] {
   const groups: LogTurnGroup[] = [];
@@ -46,7 +47,7 @@ export function LogViewer({ slug }: { slug: string }) {
   useEffect(() => {
     let es: EventSource | null = null;
     let cancelled = false;
-    fetch(`/api/gantries/${slug}/logs?tail=200`)
+    yardFetch(`/api/gantries/${slug}/logs?tail=200`)
       .then((r) => r.json())
       .then((data: { lines?: LogLine[]; error?: string }) => {
         if (!cancelled && data.lines) {
