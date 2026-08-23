@@ -3,6 +3,7 @@ import {
   applyBotProfile,
   botLink,
   emptySnapshot,
+  ensureTelegramNew,
   formatAllowlist,
   formatCommandLines,
   getBotProfile,
@@ -11,8 +12,10 @@ import {
   parseCommandLines,
   redactToken,
   seenUsers,
+  sendTelegramNewNudge,
   suggestBotIdentity,
   shouldPushTelegram,
+  telegramChatForUser,
   telegramMethod,
   type TelegramPoster,
 } from "@/lib/yard/host/telegram";
@@ -52,6 +55,62 @@ describe("parseCommandLines", () => {
       { command: "auth", description: "auth" },
     ]);
     expect(formatCommandLines(cmds[0] ? [cmds[0]] : [])).toBe("tools - list granted MCP");
+  });
+});
+
+describe("ensureTelegramNew", () => {
+  it("fills the harness menu when the list is empty", () => {
+    const cmds = ensureTelegramNew([]);
+    expect(cmds[0]).toEqual({ command: "new", description: "Distill this thread and start fresh" });
+    expect(cmds.map((c) => c.command)).toContain("tools");
+  });
+
+  it("prepends /new without dropping a custom menu", () => {
+    expect(ensureTelegramNew([{ command: "tools", description: "list granted MCP" }])).toEqual([
+      { command: "new", description: "Distill this thread and start fresh" },
+      { command: "tools", description: "list granted MCP" },
+    ]);
+  });
+
+  it("keeps an existing /new description", () => {
+    const cmds = [{ command: "new", description: "Reset conversation session" }, { command: "help", description: "List commands" }];
+    expect(ensureTelegramNew(cmds)).toEqual(cmds);
+  });
+});
+
+describe("telegramChatForUser", () => {
+  it("uses the latest telegram session chat, else the user id", () => {
+    expect(telegramChatForUser("9", [])).toEqual({ chatId: "9" });
+    expect(
+      telegramChatForUser("9", [
+        { userId: "9", sessionId: "telegram:-100:9:7", at: 20 },
+        { userId: "9", sessionId: "telegram:9:9", at: 10 },
+      ]),
+    ).toEqual({ chatId: "-100", threadId: 7 });
+  });
+});
+
+describe("sendTelegramNewNudge", () => {
+  it("posts sendMessage with a one-tap /new keyboard", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const post: TelegramPoster = async (url, init) => {
+      expect(url.split("/").pop()).toBe("sendMessage");
+      bodies.push(typeof init.body === "string" ? (JSON.parse(init.body) as Record<string, unknown>) : {});
+      return { status: 200, body: JSON.stringify({ ok: true, result: true }) };
+    };
+    const r = await sendTelegramNewNudge("t", { chatId: "9", threadId: 7 }, post);
+    expect(r).toEqual({ ok: true, detail: "asked 9 to tap /new" });
+    expect(bodies[0]).toMatchObject({
+      chat_id: 9,
+      message_thread_id: 7,
+      reply_markup: { keyboard: [[{ text: "/new" }]], one_time_keyboard: true },
+    });
+  });
+
+  it("rejects a non-numeric chat id", async () => {
+    const r = await sendTelegramNewNudge("t", { chatId: "@kit" }, async () => ({ status: 200, body: "{}" }));
+    expect(r.ok).toBe(false);
+    expect(r.detail).toMatch(/numeric/);
   });
 });
 

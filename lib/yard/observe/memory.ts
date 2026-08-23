@@ -24,8 +24,8 @@ export function persistHost(slug: string, sample: StatSample): void {
     db.prepare(
       `INSERT INTO sample_host (
          slug, at, cpu_percent, mem_bytes, mem_limit_bytes,
-         net_rx_bytes, net_tx_bytes, blk_read_bytes, blk_write_bytes
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         net_rx_bytes, net_tx_bytes, blk_read_bytes, blk_write_bytes, disk_bytes
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       slug,
       sample.at,
@@ -36,6 +36,7 @@ export function persistHost(slug: string, sample: StatSample): void {
       sample.netTxBytes ?? null,
       sample.blkReadBytes ?? null,
       sample.blkWriteBytes ?? null,
+      sample.diskBytes ?? null,
     );
     prune(db, "sample_host", slug, HOST_CAP);
   } catch {
@@ -100,8 +101,9 @@ export function persistMachine(sample: HostSample): void {
     const db = yardDb();
     db.prepare(
       `INSERT INTO sample_machine (
-         at, ncpu, mem_total_bytes, crane_cpu, console_cpu, other_cpu, crane_mem, console_mem, other_mem
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         at, ncpu, mem_total_bytes, crane_cpu, console_cpu, other_cpu, crane_mem, console_mem, other_mem,
+         crane_rx, crane_tx, console_rx, console_tx, other_rx, other_tx
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       sample.at,
       sample.ncpu,
@@ -112,6 +114,12 @@ export function persistMachine(sample: HostSample): void {
       sample.craneMem,
       sample.consoleMem,
       sample.otherMem,
+      sample.craneRx,
+      sample.craneTx,
+      sample.consoleRx,
+      sample.consoleTx,
+      sample.otherRx,
+      sample.otherTx,
     );
     const cutoff = Date.now() - RETAIN_MS;
     db.prepare("DELETE FROM sample_machine WHERE at < ?").run(cutoff);
@@ -131,7 +139,8 @@ export function recallMachine(limit: number): HostSample[] {
   try {
     const rows = yardDb()
       .prepare(
-        `SELECT at, ncpu, mem_total_bytes, crane_cpu, console_cpu, other_cpu, crane_mem, console_mem, other_mem
+        `SELECT at, ncpu, mem_total_bytes, crane_cpu, console_cpu, other_cpu, crane_mem, console_mem, other_mem,
+                crane_rx, crane_tx, console_rx, console_tx, other_rx, other_tx
          FROM sample_machine WHERE at >= ? ORDER BY at ASC`,
       )
       .all(cutoff) as MachineRow[];
@@ -145,6 +154,12 @@ export function recallMachine(limit: number): HostSample[] {
       craneMem: Number(r.crane_mem) || 0,
       consoleMem: Number(r.console_mem) || 0,
       otherMem: Number(r.other_mem) || 0,
+      craneRx: Number(r.crane_rx) || 0,
+      craneTx: Number(r.crane_tx) || 0,
+      consoleRx: Number(r.console_rx) || 0,
+      consoleTx: Number(r.console_tx) || 0,
+      otherRx: Number(r.other_rx) || 0,
+      otherTx: Number(r.other_tx) || 0,
     }));
   } catch {
     return [];
@@ -160,7 +175,7 @@ export function recallSamples(slug: string, limits: { host: number; turns: numbe
       db
         .prepare(
           `SELECT at, cpu_percent, mem_bytes, mem_limit_bytes,
-                  net_rx_bytes, net_tx_bytes, blk_read_bytes, blk_write_bytes
+                  net_rx_bytes, net_tx_bytes, blk_read_bytes, blk_write_bytes, disk_bytes
            FROM sample_host WHERE slug = ? AND at >= ? ORDER BY at ASC`,
         )
         .all(slug, cutoff) as HostRow[]
@@ -175,6 +190,7 @@ export function recallSamples(slug: string, limits: { host: number; turns: numbe
         netTxBytes: num(r.net_tx_bytes),
         blkReadBytes: num(r.blk_read_bytes),
         blkWriteBytes: num(r.blk_write_bytes),
+        diskBytes: num(r.disk_bytes),
       }));
     const turns = (
       db
@@ -239,6 +255,7 @@ type HostRow = {
   net_tx_bytes: number | null;
   blk_read_bytes: number | null;
   blk_write_bytes: number | null;
+  disk_bytes: number | null;
 };
 type TurnRow = {
   at: number;
@@ -266,6 +283,12 @@ type MachineRow = {
   crane_mem: number;
   console_mem: number;
   other_mem: number;
+  crane_rx: number | null;
+  crane_tx: number | null;
+  console_rx: number | null;
+  console_tx: number | null;
+  other_rx: number | null;
+  other_tx: number | null;
 };
 
 function num(v: number | null | undefined): number | null {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  ensureTelegramNew,
   formatCommandLines,
   parseAllowlist,
   parseCommandLines,
@@ -127,7 +128,7 @@ export function TelegramBot({
       persistKey={craneFoldKey(slug, "telegram")}
       shot="telegram"
       summary={snap.bot?.username ? `@${snap.bot.username}` : snap.tokenSet ? "token set" : "no token"}
-      hint="profile, commands, allowlist"
+      hint="profile, /new, allowlist"
       aside={
         <button
           type="button"
@@ -208,28 +209,78 @@ export function TelegramBot({
                 value={commands}
                 disabled={readOnly}
                 onChange={(e) => setCommands(e.target.value)}
-                placeholder={"tools - list granted MCP\nnew - distill memory\nauth - start OAuth"}
+                placeholder={"new - Distill this thread and start fresh\ntools - list granted MCP\nauth - start OAuth"}
               />
             </label>
           </div>
-          <button
-            type="button"
-            disabled={locked}
-            onClick={() =>
-              void post({
-                op: "profile",
-                name,
-                description,
-                shortDescription: about,
-                commands: parseCommandLines(commands),
-              })
-            }
-            className="mt-3 rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
-          >
-            Push profile
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() =>
+                void post({
+                  op: "profile",
+                  name,
+                  description,
+                  shortDescription: about,
+                  commands: ensureTelegramNew(parseCommandLines(commands)),
+                })
+              }
+              className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
+            >
+              Push profile
+            </button>
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() => {
+                const next = ensureTelegramNew(parseCommandLines(commands));
+                setCommands(formatCommandLines(next));
+                void post({ op: "profile", commands: next });
+              }}
+              className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+            >
+              Put /new in / menu
+            </button>
+          </div>
         </>
       )}
+
+      {snap.tokenSet ? (
+        <div className="mt-5 border-t border-zinc-800 pt-4">
+          <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">Fresh thread</h3>
+          <p className="mt-1 text-xs text-zinc-600">
+            <code className="text-zinc-500">/new</code> distills the chat into <code className="text-zinc-500">SELF.md</code>, then
+            drops history. Telegram will not let this console send as her — she gets a one-tap{" "}
+            <code className="text-zinc-500">/new</code> in that DM. Container RAM is gantry + MCP children, not the image; a long
+            thread is prompt tokens, extra tools stay until you revoke.
+          </p>
+          {allow.length === 0 ? (
+            <p className="mt-2 text-xs text-zinc-600">save an allowlist id first</p>
+          ) : (
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {allow.map((id) => {
+                const op = operators.find((o) => o.telegram.includes(id));
+                const label = (op?.displayName.trim() || op?.name || id).trim();
+                const seen = snap.seen.find((s) => s.id === id);
+                return (
+                  <li key={`new:${id}`}>
+                    <button
+                      type="button"
+                      disabled={locked}
+                      onClick={() => void post({ op: "new", id })}
+                      className="rounded border border-amber-900/70 bg-amber-950/30 px-2 py-0.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
+                    >
+                      ask {label} to tap /new
+                      {seen ? <span className="ml-1 text-zinc-500">{seen.turns}t</span> : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ) : null}
 
       <div className="mt-5 border-t border-zinc-800 pt-4">
         <h3 className="text-xs font-medium uppercase tracking-wide text-zinc-500">Allowlist</h3>

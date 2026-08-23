@@ -20,17 +20,34 @@ const live: HostSnapshot = {
   craneMem: 2 * 1024 ** 3,
   consoleMem: 200 * 1024 ** 2,
   otherMem: 50 * 1024 ** 2,
+  craneRx: 12 * 1024 ** 2,
+  craneTx: 3 * 1024 ** 2,
+  consoleRx: 1024 ** 2,
+  consoleTx: 400_000,
+  otherRx: 8 * 1024 ** 2,
+  otherTx: 2 * 1024 ** 2,
   procs: [
-    { name: "gantry-tim", role: "crane", cpuPercent: 40, memBytes: 800 * 1024 ** 2 },
-    { name: "gantree-gantree-1", role: "console", cpuPercent: 20, memBytes: 200 * 1024 ** 2 },
-    { name: "gantree-cloudflared-1", role: "other", cpuPercent: 10, memBytes: 50 * 1024 ** 2 },
+    { name: "gantry-tim", role: "crane", cpuPercent: 40, memBytes: 800 * 1024 ** 2, netRxBytes: 12 * 1024 ** 2, netTxBytes: 3 * 1024 ** 2 },
+    { name: "gantree-gantree-1", role: "console", cpuPercent: 20, memBytes: 200 * 1024 ** 2, netRxBytes: 1024 ** 2, netTxBytes: 400_000 },
+    { name: "gantree-cloudflared-1", role: "other", cpuPercent: 10, memBytes: 50 * 1024 ** 2, netRxBytes: 8 * 1024 ** 2, netTxBytes: 2 * 1024 ** 2 },
   ],
+};
+
+const earlier: HostSnapshot = {
+  ...live,
+  at: live.at - 15_000,
+  craneRx: 10 * 1024 ** 2,
+  craneTx: 2 * 1024 ** 2,
+  consoleRx: 900_000,
+  consoleTx: 200_000,
+  otherRx: 7 * 1024 ** 2,
+  otherTx: 1024 ** 2,
 };
 
 describe("HostCard", () => {
   it("waits when Docker has not sampled yet", () => {
     render(<HostCard host={{ live: null, spark: [] }} />);
-    expect(screen.getByText(/Sampling Docker for host CPU and RAM/)).toBeTruthy();
+    expect(screen.getByText(/Sampling Docker for host CPU, RAM, and net/)).toBeTruthy();
     expect(screen.getByRole("link", { name: /Host/ })).toHaveProperty("href", expect.stringMatching(/\/host$/));
   });
 
@@ -40,7 +57,7 @@ describe("HostCard", () => {
   });
 
   it("splits agents, dashboard, and other against host cores and RAM", () => {
-    render(<HostCard host={{ live, spark: [live] }} />);
+    render(<HostCard host={{ live, spark: [earlier, live] }} />);
     const heading = screen.getByRole("heading", { name: "paddleboy" });
     expect(heading).toBeTruthy();
     expect(heading.querySelector("svg")).toBeTruthy();
@@ -48,6 +65,9 @@ describe("HostCard", () => {
     expect(screen.getAllByText("agents").length).toBeGreaterThan(0);
     expect(screen.getAllByText("dashboard").length).toBeGreaterThan(0);
     expect(screen.getByText("gantry-tim")).toBeTruthy();
+    expect(screen.getByText("NET")).toBeTruthy();
+    expect(screen.getByText(/↓ .+\/s · ↑ .+\/s/)).toBeTruthy();
+    expect(screen.getByText(/since those containers started/)).toBeTruthy();
     expect(screen.getByRole("link", { name: /paddleboy/ })).toHaveProperty("href", expect.stringMatching(/\/host$/));
   });
 });

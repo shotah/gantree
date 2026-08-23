@@ -89,4 +89,34 @@ describe("YardBoard", () => {
     await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
     expect(screen.queryByLabelText(/recoveries/)).toBeNull();
   });
+
+  it("shows data-dir size on the card when the dir is fat", async () => {
+    const fat = 300 * 1024 * 1024;
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            sparks: {
+              kit: [
+                {
+                  at: Date.now(),
+                  cpuPercent: 1,
+                  memBytes: 1,
+                  memLimitBytes: 2,
+                  diskBytes: fat,
+                },
+              ],
+            },
+          }),
+      } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("300 MiB")).toBeTruthy());
+    expect(screen.getByText("data dir")).toBeTruthy();
+  });
 });

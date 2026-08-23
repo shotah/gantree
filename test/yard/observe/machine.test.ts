@@ -37,6 +37,12 @@ beforeEach(() => {
       cpu_stats: { cpu_usage: { total_usage: cpu + 10 }, system_cpu_usage: 200, online_cpus: 4 },
       precpu_stats: { cpu_usage: { total_usage: 10 }, system_cpu_usage: 100 },
       memory_stats: { usage: cpu * 1_000_000, limit: 8_000_000_000 },
+      networks: {
+        eth0: {
+          rx_bytes: id === "a" ? 1_200_000 : id === "b" ? 80_000 : 400_000,
+          tx_bytes: id === "a" ? 300_000 : id === "b" ? 20_000 : 90_000,
+        },
+      },
     } as never;
   });
 });
@@ -58,6 +64,9 @@ describe("sampleMachine", () => {
     expect(snap?.craneCpu).toBeGreaterThan(0);
     expect(snap?.consoleCpu).toBeGreaterThan(0);
     expect(snap?.otherCpu).toBeGreaterThan(0);
+    expect(snap?.craneRx).toBe(1_200_000);
+    expect(snap?.consoleTx).toBe(20_000);
+    expect(snap?.otherRx).toBe(400_000);
     expect(peekMachine().live?.hostname).toBe("paddleboy");
     expect(peekMachine().spark.length).toBe(1);
 
@@ -66,5 +75,6 @@ describe("sampleMachine", () => {
     expect(recalled.live).toBeNull();
     expect(recalled.spark).toHaveLength(1);
     expect(recalled.spark[0]?.craneCpu).toBeGreaterThan(0);
+    expect(recalled.spark[0]?.craneRx).toBe(1_200_000);
   });
 });

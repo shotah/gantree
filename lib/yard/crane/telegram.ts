@@ -9,7 +9,9 @@ import {
   parseAllowlist,
   resolveChannelAndToken,
   seenUsers,
+  sendTelegramNewNudge,
   shouldPushTelegram,
+  telegramChatForUser,
   type BotProfilePatch,
   type TelegramPoster,
   type TelegramSnapshot,
@@ -97,6 +99,33 @@ export async function pushTelegramProfile(
     return { ok: false, detail: "no TELEGRAM_BOT_TOKEN" };
   }
   return applyBotProfile(auth.token, patch, post);
+}
+
+export async function askTelegramNew(
+  slug: string,
+  userId: string,
+  post?: TelegramPoster,
+): Promise<{ ok: boolean; detail: string }> {
+  const g = await getGantry(slug);
+  if (!g) {
+    return { ok: false, detail: "not found" };
+  }
+  const auth = await craneTelegramAuth(g);
+  if (!shouldPushTelegram(auth.channel)) {
+    return { ok: false, detail: "not telegram" };
+  }
+  if (!auth.token) {
+    return { ok: false, detail: "no TELEGRAM_BOT_TOKEN" };
+  }
+  const ids = parseAllowlist(userId);
+  if (ids.length !== 1) {
+    return { ok: false, detail: "need a numeric id" };
+  }
+  const id = ids[0];
+  if (!auth.allowlist.includes(id)) {
+    return { ok: false, detail: "id is not on the allowlist" };
+  }
+  return sendTelegramNewNudge(auth.token, telegramChatForUser(id, peekTurns(slug)), post);
 }
 
 export async function saveGantryAllowlist(

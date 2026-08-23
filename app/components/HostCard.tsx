@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { fmtAgo, fmtBytes, fmtCores, hostShare } from "@/lib/yard/observe/spend";
+import { fmtAgo, fmtBps, fmtBytes, fmtCores, hostShare, lastHostNetRate } from "@/lib/yard/observe/spend";
 import type { HostLive, HostRole, HostSample, HostSnapshot } from "@/lib/yard/types";
 
 const CARD =
@@ -92,10 +92,15 @@ function HostSpark({ spark }: { spark: HostSample[] }) {
   );
 }
 
-export function HostMeters({ live }: { live: HostSnapshot }) {
+export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: HostSample[] }) {
   const cpuCap = live.ncpu * 100;
   const cpuUsed = live.craneCpu + live.consoleCpu + live.otherCpu;
   const memUsed = live.craneMem + live.consoleMem + live.otherMem;
+  const netRx = live.craneRx + live.consoleRx + live.otherRx;
+  const netTx = live.craneTx + live.consoleTx + live.otherTx;
+  const rate = lastHostNetRate(spark.length > 0 ? spark : [live]);
+  const rxBps = rate ? rate.craneRx + rate.consoleRx + rate.otherRx : 0;
+  const txBps = rate ? rate.craneTx + rate.consoleTx + rate.otherTx : 0;
   const cpuParts = [
     { role: "crane" as const, value: live.craneCpu },
     { role: "console" as const, value: live.consoleCpu },
@@ -105,6 +110,11 @@ export function HostMeters({ live }: { live: HostSnapshot }) {
     { role: "crane" as const, value: live.craneMem },
     { role: "console" as const, value: live.consoleMem },
     { role: "other" as const, value: live.otherMem },
+  ];
+  const netParts = [
+    { role: "crane" as const, value: rate ? rate.craneRx + rate.craneTx : live.craneRx + live.craneTx },
+    { role: "console" as const, value: rate ? rate.consoleRx + rate.consoleTx : live.consoleRx + live.consoleTx },
+    { role: "other" as const, value: rate ? rate.otherRx + rate.otherTx : live.otherRx + live.otherTx },
   ];
   const top = [...live.procs].slice(0, 6);
 
@@ -128,6 +138,18 @@ export function HostMeters({ live }: { live: HostSnapshot }) {
             </dd>
           </div>
           <Stack parts={memParts} cap={live.memTotalBytes} />
+        </div>
+        <div>
+          <div className="mb-1 flex justify-between gap-2">
+            <dt>NET</dt>
+            <dd className="tabular-nums text-zinc-200">
+              ↓ {fmtBps(rxBps)} · ↑ {fmtBps(txBps)}
+            </dd>
+          </div>
+          <Stack parts={netParts} cap={netParts.reduce((n, p) => n + p.value, 0)} />
+          <p className="mt-1 tabular-nums text-[10px] text-zinc-600">
+            {fmtBytes(netRx)} ↓ · {fmtBytes(netTx)} ↑ since those containers started
+          </p>
         </div>
         <div className="flex justify-between gap-2 pt-1">
           <dt className={ROLE_TEXT.crane}>agents</dt>
@@ -166,7 +188,7 @@ export function HostMeters({ live }: { live: HostSnapshot }) {
       ) : null}
 
       <p className="mt-2 text-[10px] text-zinc-600">
-        Docker share of the Mini · {fmtAgo(live.at)} · leftover is the OS and anything not in a container
+        Docker share of the Mini · {fmtAgo(live.at)} · leftover is the OS, the host NIC, and anything not in a container
       </p>
     </>
   );
@@ -183,7 +205,7 @@ export function HostCard({ host, dockerError }: { host: HostLive | undefined; do
           Host
         </h2>
         <p className="mt-3 text-sm text-zinc-500">
-          {dockerError || "Sampling Docker for host CPU and RAM…"}
+          {dockerError || "Sampling Docker for host CPU, RAM, and net…"}
         </p>
       </Link>
     );
@@ -204,7 +226,7 @@ export function HostCard({ host, dockerError }: { host: HostLive | undefined; do
           </span>
         </div>
       </div>
-      <HostMeters live={live} />
+      <HostMeters live={live} spark={spark} />
     </Link>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
-import { DEFAULT_SPEND_WINDOW, fmtAgo, fmtEstTokens, type SpendWindow } from "@/lib/yard/observe/spend";
+import { DEFAULT_SPEND_WINDOW, FAT_DATA_DIR_BYTES, fmtAgo, fmtBytes, fmtEstTokens, lastDiskBytes, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BuildCrane } from "./BuildCrane";
 import { CraneAvatar } from "./CraneAvatar";
 import { useDoor } from "./DoorShell";
@@ -185,6 +185,18 @@ export function YardBoard() {
                   {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
                 </dd>
               </div>
+              {(() => {
+                const disk = lastDiskBytes(yard.sparks?.[g.slug]);
+                if (disk == null || disk < FAT_DATA_DIR_BYTES) {
+                  return null;
+                }
+                return (
+                  <div className="flex justify-between gap-2">
+                    <dt>data dir</dt>
+                    <dd className="text-zinc-200">{fmtBytes(disk)}</dd>
+                  </div>
+                );
+              })()}
               <div className="flex justify-between gap-2">
                 <dt>image</dt>
                 <dd className="truncate text-zinc-200" title={g.image ?? ""}>

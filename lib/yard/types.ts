@@ -61,6 +61,8 @@ export type StatSample = {
   netTxBytes?: number | null;
   blkReadBytes?: number | null;
   blkWriteBytes?: number | null;
+  /** `du` of data_dir. Sparse — only set when we actually walked. */
+  diskBytes?: number | null;
 };
 
 export type TurnSample = {
@@ -139,6 +141,8 @@ export type HostProc = {
   role: HostRole;
   cpuPercent: number | null;
   memBytes: number | null;
+  netRxBytes: number | null;
+  netTxBytes: number | null;
 };
 
 export type HostSample = {
@@ -151,6 +155,13 @@ export type HostSample = {
   craneMem: number;
   consoleMem: number;
   otherMem: number;
+  /** Cumulative Docker rx/tx since those containers started. */
+  craneRx: number;
+  craneTx: number;
+  consoleRx: number;
+  consoleTx: number;
+  otherRx: number;
+  otherTx: number;
 };
 
 export type HostSnapshot = HostSample & {

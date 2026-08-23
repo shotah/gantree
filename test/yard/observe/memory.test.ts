@@ -93,6 +93,7 @@ describe("yard memory", () => {
       netTxBytes: 9,
       blkReadBytes: 3,
       blkWriteBytes: 4,
+      diskBytes: 9001,
     });
     persistMcp("kit", { at: Date.now(), published: 1, skipped: 1 });
     persistUptime("kit", { at: Date.now(), uptimeSeconds: 12, restartCount: 0 });
@@ -102,6 +103,7 @@ describe("yard memory", () => {
     expect(recalled.host).toHaveLength(1);
     expect(recalled.host[0]?.netRxBytes).toBe(50);
     expect(recalled.host[0]?.blkWriteBytes).toBe(4);
+    expect(recalled.host[0]?.diskBytes).toBe(9001);
     expect(recalled.turns[0]?.durationMs).toBe(1500);
     expect(recalled.mcp[0]?.skipped).toBe(1);
     expect(recalled.uptime[0]?.restartCount).toBe(0);

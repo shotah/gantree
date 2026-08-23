@@ -1,5 +1,6 @@
 import { getGantry } from "../crane/inventory";
 import { containerLogsBuffer, containerStatsOnce, cpuMemFromStats } from "../host/docker";
+import { dirBytes } from "../host/disk";
 import { decodeDockerLogs, parseLogText, turnFromLog } from "../host/logs";
 import { mcpSnapshot } from "../tools/mcp";
 import type { McpSample, StatSample, TurnSample, UptimeSample, YardSpend } from "../types";
@@ -13,11 +14,15 @@ const TURN_TAIL = 5000;
 const TURN_MAX = 10_000;
 const MCP_MAX = 200;
 const SPEND_SAMPLE_MS = 15_000;
+/** `du` is slower than docker stats — once per five minutes per crane. */
+const DISK_SAMPLE_MS = 5 * 60 * 1000;
 const hostRing = new Map<string, StatSample[]>();
 const turnRing = new Map<string, TurnSample[]>();
 const mcpRing = new Map<string, McpSample[]>();
 const uptimeRing = new Map<string, UptimeSample[]>();
 const hydrated = new Set<string>();
+const diskAt = new Map<string, number>();
+const diskVal = new Map<string, number | null>();
 let spendTimer: ReturnType<typeof setInterval> | null = null;
 
 function inObserveTests(): boolean {
@@ -64,6 +69,11 @@ function ensureHydrated(slug: string): void {
   const mem = recallSamples(slug, { host: HOST_MAX, turns: TURN_MAX, mcp: MCP_MAX, uptime: HOST_MAX });
   if (!hostRing.has(slug) && mem.host.length) {
     hostRing.set(slug, mem.host);
+    const last = [...mem.host].reverse().find((s) => s.diskBytes != null);
+    if (last) {
+      diskVal.set(slug, last.diskBytes ?? null);
+      diskAt.set(slug, last.at);
+    }
   }
   if (!turnRing.has(slug) && mem.turns.length) {
     turnRing.set(slug, mem.turns);
@@ -83,6 +93,8 @@ export function clearObserveRings(): void {
   mcpRing.clear();
   uptimeRing.clear();
   hydrated.clear();
+  diskAt.clear();
+  diskVal.clear();
   clearMachineRing();
 }
 
@@ -95,13 +107,29 @@ export async function sampleHost(slug: string): Promise<StatSample[]> {
   try {
     const raw = (await containerStatsOnce(g.containerId)) as Parameters<typeof cpuMemFromStats>[0];
     const io = cpuMemFromStats(raw);
-    const sample = { at: Date.now(), ...io };
+    const diskBytes = await maybeDiskBytes(slug, g.dataDir);
+    const sample = { at: Date.now(), ...io, diskBytes };
     push(hostRing, slug, sample, HOST_MAX);
     persistHost(slug, sample);
   } catch {
     /* keep last ring */
   }
   return hostRing.get(slug) ?? [];
+}
+
+async function maybeDiskBytes(slug: string, dataDir: string | null): Promise<number | null> {
+  const cached = diskVal.get(slug) ?? null;
+  if (!dataDir) {
+    return cached;
+  }
+  const last = diskAt.get(slug) ?? 0;
+  if (diskVal.has(slug) && Date.now() - last < DISK_SAMPLE_MS) {
+    return cached;
+  }
+  const n = await dirBytes(dataDir);
+  diskAt.set(slug, Date.now());
+  diskVal.set(slug, n ?? cached);
+  return diskVal.get(slug) ?? null;
 }
 
 export async function sampleTurns(slug: string): Promise<TurnSample[]> {

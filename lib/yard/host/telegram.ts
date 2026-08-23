@@ -145,6 +145,85 @@ export function formatCommandLines(cmds: TelegramCommand[]): string {
   return cmds.map((c) => `${c.command} - ${c.description}`).join("\n");
 }
 
+/** Same / menu the harness registers on Telegram start — /new first so it is obvious. */
+export const TELEGRAM_NEW_COMMAND: TelegramCommand = {
+  command: "new",
+  description: "Distill this thread and start fresh",
+};
+
+export const GANTRY_TELEGRAM_COMMANDS: TelegramCommand[] = [
+  TELEGRAM_NEW_COMMAND,
+  { command: "cancel", description: "Cancel the in-flight reply / tool loop" },
+  { command: "status", description: "Uptime, model, history, tools, turns" },
+  { command: "tools", description: "Prefixed tool catalog" },
+  { command: "examples", description: "Capability idea (/examples on|off)" },
+  { command: "perf", description: "Last turns: invocations, tools, batch" },
+  { command: "memstats", description: "Memory row counts and consolidation" },
+  { command: "toolstats", description: "Per-tool call ledger since boot" },
+  { command: "tokens", description: "Prompt token breakdown (estimates)" },
+  { command: "auth", description: "Remote OAuth (URL / paste code)" },
+  { command: "help", description: "List commands" },
+];
+
+/** Keep /new on a custom menu. Empty list → the harness defaults (so the / menu is not a blank). */
+export function ensureTelegramNew(cmds: TelegramCommand[]): TelegramCommand[] {
+  const have = cmds.filter((c) => COMMAND_RE.test(c.command) && c.description.trim());
+  if (have.some((c) => c.command === "new")) {
+    return have;
+  }
+  if (have.length === 0) {
+    return GANTRY_TELEGRAM_COMMANDS;
+  }
+  return [TELEGRAM_NEW_COMMAND, ...have];
+}
+
+export type TelegramChatDest = { chatId: string; threadId?: number };
+
+/** DM chat id is the user id. Group/topic sessions are telegram:chat:user[:thread]. */
+export function telegramChatForUser(
+  userId: string,
+  turns: { userId: string | null; sessionId: string | null; at: number }[],
+): TelegramChatDest {
+  const id = userId.trim();
+  const hits = turns
+    .filter((t) => t.userId?.trim() === id && t.sessionId)
+    .sort((a, b) => b.at - a.at);
+  const parts = (hits[0]?.sessionId ?? "").split(":");
+  if (parts[0] === "telegram" && ID_RE.test(parts[1] ?? "") && parts[2] === id) {
+    const thread = parts[3] && ID_RE.test(parts[3]) ? Number(parts[3]) : 0;
+    return thread > 0 ? { chatId: parts[1], threadId: thread } : { chatId: parts[1] };
+  }
+  return { chatId: id };
+}
+
+const NEW_NUDGE =
+  "Long thread. Tap /new to distill it and start fresh — I keep who I am; this chat's history folds away.";
+
+/** One-tap /new in her DM. Telegram will not let the yard send as her. */
+export async function sendTelegramNewNudge(
+  token: string,
+  dest: TelegramChatDest,
+  post: TelegramPoster = telegramPost,
+): Promise<{ ok: boolean; detail: string }> {
+  if (!ID_RE.test(dest.chatId)) {
+    return { ok: false, detail: "need a numeric Telegram chat id" };
+  }
+  const params: Record<string, unknown> = {
+    chat_id: Number(dest.chatId),
+    text: NEW_NUDGE,
+    reply_markup: {
+      keyboard: [[{ text: "/new" }]],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    },
+  };
+  if (dest.threadId && dest.threadId > 0) {
+    params.message_thread_id = dest.threadId;
+  }
+  const r = await telegramMethod(token, "sendMessage", params, post);
+  return r.ok ? { ok: true, detail: `asked ${dest.chatId} to tap /new` } : { ok: false, detail: r.detail };
+}
+
 export function seenUsers(turns: { userId: string | null; at: number }[]): TelegramSeen[] {
   const map = new Map<string, { turns: number; lastAt: number }>();
   for (const t of turns) {

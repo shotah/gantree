@@ -123,7 +123,13 @@ function migrate(d: DatabaseSync): void {
       other_cpu REAL,
       crane_mem INTEGER,
       console_mem INTEGER,
-      other_mem INTEGER
+      other_mem INTEGER,
+      crane_rx INTEGER,
+      crane_tx INTEGER,
+      console_rx INTEGER,
+      console_tx INTEGER,
+      other_rx INTEGER,
+      other_tx INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_sample_machine_at ON sample_machine(at);
   `);
@@ -137,7 +143,14 @@ function migrate(d: DatabaseSync): void {
   ensureColumn(d, "sample_host", "net_tx_bytes", "INTEGER");
   ensureColumn(d, "sample_host", "blk_read_bytes", "INTEGER");
   ensureColumn(d, "sample_host", "blk_write_bytes", "INTEGER");
+  ensureColumn(d, "sample_host", "disk_bytes", "INTEGER");
   ensureColumn(d, "sample_turn", "duration_ms", "REAL");
+  ensureColumn(d, "sample_machine", "crane_rx", "INTEGER");
+  ensureColumn(d, "sample_machine", "crane_tx", "INTEGER");
+  ensureColumn(d, "sample_machine", "console_rx", "INTEGER");
+  ensureColumn(d, "sample_machine", "console_tx", "INTEGER");
+  ensureColumn(d, "sample_machine", "other_rx", "INTEGER");
+  ensureColumn(d, "sample_machine", "other_tx", "INTEGER");
 }
 
 function ensureColumn(d: DatabaseSync, table: string, name: string, ddl: string): void {

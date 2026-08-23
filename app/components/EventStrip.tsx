@@ -20,6 +20,7 @@ const EVENT_KINDS = [
   "env",
   "allowlist",
   "telegram-profile",
+  "telegram-new",
   "operator-add",
   "operator-remove",
   "operator-access",

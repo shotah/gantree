@@ -1,4 +1,4 @@
-import type { LastTurn, SpendRollup, SpendSlice, SpendTrajectory, TurnSample, YardSpend } from "../types";
+import type { HostSample, LastTurn, SpendRollup, SpendSlice, SpendTrajectory, TurnSample, YardSpend } from "../types";
 
 export const SPEND_WINDOWS = ["1h", "6h", "12h", "24h", "7d", "month", "all"] as const;
 export type SpendWindow = (typeof SPEND_WINDOWS)[number];
@@ -326,6 +326,69 @@ export function fmtBytes(n: number): string {
     return `${Math.round(n / 1024)} KiB`;
   }
   return `${Math.round(n)} B`;
+}
+
+/** Show data-dir size on a card once it is no longer tiny. */
+export const FAT_DATA_DIR_BYTES = 256 * 1024 * 1024;
+
+export function lastDiskBytes(samples: { diskBytes?: number | null }[] | undefined): number | null {
+  if (!samples?.length) {
+    return null;
+  }
+  for (let i = samples.length - 1; i >= 0; i--) {
+    const n = samples[i]?.diskBytes;
+    if (typeof n === "number" && n > 0) {
+      return n;
+    }
+  }
+  return null;
+}
+
+export function fmtBps(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) {
+    return "0 B/s";
+  }
+  return `${fmtBytes(n)}/s`;
+}
+
+const HOST_NET_KEYS = ["craneRx", "craneTx", "consoleRx", "consoleTx", "otherRx", "otherTx"] as const;
+
+export type HostNetRate = { at: number } & Record<(typeof HOST_NET_KEYS)[number], number>;
+
+/** Bytes/sec from consecutive Docker counters. A recreate (counter reset) is idle, not negative. */
+export function netBps(prev: number, cur: number, dtSec: number): number {
+  if (!(dtSec > 0) || !Number.isFinite(prev) || !Number.isFinite(cur)) {
+    return 0;
+  }
+  const delta = cur - prev;
+  if (delta < 0) {
+    return 0;
+  }
+  return delta / dtSec;
+}
+
+export function hostNetRates(spark: HostSample[]): HostNetRate[] {
+  return spark.map((s, i) => {
+    const prev = spark[i - 1];
+    const dt = prev ? (s.at - prev.at) / 1000 : 0;
+    const n = (key: (typeof HOST_NET_KEYS)[number]) => (prev ? netBps(prev[key], s[key], dt) : 0);
+    return {
+      at: s.at,
+      craneRx: n("craneRx"),
+      craneTx: n("craneTx"),
+      consoleRx: n("consoleRx"),
+      consoleTx: n("consoleTx"),
+      otherRx: n("otherRx"),
+      otherTx: n("otherTx"),
+    };
+  });
+}
+
+export function lastHostNetRate(spark: HostSample[]): HostNetRate | null {
+  if (spark.length < 2) {
+    return null;
+  }
+  return hostNetRates(spark).at(-1) ?? null;
 }
 
 /** Docker CPU % is 100 = one full core. */

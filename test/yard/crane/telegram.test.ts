@@ -21,7 +21,7 @@ vi.mock("@/lib/yard/observe/stats", () => ({
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { inspectByName } from "@/lib/yard/host/docker";
 import { peekTurns } from "@/lib/yard/observe/stats";
-import { pushTelegramProfile, saveGantryAllowlist, telegramSnapshot } from "@/lib/yard/crane/telegram";
+import { askTelegramNew, pushTelegramProfile, saveGantryAllowlist, telegramSnapshot } from "@/lib/yard/crane/telegram";
 
 const dirs: string[] = [];
 
@@ -180,5 +180,45 @@ describe("pushTelegramProfile", () => {
     const r = await pushTelegramProfile("kit", { name: "Kit" }, post);
     expect(r.ok).toBe(true);
     expect(methods).toEqual(["setMyName"]);
+  });
+});
+
+describe("askTelegramNew", () => {
+  it("nudge only an allowlisted id", async () => {
+    const path = envFile({ CHANNEL: "telegram", TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_ALLOWED_USERS: "9" });
+    vi.mocked(getGantry).mockResolvedValue(card({ channel: "telegram", envFile: path }));
+    vi.mocked(peekTurns).mockReturnValue([
+      {
+        at: 10,
+        key: "a",
+        rounds: 1,
+        recoveries: 0,
+        estTokens: 1,
+        promptEstTokens: 1,
+        genEstTokens: 0,
+        source: "user",
+        userId: "9",
+        sessionId: "telegram:9:9",
+        outcome: "ok",
+      },
+    ]);
+    const methods: string[] = [];
+    const post: TelegramPoster = async (url) => {
+      methods.push(url.split("/").pop() ?? "");
+      return { status: 200, body: JSON.stringify({ ok: true, result: true }) };
+    };
+    const r = await askTelegramNew("kit", "9", post);
+    expect(r.ok).toBe(true);
+    expect(methods).toEqual(["sendMessage"]);
+    expect(await askTelegramNew("kit", "8", post)).toEqual({ ok: false, detail: "id is not on the allowlist" });
+  });
+
+  it("refuses a missing token or non-telegram crane", async () => {
+    vi.mocked(getGantry).mockResolvedValue(card({ channel: "telegram", envFile: envFile({ CHANNEL: "telegram" }) }));
+    expect(await askTelegramNew("kit", "9")).toEqual({ ok: false, detail: "no TELEGRAM_BOT_TOKEN" });
+    vi.mocked(getGantry).mockResolvedValue(card({ channel: "discord", envFile: envFile({ CHANNEL: "discord" }) }));
+    expect(await askTelegramNew("kit", "9")).toEqual({ ok: false, detail: "not telegram" });
+    vi.mocked(getGantry).mockResolvedValue(null);
+    expect(await askTelegramNew("kit", "9")).toEqual({ ok: false, detail: "not found" });
   });
 });

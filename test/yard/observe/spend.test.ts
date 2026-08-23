@@ -10,7 +10,11 @@ import {
   parseSpendWindow,
   rollupTurns,
   fmtBytes,
+  fmtBps,
   fmtCores,
+  FAT_DATA_DIR_BYTES,
+  lastDiskBytes,
+  hostNetRates,
   hostShare,
   namesFromOperators,
   labelSlices,
@@ -242,7 +246,41 @@ describe("host formatters", () => {
     expect(fmtCores(80)).toBe("0.80");
     expect(fmtCores(110)).toBe("1.1");
     expect(fmtBytes(2 * 1024 ** 3)).toBe("2.0 GiB");
+    expect(fmtBps(0)).toBe("0 B/s");
+    expect(fmtBps(1500)).toBe("1 KiB/s");
     expect(hostShare(110, 400)).toBeCloseTo(0.275);
+    expect(lastDiskBytes([{ diskBytes: 10 }, { diskBytes: 20 }])).toBe(20);
+    expect(lastDiskBytes([{ diskBytes: null }])).toBeNull();
+    expect(FAT_DATA_DIR_BYTES).toBe(256 * 1024 * 1024);
+  });
+});
+
+describe("hostNetRates", () => {
+  it("turns consecutive Docker counters into bytes/sec and clamps a recreate", () => {
+    const a = {
+      at: 1_000,
+      ncpu: 4,
+      memTotalBytes: 1,
+      craneCpu: 0,
+      consoleCpu: 0,
+      otherCpu: 0,
+      craneMem: 0,
+      consoleMem: 0,
+      otherMem: 0,
+      craneRx: 10_000,
+      craneTx: 1_000,
+      consoleRx: 0,
+      consoleTx: 0,
+      otherRx: 0,
+      otherTx: 0,
+    };
+    const b = { ...a, at: 11_000, craneRx: 30_000, craneTx: 3_000 };
+    const reset = { ...a, at: 21_000, craneRx: 50, craneTx: 10 };
+    const rates = hostNetRates([a, b, reset]);
+    expect(rates[0]?.craneRx).toBe(0);
+    expect(rates[1]?.craneRx).toBe(2_000);
+    expect(rates[1]?.craneTx).toBe(200);
+    expect(rates[2]?.craneRx).toBe(0);
   });
 });
 

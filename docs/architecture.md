@@ -86,7 +86,7 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | --- | --- |
 | Alive, image, restart | Docker inspect / compose |
 | Visual logs (per instance) | `docker logs` stream, structured in the UI |
-| CPU / RAM graphs | sampled `docker stats` / cgroup (ring + yard sqlite, 7d cap) |
+| CPU / RAM / net graphs | sampled `docker stats` / cgroup (ring + yard sqlite, 7d cap). Host card rolls containers up by role (agents / dashboard / other). |
 | Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`) — same sqlite so a bounce keeps this billing month (local 1st) |
 | Published vs skipped MCP | `mcp.toml` + `gantry status` JSON (`mcp.servers[].reason`: `no_binary` / `no_key` / `no_oauth`) |
 | Persona, secrets | `PERSONA.md`, `avatar.jpg`, `.env`, `data/` on disk |

@@ -50,16 +50,19 @@ A handful of named pets, not a Kubernetes dashboard. Each card: name, alive
 or not, model, channel, published vs skipped MCP. **Nags** (dead process,
 skipped grant, needs-auth) sit on the card — you do not have to open Tools.
 Click through. Kit’s page is **Kit** — graphs and log, not a mixed fleet dump.
-The host card (CPU bubble) is the Mini itself: metrics, `gantree.toml`, yard
-sqlite, and how this process was started. People (roles) stay on the cog.
+The host card (CPU bubble) is the Mini itself: CPU, RAM, and Docker network
+(rx/tx), `gantree.toml`, yard sqlite, and how this process was started. People
+(roles) stay on the cog.
 
 Build a crane from the board (yard type first: home Mini or cloud VM).
 Telegram: **Create with BotFather** copies `/newbot`, opens the chat, and
 suggests `{slug}_bot` — paste the token it replies with. **Upload a photo** on the crane — it lands in `persona/avatar.jpg`, shows on
 the board, and if the channel is Telegram the bot’s face updates too. On a
 Telegram crane, **Telegram** (below the photo) can `getMe` the token, push
-name / about / the `/` command menu, and edit `TELEGRAM_ALLOWED_USERS` from
-numeric ids (slog `user_id` after someone talks — not `@username`). Grant
+name / about / the `/` command menu (including `/new`), ask an allowlisted
+chatter to tap `/new` (distill, then drop that thread — the yard cannot send
+as her), and edit `TELEGRAM_ALLOWED_USERS` from numeric ids (slog `user_id`
+after someone talks — not `@username`). Grant
 a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 `/tools` is the crane’s mouth; this page is the operator’s.
 
@@ -121,7 +124,7 @@ keeps the host `user` that owns `data/` (never Distroless `65532`),
 
 1. `npm start` (or compose) on the Docker host
 2. Board shows every gantry in `gantree.toml` — alive or not
-3. Click a card: per-instance graphs + visual logs. Host card: Mini metrics + `gantree.toml`
+3. Click a card: per-instance graphs + visual logs. Host card: Mini CPU/RAM/net + `gantree.toml`
 4. Build a crane (yard type → slug → model → channel → profile)
 5. Grant / revoke MCP; files update; container recreates
 6. Watch *that* agent’s log and metrics until the grant is real

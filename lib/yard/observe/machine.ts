@@ -35,6 +35,12 @@ function toSample(snap: HostSnapshot): HostSample {
     craneMem: snap.craneMem,
     consoleMem: snap.consoleMem,
     otherMem: snap.otherMem,
+    craneRx: snap.craneRx,
+    craneTx: snap.craneTx,
+    consoleRx: snap.consoleRx,
+    consoleTx: snap.consoleTx,
+    otherRx: snap.otherRx,
+    otherTx: snap.otherTx,
   };
 }
 
@@ -68,13 +74,20 @@ export async function sampleMachine(craneNames: string[]): Promise<HostSnapshot 
         try {
           const raw = (await containerStatsOnce(w.id)) as Parameters<typeof cpuMemFromStats>[0];
           const io = cpuMemFromStats(raw);
-          return { name: w.name, role, cpuPercent: io.cpuPercent, memBytes: io.memBytes };
+          return {
+            name: w.name,
+            role,
+            cpuPercent: io.cpuPercent,
+            memBytes: io.memBytes,
+            netRxBytes: io.netRxBytes,
+            netTxBytes: io.netTxBytes,
+          };
         } catch {
-          return { name: w.name, role, cpuPercent: null, memBytes: null };
+          return { name: w.name, role, cpuPercent: null, memBytes: null, netRxBytes: null, netTxBytes: null };
         }
       }),
     );
-    const sum = (role: HostProc["role"], key: "cpuPercent" | "memBytes"): number =>
+    const sum = (role: HostProc["role"], key: "cpuPercent" | "memBytes" | "netRxBytes" | "netTxBytes"): number =>
       procs.filter((p) => p.role === role).reduce((n, p) => n + (p[key] ?? 0), 0);
     const snap: HostSnapshot = {
       at: Date.now(),
@@ -88,6 +101,12 @@ export async function sampleMachine(craneNames: string[]): Promise<HostSnapshot 
       craneMem: sum("crane", "memBytes"),
       consoleMem: sum("console", "memBytes"),
       otherMem: sum("other", "memBytes"),
+      craneRx: sum("crane", "netRxBytes"),
+      craneTx: sum("crane", "netTxBytes"),
+      consoleRx: sum("console", "netRxBytes"),
+      consoleTx: sum("console", "netTxBytes"),
+      otherRx: sum("other", "netRxBytes"),
+      otherTx: sum("other", "netTxBytes"),
     };
     live = snap;
     const row = toSample(snap);

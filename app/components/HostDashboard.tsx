@@ -137,10 +137,10 @@ export function HostDashboard() {
         title="Metrics"
         persistKey={craneFoldKey("host", "metrics")}
         defaultOpen
-        hint="Mini CPU and RAM vs agents and this dashboard"
+        hint="Mini CPU, RAM, and net vs agents and this dashboard"
         aside={<SpendScope window={spendWindow} onWindow={setSpendWindow} />}
       >
-        {live ? <HostMeters live={live} /> : <p className="text-sm text-zinc-500">{meta?.dockerError || "Sampling Docker…"}</p>}
+        {live ? <HostMeters live={live} spark={spark} /> : <p className="text-sm text-zinc-500">{meta?.dockerError || "Sampling Docker…"}</p>}
         <HostCharts spark={spark} since={since} now={Date.now()} />
         <p className="mt-2 text-[11px] text-zinc-600">Window {fmtSpendWindow(spendWindow)}. Host samples cap at 7 days.</p>
       </DashFold>

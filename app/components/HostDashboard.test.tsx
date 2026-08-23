@@ -31,7 +31,13 @@ const live: HostSnapshot = {
   craneMem: 2 * 1024 ** 3,
   consoleMem: 200 * 1024 ** 2,
   otherMem: 50 * 1024 ** 2,
-  procs: [{ name: "gantry-tim", role: "crane", cpuPercent: 40, memBytes: 800 * 1024 ** 2 }],
+  craneRx: 5 * 1024 ** 2,
+  craneTx: 1024 ** 2,
+  consoleRx: 200_000,
+  consoleTx: 50_000,
+  otherRx: 1024 ** 2,
+  otherTx: 100_000,
+  procs: [{ name: "gantry-tim", role: "crane", cpuPercent: 40, memBytes: 800 * 1024 ** 2, netRxBytes: 5 * 1024 ** 2, netTxBytes: 1024 ** 2 }],
 };
 
 function json(data: unknown): Promise<Response> {
@@ -60,7 +66,7 @@ beforeEach(() => {
     }
     if (u.startsWith("/api/host")) {
       return json({
-        host: { live, spark: [live, { ...live, at: live.at + 15_000 }] },
+        host: { live, spark: [live, { ...live, at: live.at + 15_000, craneRx: live.craneRx + 150_000, craneTx: live.craneTx + 40_000 }] },
         dockerError: null,
         yard: "home",
         source: "gantree.toml",
@@ -93,6 +99,7 @@ describe("HostDashboard", () => {
   it("mirrors the crane page: metrics, inventory, sqlite", async () => {
     render(<HostDashboard />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "paddleboy" })).toBeTruthy());
+    expect(screen.getByText("NET")).toBeTruthy();
     expect(screen.getByText(/16\.0 GiB · home/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "← shipping yard" })).toHaveProperty("href", expect.stringMatching(/\/$/));
 

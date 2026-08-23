@@ -5,6 +5,7 @@ import {
   filterSamples,
   fmtEstTokens,
   fmtSpendBucketTitle,
+  hostNetRates,
   SOURCE_ORDER,
   sourceChartSeries,
   tokenChartSeries,
@@ -101,6 +102,7 @@ export function MetricCharts({
     tx: mib(s.netTxBytes),
     blkRead: mib(s.blkReadBytes),
     blkWrite: mib(s.blkWriteBytes),
+    disk: mib(s.diskBytes),
   }));
   const tokenRows = tokenPts.map((s) => ({
     t: fmtTick(s.at, tokenSpan, bucket),
@@ -140,6 +142,7 @@ export function MetricCharts({
   const tokenLine = bucket === "cumulative" ? "stepAfter" : "monotone";
   const hasNet = hostRows.some((r) => r.rx != null || r.tx != null);
   const hasBlk = hostRows.some((r) => r.blkRead != null || r.blkWrite != null);
+  const hasDisk = hostRows.some((r) => r.disk != null);
   const hasDuration = turnRows.some((r) => r.durationS != null);
   const hasSource = turnsIn.some((t) => t.source);
   const sourceKeys = SOURCE_ORDER.filter((k) => sourceRows.some((r) => r[k] > 0));
@@ -164,7 +167,11 @@ export function MetricCharts({
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
-      <ChartFrame title="Memory (MiB)" empty={hostRows.length === 0}>
+      <ChartFrame
+        title="Memory (MiB)"
+        empty={hostRows.length === 0}
+        caption="cgroup RSS: gantry + MCP children, not the image. A fat thread is tokens; extra grants stay until you revoke."
+      >
         <ResponsiveContainer>
           <AreaChart data={hostRows}>
             <CartesianGrid stroke="#27272a" />
@@ -212,6 +219,23 @@ export function MetricCharts({
             </ResponsiveContainer>
           </ChartFrame>
         </>
+      ) : null}
+      {hasDisk ? (
+        <ChartFrame
+          title="Data dir (MiB)"
+          empty={false}
+          caption="du of data_dir · every few minutes, not per board load"
+        >
+          <ResponsiveContainer>
+            <AreaChart data={hostRows}>
+              <CartesianGrid stroke="#27272a" />
+              <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+              <Tooltip contentStyle={tooltip} />
+              <Area dataKey="disk" name="data dir" type="monotone" stroke="#a3e635" fill="#a3e63522" connectNulls />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartFrame>
       ) : null}
       <ChartFrame
         title={fmtSpendBucketTitle(bucket)}
@@ -333,7 +357,7 @@ export function HostCharts({
   since: number | null;
   now: number;
 }) {
-  const rows = filterSamples(spark, since, now).map((s) => {
+  const cpuRows = filterSamples(spark, since, now).map((s) => {
     const cap = s.ncpu * 100;
     const span = cap > 0 ? cap : 1;
     return {
@@ -346,12 +370,23 @@ export function HostCharts({
       otherGiB: Number((s.otherMem / 1024 ** 3).toFixed(3)),
     };
   });
+  const kib = (n: number) => Number((n / 1024).toFixed(2));
+  const netRows = filterSamples(hostNetRates(spark), since, now).map((s) => ({
+    t: fmtTick(s.at, spanOf(spark), "hour"),
+    agentsRx: kib(s.craneRx),
+    dashboardRx: kib(s.consoleRx),
+    otherRx: kib(s.otherRx),
+    agentsTx: kib(s.craneTx),
+    dashboardTx: kib(s.consoleTx),
+    otherTx: kib(s.otherTx),
+  }));
+  const hasRate = spark.length >= 2;
   const tooltip = { background: "#18181b", border: "1px solid #3f3f46" };
   return (
     <div className="mt-3 grid gap-3 md:grid-cols-2" data-shot="host-metrics">
-      <ChartFrame title="CPU % of host" empty={rows.length === 0} caption="Docker share stacked · leftover is the OS">
+      <ChartFrame title="CPU % of host" empty={cpuRows.length === 0} caption="Docker share stacked · leftover is the OS">
         <ResponsiveContainer>
-          <AreaChart data={rows}>
+          <AreaChart data={cpuRows}>
             <CartesianGrid stroke="#27272a" />
             <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
             <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
@@ -362,9 +397,9 @@ export function HostCharts({
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
-      <ChartFrame title="RAM (GiB)" empty={rows.length === 0} caption="agents / dashboard / other in Docker">
+      <ChartFrame title="RAM (GiB)" empty={cpuRows.length === 0} caption="agents / dashboard / other in Docker">
         <ResponsiveContainer>
-          <AreaChart data={rows}>
+          <AreaChart data={cpuRows}>
             <CartesianGrid stroke="#27272a" />
             <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
             <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
@@ -372,6 +407,42 @@ export function HostCharts({
             <Area dataKey="agentsGiB" name="agents" type="monotone" stackId="mem" stroke="#f59e0b" fill="#f59e0b33" />
             <Area dataKey="dashboardGiB" name="dashboard" type="monotone" stackId="mem" stroke="#38bdf8" fill="#38bdf833" />
             <Area dataKey="otherGiB" name="other" type="monotone" stackId="mem" stroke="#71717a" fill="#71717a33" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+      <ChartFrame
+        title="Network rx (KiB/s)"
+        empty={!hasRate}
+        hint="need two samples for a rate — leave this page open"
+        caption="Docker rx stacked · leftover is the host NIC"
+      >
+        <ResponsiveContainer>
+          <AreaChart data={netRows}>
+            <CartesianGrid stroke="#27272a" />
+            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+            <Tooltip contentStyle={tooltip} />
+            <Area dataKey="agentsRx" name="agents" type="monotone" stackId="rx" stroke="#f59e0b" fill="#f59e0b33" />
+            <Area dataKey="dashboardRx" name="dashboard" type="monotone" stackId="rx" stroke="#38bdf8" fill="#38bdf833" />
+            <Area dataKey="otherRx" name="other" type="monotone" stackId="rx" stroke="#71717a" fill="#71717a33" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFrame>
+      <ChartFrame
+        title="Network tx (KiB/s)"
+        empty={!hasRate}
+        hint="need two samples for a rate — leave this page open"
+        caption="Docker tx stacked · Telegram and LLM calls show up here"
+      >
+        <ResponsiveContainer>
+          <AreaChart data={netRows}>
+            <CartesianGrid stroke="#27272a" />
+            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
+            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+            <Tooltip contentStyle={tooltip} />
+            <Area dataKey="agentsTx" name="agents" type="monotone" stackId="tx" stroke="#f59e0b" fill="#f59e0b33" />
+            <Area dataKey="dashboardTx" name="dashboard" type="monotone" stackId="tx" stroke="#38bdf8" fill="#38bdf833" />
+            <Area dataKey="otherTx" name="other" type="monotone" stackId="tx" stroke="#71717a" fill="#71717a33" />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>

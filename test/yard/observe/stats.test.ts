@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { card } from "../card";
@@ -82,6 +82,16 @@ describe("sampleHost", () => {
     vi.mocked(containerStatsOnce).mockRejectedValue(new Error("busy"));
     const kept = await sampleHost("host-ok");
     expect(kept).toHaveLength(1);
+  });
+
+  it("records data-dir bytes when the crane has a data_dir", async () => {
+    const dataDir = join(dirs[0]!, "data");
+    mkdirSync(dataDir);
+    writeFileSync(join(dataDir, "gantry.db"), Buffer.alloc(200));
+    vi.mocked(getGantry).mockResolvedValue(card({ slug: "host-disk", dataDir }));
+    vi.mocked(containerStatsOnce).mockResolvedValue(statsRaw);
+    const rows = await sampleHost("host-disk");
+    expect(rows[0]?.diskBytes).toBeGreaterThanOrEqual(200);
   });
 });
 

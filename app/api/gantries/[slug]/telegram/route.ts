@@ -1,6 +1,6 @@
 import { denyUnlessCraneMutate, denyUnlessCraneRead, recordFromRequest, withDoor } from "@/lib/yard/door";
-import { pushTelegramProfile, saveGantryAllowlist, telegramSnapshot } from "@/lib/yard/crane/telegram";
-import { parseCommandLines, type TelegramCommand } from "@/lib/yard/host/telegram";
+import { askTelegramNew, pushTelegramProfile, saveGantryAllowlist, telegramSnapshot } from "@/lib/yard/crane/telegram";
+import { ensureTelegramNew, parseCommandLines, type TelegramCommand } from "@/lib/yard/host/telegram";
 
 export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
@@ -28,16 +28,26 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug:
     shortDescription?: string;
     commands?: TelegramCommand[] | string;
     ids?: string[] | string;
+    id?: string;
   };
   if (body.op === "profile") {
+    const cmds = commandsOf(body.commands);
     const result = await pushTelegramProfile(slug, {
       name: typeof body.name === "string" ? body.name : undefined,
       description: typeof body.description === "string" ? body.description : undefined,
       shortDescription: typeof body.shortDescription === "string" ? body.shortDescription : undefined,
-      commands: commandsOf(body.commands),
+      commands: cmds === undefined ? undefined : cmds.length === 0 ? cmds : ensureTelegramNew(cmds),
     });
     if (result.ok) {
       recordFromRequest(req, "telegram-profile", slug, result.detail);
+    }
+    return Response.json(result, { status: result.ok ? 200 : 400 });
+  }
+  if (body.op === "new") {
+    const id = typeof body.id === "string" ? body.id : Array.isArray(body.ids) ? (body.ids[0] ?? "") : "";
+    const result = await askTelegramNew(slug, id);
+    if (result.ok) {
+      recordFromRequest(req, "telegram-new", slug, result.detail);
     }
     return Response.json(result, { status: result.ok ? 200 : 400 });
   }
@@ -49,7 +59,7 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug:
     }
     return Response.json(result, { status: result.ok ? 200 : 400 });
   }
-  return Response.json({ error: "op must be profile|allowlist" }, { status: 400 });
+  return Response.json({ error: "op must be profile|allowlist|new" }, { status: 400 });
 });
 
 function commandsOf(raw: TelegramCommand[] | string | undefined): TelegramCommand[] | undefined {

@@ -713,10 +713,10 @@ still the settings cog** (people only). A first slice of M1/M2/M4
 is in: Profile chat ids label spend, Telegram can queue an
 operator id onto a crane allowlist, Docker net/blkio and slog
 `duration_ms` chart when present, turns-by-source when slog has
-`source`, last-turn age + recovery spark on the board, the event
-strip filters by kind and downloads jsonl. Still missing: yard
-`[observe]` prefs, `du` on data-dir, compare overlay, backup
-list/restore, retire.
+`source`, last-turn age + recovery spark on the board, data-dir
+`du` (chart + fat-card number), the event strip filters by kind
+and downloads jsonl. Still missing: yard `[observe]` prefs,
+compare overlay, backup list/restore, retire.
 
 Push into `ai-gantry` only when every consumer benefits (same rule
 as v1): stable `turn perf` fields for duration and tool
@@ -783,7 +783,7 @@ Richer graphs. Same pull. No new harness port.
 - [x] Parse net I/O + blkio from the stats blob `cpuMemFromStats`
       already receives. Sample into sqlite next to CPU/RAM.
       Missing cgroup fields stay empty.
-- [ ] Data-dir bytes (`du` on `data_dir`, periodic, not per-request
+- [x] Data-dir bytes (`du` on `data_dir`, periodic, not per-request
       on the board). Chart + a number on the card when it’s fat.
 - [ ] Retain respects M0. Don’t keep 30d of 1Hz CPU on a Mini by
       accident — host cadence stays sparse.
