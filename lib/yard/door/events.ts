@@ -39,10 +39,12 @@ export function recordFromRequest(req: Request, kind: string, slug?: string | nu
   });
 }
 
-export function listYardEvents(opts?: { slug?: string; limit?: number }): YardEvent[] {
+export function listYardEvents(opts?: { slug?: string; slugs?: string[]; limit?: number }): YardEvent[] {
   const limit = Math.min(Math.max(opts?.limit ?? 40, 1), 200);
-  const rows = opts?.slug
-    ? (yardDb()
+  const slugs = opts?.slugs?.filter(Boolean) ?? [];
+  if (opts?.slug) {
+    return mapEvents(
+      yardDb()
         .prepare(
           `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
            FROM yard_event e
@@ -51,16 +53,38 @@ export function listYardEvents(opts?: { slug?: string; limit?: number }): YardEv
            ORDER BY e.id DESC
            LIMIT ?`,
         )
-        .all(opts.slug, limit) as EventRow[])
-    : (yardDb()
+        .all(opts.slug, limit) as EventRow[],
+    );
+  }
+  if (slugs.length > 0) {
+    const placeholders = slugs.map(() => "?").join(",");
+    return mapEvents(
+      yardDb()
         .prepare(
           `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
            FROM yard_event e
            LEFT JOIN operator o ON o.id = e.operator_id
+           WHERE e.slug IN (${placeholders})
            ORDER BY e.id DESC
            LIMIT ?`,
         )
-        .all(limit) as EventRow[]);
+        .all(...slugs, limit) as EventRow[],
+    );
+  }
+  return mapEvents(
+    yardDb()
+      .prepare(
+        `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
+         FROM yard_event e
+         LEFT JOIN operator o ON o.id = e.operator_id
+         ORDER BY e.id DESC
+         LIMIT ?`,
+      )
+      .all(limit) as EventRow[],
+  );
+}
+
+function mapEvents(rows: EventRow[]): YardEvent[] {
   return rows.map(fromRow);
 }
 

@@ -6,6 +6,7 @@ import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard
 import { fmtEstTokens, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BuildCrane } from "./BuildCrane";
 import { CraneAvatar } from "./CraneAvatar";
+import { useDoor } from "./DoorShell";
 import { EventStrip } from "./EventStrip";
 import { SpendBoard } from "./SpendBoard";
 import { yardFetch } from "../lib/yardFetch";
@@ -60,9 +61,11 @@ function Spark({ samples }: { samples: StatSample[] | undefined }) {
 }
 
 export function YardBoard() {
+  const { operator } = useDoor();
   const [yard, setYard] = useState<YardInventory | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [spendWindow, setSpendWindow] = useState<SpendWindow>("24h");
+  const eventsSlug = operator?.role === "admin" || (operator?.cranes.length ?? 0) !== 1 ? undefined : operator?.cranes[0];
 
   const load = useCallback(() => {
     yardFetch(`/api/gantries?window=${spendWindow}`)
@@ -177,7 +180,7 @@ export function YardBoard() {
         ))}
       </div>
 
-      <EventStrip />
+      <EventStrip slug={eventsSlug} />
     </section>
   );
 }

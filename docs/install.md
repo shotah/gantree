@@ -22,7 +22,7 @@ cp gantree.toml.example gantree.toml
 npm install
 npm run build
 npm start          # http://127.0.0.1:3000 — first boot is /setup
-# or Hub / compose (LAN :80 → container :3000):
+# or Hub / compose (LAN :80 → nginx → container :3000):
 docker compose up -d
 ```
 
@@ -43,9 +43,11 @@ in `.env` ([.env.example](../.env.example)). Loopback only — compose
 Sessions live in `gantree.db` next to the checkout (compose: `var/gantree.db`).
 That file is the yard’s sqlite — not a crane’s `data/gantry.db`. Forgot the
 passphrase: delete it and run `/setup` again. Add a partner from **Settings**
-(the cog) after login (admin / user on one crane / readonly). Your photo and
+(the cog) after login (admin / user or readonly on assigned cranes). Your photo and
 passphrase are **Profile**. People walk: [operators.md](operators.md). What
-the door checks: [security.md](security.md).
+the door checks: [security.md](security.md). A partner who only updates
+keys is **user** on their crane; they hit compose `:80` (nginx), not
+gantree `:3000`.
 
 ## Cloud (your GCE / EC2)
 
@@ -62,15 +64,20 @@ cp gantree.toml.example gantree.toml
 GANTREE_LISTEN=127.0.0.1 docker compose up -d
 ```
 
-On a cloud VM pin the publish to loopback (`GANTREE_LISTEN=127.0.0.1`).
-The process inside still listens on `0.0.0.0` so the port map works; that
-is not a public load balancer. Do not open a cloud firewall port to the world.
+On a cloud VM pin the nginx publish to loopback (`GANTREE_LISTEN=127.0.0.1`).
+Gantree still listens on `0.0.0.0:3000` *inside* the compose network so
+nginx can reach it; that is not a public load balancer. Do not open
+a cloud firewall port to the world.
 
 Reach it from a laptop:
 
 **Tailscale** (preferred): install Tailscale on the VM, then Serve or an
-SSH tunnel to `127.0.0.1:80` (compose). Do not open a cloud firewall port to the
-world.
+SSH tunnel to `127.0.0.1:80` (nginx). Do not open a cloud firewall port
+to the world.
+
+```bash
+ssh -N -L 3000:127.0.0.1:80 user@host
+```
 
 **Cloudflare Tunnel** (console only — never the agents):
 

@@ -162,11 +162,6 @@ export function kickYardSamples(slugs: string[]): Record<string, StatSample[]> {
   for (const slug of slugs) {
     out[slug] = peekHost(slug);
   }
-  for (const [slug, samples] of hostRing) {
-    if (!(slug in out)) {
-      out[slug] = samples;
-    }
-  }
   return out;
 }
 

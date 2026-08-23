@@ -6,7 +6,7 @@ import {
   getOperator,
   listOperators,
   operatorFromRequest,
-  parseCraneSlug,
+  parseCraneSlugs,
   parseRole,
   readCookie,
   recordFromRequest,
@@ -47,6 +47,7 @@ export const POST = withDoor(async (req: Request) => {
     description?: string;
     role?: OperatorRole;
     crane?: string | null;
+    cranes?: unknown;
     channels?: OperatorChannels;
   };
   if (body.op === "profile") {
@@ -91,11 +92,11 @@ export const POST = withDoor(async (req: Request) => {
     if (!role) {
       return Response.json({ error: "role must be admin, user, or readonly", status: 400 });
     }
-    const slug = parseCraneSlug(body.crane);
-    if (!slug.ok) {
-      return Response.json({ error: slug.error }, { status: 400 });
+    const slugs = parseCraneSlugs(body.cranes ?? body.crane);
+    if (!slugs.ok) {
+      return Response.json({ error: slugs.error }, { status: 400 });
     }
-    const result = addOperator(body.name, body.passphrase, role, slug.crane);
+    const result = addOperator(body.name, body.passphrase, role, slugs.cranes);
     if (!result.ok) {
       return Response.json({ error: result.error }, { status: result.status });
     }
@@ -122,11 +123,11 @@ export const POST = withDoor(async (req: Request) => {
     if (!role) {
       return Response.json({ error: "role must be admin, user, or readonly" }, { status: 400 });
     }
-    const slug = parseCraneSlug(body.crane);
-    if (!slug.ok) {
-      return Response.json({ error: slug.error }, { status: 400 });
+    const slugs = parseCraneSlugs(body.cranes ?? body.crane);
+    if (!slugs.ok) {
+      return Response.json({ error: slugs.error }, { status: 400 });
     }
-    const result = setOperatorAccess(body.id, role, slug.crane);
+    const result = setOperatorAccess(body.id, role, slugs.cranes);
     if (!result.ok) {
       return Response.json({ error: result.error }, { status: result.status });
     }

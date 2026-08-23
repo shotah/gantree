@@ -1,6 +1,9 @@
 # Console on the Docker host. Vinext listens on :3000 *inside* the container.
-# Host publish is :80. Home LAN: http://<lan-ip>/
+# Host :80 is nginx. Gantree is not published.
+# Partner (user on one crane) updates keys through this, not :3000.
+# Home LAN: http://<lan-ip>/
 # Cloud VM: GANTREE_LISTEN=127.0.0.1 — do not open a WAN firewall port.
+#   ssh -N -L 3000:127.0.0.1:80 user@host
 #
 # Run compose from this checkout so PWD is the yard (or set GANTREE_HOST_ROOT).
 # Recreate bind-mounts are host paths; without GANTREE_HOST_ROOT they become
@@ -26,8 +29,8 @@ services:
       GANTREE_ROOT: /app
       GANTREE_HOST_ROOT: ${GANTREE_HOST_ROOT:-${PWD}}
       GANTREE_DB: /app/var/gantree.db
-    ports:
-      - "${GANTREE_LISTEN:-0.0.0.0}:80:3000"
+    expose:
+      - "3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./gantree.toml:/app/gantree.toml
@@ -38,4 +41,16 @@ services:
       # container, and recreate bind-mounts them from the host. Uncomment
       # and match your inventory.
       # - /opt/agents:/opt/agents
+    restart: unless-stopped
+
+  # nginx:alpine. Drops php/wordpress/dotfile probes. Login is the door.
+  # PUT + 6m body for env / avatars. Buffering off for log SSE.
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - gantree
+    ports:
+      - "${GANTREE_LISTEN:-0.0.0.0}:80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped

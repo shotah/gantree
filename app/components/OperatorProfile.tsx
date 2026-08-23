@@ -23,7 +23,7 @@ type OperatorRow = {
   email: string;
   description: string;
   role: OperatorRole;
-  crane: string | null;
+  cranes: string[];
   channels: OperatorChannels;
   avatarRev: number | null;
   createdAt: string;
@@ -133,7 +133,7 @@ export function OperatorProfile() {
             <>
               {" "}
               — you are <span className="text-zinc-300">{you.role}</span>
-              {you.role === "user" && you.crane ? ` on ${you.crane}` : ""}.
+              {you.cranes?.length ? ` on ${you.cranes.join(", ")}` : ""}.
             </>
           ) : null}
         </p>

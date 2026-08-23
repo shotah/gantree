@@ -71,12 +71,15 @@ or remove.
 | Role | Access |
 | --- | --- |
 | **admin** | Every crane. Operators. Build. |
-| **user** | One crane (grant, recreate, env). Not operators, not other cranes. |
-| **readonly** | Look (board, logs, doctor). Not touch. |
+| **user** | Assigned cranes (card, details, grant, recreate, env). Not operators, not other cranes. |
+| **readonly** | Assigned cranes — look (card, logs, doctor). Not touch. Not other cranes. |
 
-Setup always creates an admin. A **user** add requires a crane — a user
-without one is a misconfig and sees an empty board. Do not share an
-admin login the way you would share a read-only dashboard.
+Setup always creates an admin. **user** and **readonly** need at least
+one crane — without any they see an empty board. Tick more than one
+when a person covers two bots. Only **admin** sees every crane.
+Do not share an admin login the way you would share a read-only
+dashboard. A partner who only pastes keys is **user** on their crane(s).
+Compose: they hit nginx `:80`, not gantree `:3000`.
 
 Add / remove / change access are **confirm-scary** (checkbox), like a
 token push. You cannot delete the last operator, or the last admin, or
@@ -92,7 +95,7 @@ demote the last admin.
 | `too many attempts, try later` | Wait out the 15-minute window. 8 fails on one name, or 40 across all names, lock that window. |
 | `opening the door…` and it never opens | Cookie missing or dead. Hard-refresh `/login`. If the process bounced mid-login, sign in again. |
 | Cog does nothing useful / no add form | You are `user` or `readonly`. An admin assigns roles. Photo and passphrase are still on Profile. |
-| Logged in as **user**, board is empty | No crane on that row. Admin: Settings → **role** → pick the crane. |
+| Logged in as **user** or **readonly**, board is empty | No crane on that row. Admin: Settings → **role** → tick the crane(s). |
 | Cannot remove kit / cannot demote bob | Last operator, or last admin. Add another admin first. |
 | `/login` never appears in `npm run dev` | `GANTREE_DEV` is on and loopback. Unset it to photograph or test the door. |
 | Name exists, passphrase rejected at auto-login | `GANTREE_DEV_PASSPHRASE` must match the hash already in sqlite — or pick a new operator name. |

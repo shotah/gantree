@@ -12,7 +12,7 @@ export type DoorOperator = {
   name: string;
   displayName: string;
   role: OperatorRole;
-  crane: string | null;
+  cranes: string[];
   avatarRev: number | null;
 };
 

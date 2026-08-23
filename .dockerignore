@@ -7,5 +7,6 @@ dist
 /gantries
 gantree.toml
 backups
+nginx
 *.md
 !README.md

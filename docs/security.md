@@ -29,13 +29,15 @@ each — not a permission matrix:
 | Role | Access |
 | --- | --- |
 | **admin** | Every crane. Operators. Build. |
-| **user** | One crane (grant, recreate, env). Not operators, not other cranes. |
-| **readonly** | Look at the yard (board, logs, doctor). Not touch. |
+| **user** | Assigned cranes (card, details, grant, recreate, env). Not operators, not other cranes. |
+| **readonly** | Assigned cranes — look (card, logs, doctor). Not touch. Not other cranes. |
 
 Setup always creates an **admin**. Assign the rest from **Settings** (the
 cog). Profile (name, photo, passphrase) is a different page — click your
-name. A user without a crane is a misconfig — the add form requires one.
-Do not share an admin login the way you would share a read-only dashboard.
+name. A user or readonly without a crane is a misconfig — the add form
+requires at least one. Tick several when one person covers more than one
+bot. Only admin sees every crane. Do not share an admin login
+the way you would share a read-only dashboard.
 
 ---
 
@@ -45,13 +47,16 @@ Do not share an admin login the way you would share a read-only dashboard.
 | --- | --- |
 | `npm start` (default) | `127.0.0.1:3000` only |
 | `HOST=0.0.0.0 npm start` | that host’s interfaces, `:3000` |
-| compose (default) | host `:80` on `0.0.0.0` → container `:3000` |
-| compose + `GANTREE_LISTEN=127.0.0.1` | host loopback `:80` only |
+| compose (default) | host `:80` (nginx) on `0.0.0.0` → gantree `:3000` (unpublished) |
+| compose + `GANTREE_LISTEN=127.0.0.1` | host loopback `:80` (nginx) only |
 
 `npm start` already sets loopback. Compose sets `HOST=0.0.0.0` *inside*
-the container so the port map works; that is not “open the cloud
+the container so nginx can reach it; that is not “open the cloud
 firewall.” On a VM use `GANTREE_LISTEN=127.0.0.1` and Tailscale or a
-tunnel. Do not WAN-forward `:3000` / `:80` and hope login is enough.
+tunnel to host `:80` (nginx). A partner who only needs keys is a **user**
+on their crane — they hit nginx, not gantree `:3000`. Do not WAN-forward
+`:3000` / `:80` and hope login is enough. A flood can still knock nginx
+over; dropping php/wordpress probes is not a WAN license.
 
 If `HOST` is `0.0.0.0` / `::` and there are **no** operators yet, the
 process warns once: only `/setup` is live. Create the first operator
@@ -174,9 +179,10 @@ access change / passphrase change (checkbox must be JSON `true`, not
 - Add uses the same passphrase rules as setup.
 - Names are unique ignoring case.
 - Hashes never round-trip on `GET /api/operators`.
-- Role lives on the operator row (`admin` / `user` / `readonly`). User also
-  has `crane_slug`. Profile edits (name, email) cannot change role — that
-  is Settings.
+- Role lives on the operator row (`admin` / `user` / `readonly`). User and
+  readonly also have `crane_slug` (JSON list of slugs; a leftover single
+  slug still reads). Profile edits (name, email) cannot
+  change role — that is Settings. Only admin lists every crane.
 - Non-admins `GET /api/operators` see only themselves. Mutations other
   than own passphrase / profile are 403.
 
@@ -228,7 +234,7 @@ console does not become the IdP.
 
 - DDoS / slowloris / filling the disk. Login backoff is anti-guess, not
   anti-flood. In-memory; restart resets the counters.
-- A WAN-open console. Login does not make that a good idea.
+- A WAN-open console. Login and nginx in front do not make that a good idea.
 - SSO, OIDC, email, invite links, “forgot password.”
 - HaveIBeenPwned / zxcvbn. Offline denylist + structure checks.
 - CSRF tokens. Cookie is `SameSite=Lax`, APIs are same-origin.
@@ -242,8 +248,10 @@ console does not become the IdP.
 
 1. First boot: `/setup` with a real passphrase before the LAN URL is a
    habit for anyone else on the network.
-2. Home LAN: compose `:80` is OK *behind* login. Cloud: `GANTREE_LISTEN=127.0.0.1`
-   + Tailscale or tunnel. No cloud firewall hole.
+2. Home LAN: compose `:80` (nginx) is OK *behind* login. Cloud:
+   `GANTREE_LISTEN=127.0.0.1` + Tailscale or tunnel to `:80`. No cloud
+   firewall hole. Port-forward nginx, not gantree `:3000`. Partner keys:
+   **user** on that crane, not a shared admin login.
 3. Never set `GANTREE_DEV` in compose.
 4. Forgot passphrase → delete yard sqlite → setup. There is no other
    recovery.

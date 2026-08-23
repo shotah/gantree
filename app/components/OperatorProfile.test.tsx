@@ -18,7 +18,7 @@ describe("OperatorProfile", () => {
   it("shows you and passphrase, not the operator list", async () => {
     vi.mocked(yardFetch).mockResolvedValue({
       json: async () => ({
-        operators: [{ id: "1", name: "kit", displayName: "Kit", role: "admin", crane: null, createdAt: "now" }],
+        operators: [{ id: "1", name: "kit", displayName: "Kit", role: "admin", cranes: [], createdAt: "now" }],
         you: {
           id: "1",
           name: "kit",
@@ -26,7 +26,7 @@ describe("OperatorProfile", () => {
           email: "",
           description: "",
           role: "admin",
-          crane: null,
+          cranes: [],
           channels: { telegram: [], slack: [], discord: [] },
           avatarRev: null,
           createdAt: "now",

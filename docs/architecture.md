@@ -20,6 +20,9 @@ Harness-side design note (nested checkout, **dev only**):
      |
      |  localhost | Tailscale | Cloudflare Tunnel (console only)
      v
+[ nginx — compose :80 ]     (compose only; npm start has no sidecar)
+     |
+     v
 [ gantree  — Vinext on Node, on the Docker host ]
      |
      |  Docker API + files on disk
@@ -181,7 +184,7 @@ the console image (same Hub secrets as the harness).
 
 **v2:** a door on that process (setup + login + session on every API
 and log SSE), a handful of operators in yard `gantree.db` (independent
-of each crane’s `gantry.db`; admin / user-on-one-crane / readonly), board nags for skipped MCP / needs-auth,
+of each crane’s `gantry.db`; admin sees every crane, user / readonly their assigned), board nags for skipped MCP / needs-auth,
 sqlite so graphs survive a bounce, audit of who mutated what. What that
 door checks: [security.md](security.md). Last walk:
 the same `app/` on Workers as a portal — host keeps `docker.sock`,

@@ -446,7 +446,7 @@ v1 gates still hold. Deltas:
 | Surface | What “done” means |
 | --- | --- |
 | Login | Setup first operator; login; logout; session on every API + SSE |
-| Operators | Add / remove / roles (`admin` / `user` on one crane / `readonly`). Cannot delete the last operator or last admin. |
+| Operators | Add / remove / roles (`admin` sees every crane; `user` / `readonly` one). Cannot delete the last operator or last admin. |
 | Bind | LAN `:3000` is an explicit choice *behind* login; cloud still loopback |
 | Board nags | Skipped MCP / needs-auth / dead token visible on the yard home |
 | Yard memory | sqlite event log; graphs survive restart; inventory still toml |
@@ -518,12 +518,13 @@ You and a partner. Not a user-admin product.
       push. Hashes never round-trip.
 - [x] Cannot delete the last operator. Cannot remove yourself if
       you are the last.
-- [x] Three roles: `admin` (everything), `user` (one crane), `readonly`
-      (look, not touch). Settings (cog) assigns them. Last admin cannot
-      be demoted or deleted.
+- [x] Three roles: `admin` (everything), `user` / `readonly` (assigned
+      cranes; readonly look-only). Only admin sees every crane.
+      Settings (cog) assigns them. Last admin cannot be demoted or deleted.
 - [ ] **Walk:** add a partner. They log in on a phone. Same yard.
-      Remove them. Their next request is 401. Add a readonly; they see
-      Kit and cannot recreate.
+      Remove them. Their next request is 401. Add a user on Kit; they
+      see only Kit’s card. Add a readonly on Kit; they see Kit and
+      cannot recreate. They cannot open another crane.
 
 ---
 

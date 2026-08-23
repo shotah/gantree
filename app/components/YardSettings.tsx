@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { OPERATOR_ROLES, ROLE_BLURB } from "@/lib/yard/door/access";
+import { OPERATOR_ROLES, ROLE_BLURB, roleNeedsCrane } from "@/lib/yard/door/access";
 import type { OperatorRole } from "@/lib/yard/door/channels";
 import { yardFetch } from "../lib/yardFetch";
 import { OperatorAvatar } from "./OperatorAvatar";
@@ -11,7 +11,7 @@ type OperatorRow = {
   name: string;
   displayName: string;
   role: OperatorRole;
-  crane: string | null;
+  cranes: string[];
   avatarRev: number | null;
   createdAt: string;
 };
@@ -24,13 +24,13 @@ export function YardSettings() {
   const [passphrase, setPassphrase] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
   const [addRole, setAddRole] = useState<OperatorRole>("user");
-  const [addCrane, setAddCrane] = useState("");
+  const [addCranes, setAddCranes] = useState<string[]>([]);
   const [addConfirm, setAddConfirm] = useState(false);
   const [removeId, setRemoveId] = useState<string | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<OperatorRole>("user");
-  const [editCrane, setEditCrane] = useState("");
+  const [editCranes, setEditCranes] = useState<string[]>([]);
   const [editConfirm, setEditConfirm] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -121,7 +121,7 @@ export function YardSettings() {
                   <span className="font-medium text-stone-100">{o.displayName || o.name}</span>
                   {you?.id === o.id ? <span className="ml-2 text-xs text-zinc-500">you</span> : null}
                   <span className="ml-2 text-xs text-zinc-500">{o.role}</span>
-                  {o.role === "user" && o.crane ? <span className="ml-1 text-xs text-amber-200/80">{o.crane}</span> : null}
+                  {o.cranes?.length ? <span className="ml-1 text-xs text-amber-200/80">{o.cranes.join(", ")}</span> : null}
                   {o.name !== o.displayName ? <span className="ml-2 text-xs text-zinc-600">{o.name}</span> : null}
                 </span>
               </div>
@@ -134,7 +134,7 @@ export function YardSettings() {
                       onClick={() => {
                         setEditId(o.id);
                         setEditRole(o.role);
-                        setEditCrane(o.crane ?? slugs[0] ?? "");
+                        setEditCranes(o.cranes ?? []);
                         setEditConfirm(false);
                         setRemoveId(null);
                       }}
@@ -171,11 +171,11 @@ export function YardSettings() {
                       op: "access",
                       id: o.id,
                       role: editRole,
-                      crane: editRole === "user" ? editCrane : null,
+                      cranes: roleNeedsCrane(editRole) ? editCranes : [],
                       confirm: editConfirm,
                     })
                   ) {
-                    setNotice(`${o.name} is ${editRole}${editRole === "user" ? ` on ${editCrane}` : ""}`);
+                    setNotice(`${o.name} is ${editRole}${roleNeedsCrane(editRole) ? ` on ${editCranes.join(", ")}` : ""}`);
                     setEditId(null);
                     setEditConfirm(false);
                     load();
@@ -183,14 +183,14 @@ export function YardSettings() {
                 }}
               >
                 <RoleSelect value={editRole} onChange={setEditRole} />
-                {editRole === "user" ? <CranePick slugs={slugs} value={editCrane} onChange={setEditCrane} /> : null}
+                {roleNeedsCrane(editRole) ? <CranePicks slugs={slugs} value={editCranes} onChange={setEditCranes} /> : null}
                 <label className="flex items-center gap-2 text-amber-200">
                   <input type="checkbox" checked={editConfirm} onChange={(e) => setEditConfirm(e.target.checked)} />
                   I am changing this operator's access
                 </label>
                 <button
                   type="submit"
-                  disabled={busy || !editConfirm || (editRole === "user" && !editCrane)}
+                  disabled={busy || !editConfirm || (roleNeedsCrane(editRole) && editCranes.length === 0)}
                   className="rounded border border-amber-800/80 px-2 py-1 text-amber-200 disabled:opacity-50"
                 >
                   save access
@@ -259,7 +259,7 @@ export function YardSettings() {
                 name,
                 passphrase,
                 role: addRole,
-                crane: addRole === "user" ? addCrane : null,
+                cranes: roleNeedsCrane(addRole) ? addCranes : [],
                 confirm: addConfirm,
               })
             ) {
@@ -268,6 +268,7 @@ export function YardSettings() {
               setPassphrase("");
               setConfirmPass("");
               setAddConfirm(false);
+              setAddCranes([]);
               load();
             }
           }}
@@ -313,14 +314,14 @@ export function YardSettings() {
             />
           </label>
           <RoleSelect value={addRole} onChange={setAddRole} />
-          {addRole === "user" ? <CranePick slugs={slugs} value={addCrane} onChange={setAddCrane} /> : null}
+          {roleNeedsCrane(addRole) ? <CranePicks slugs={slugs} value={addCranes} onChange={setAddCranes} /> : null}
           <label className="flex items-center gap-2 text-xs text-amber-200">
             <input type="checkbox" checked={addConfirm} onChange={(e) => setAddConfirm(e.target.checked)} />
             I am adding this operator
           </label>
           <button
             type="submit"
-            disabled={busy || !addConfirm || (addRole === "user" && !addCrane)}
+            disabled={busy || !addConfirm || (roleNeedsCrane(addRole) && addCranes.length === 0)}
             className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50"
           >
             Add operator
@@ -350,38 +351,44 @@ function RoleSelect({ value, onChange }: { value: OperatorRole; onChange: (role:
   );
 }
 
-function CranePick({ slugs, value, onChange }: { slugs: string[]; value: string; onChange: (slug: string) => void }) {
+function CranePicks({ slugs, value, onChange }: { slugs: string[]; value: string[]; onChange: (next: string[]) => void }) {
+  function toggle(slug: string) {
+    onChange(value.includes(slug) ? value.filter((s) => s !== slug) : [...value, slug]);
+  }
   if (slugs.length === 0) {
     return (
       <label className="flex flex-col gap-1 text-xs text-zinc-500">
-        crane
+        cranes
         <input
           className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
-          value={value}
-          onChange={(e) => onChange(e.target.value.trim().toLowerCase())}
+          value={value.join(", ")}
+          onChange={(e) =>
+            onChange(
+              e.target.value
+                .split(/[,\s]+/)
+                .map((s) => s.trim().toLowerCase())
+                .filter(Boolean),
+            )
+          }
           required
-          pattern="[a-z][a-z0-9-]{0,31}"
-          placeholder="kit"
+          placeholder="kit, tryout"
         />
       </label>
     );
   }
   return (
-    <label className="flex flex-col gap-1 text-xs text-zinc-500">
-      crane
-      <select
-        className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-      >
-        <option value="">select crane</option>
+    <fieldset className="flex flex-col gap-1 text-xs text-zinc-500">
+      <legend>cranes</legend>
+      <ul className="mt-1 flex flex-wrap gap-1.5">
         {slugs.map((slug) => (
-          <option key={slug} value={slug}>
-            {slug}
-          </option>
+          <li key={slug}>
+            <label className="inline-flex items-center gap-1.5 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100">
+              <input type="checkbox" checked={value.includes(slug)} onChange={() => toggle(slug)} />
+              {slug}
+            </label>
+          </li>
         ))}
-      </select>
-    </label>
+      </ul>
+    </fieldset>
   );
 }

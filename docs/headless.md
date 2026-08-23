@@ -138,7 +138,7 @@ You want in the log: `Production server running at http://0.0.0.0:3000`
 The UI has a **login**. First boot is `/setup` (one operator). Sessions
 live in yard `gantree.db` (compose: `var/gantree.db`) — not a crane’s
 `data/gantry.db`. Whoever logs in has a **role** — admin is full access,
-user is one crane, readonly can look. Forgot the passphrase: stop, delete
+user or readonly is assigned cranes (only admin sees every crane). Forgot the passphrase: stop, delete
 that sqlite file, start, run setup again. No email reset. People walk:
 [operators.md](operators.md). What the door checks:
 [security.md](security.md).
@@ -148,7 +148,7 @@ that sqlite file, start, run setup again. No email reset. People walk:
 ![Log in](../assets/login.png)
 
 **Home LAN only** (no WAN port forward): listen on all interfaces.
-Compose publishes host `:80`. `npm start` stays `:3000`.
+Compose publishes host `:80` (nginx). `npm start` stays `:3000`.
 
 ```bash
 # stop the old foreground npm start first (Ctrl-C), then:
@@ -166,7 +166,9 @@ Skip binding port 80 as root. Do not run this app as root (`docker.sock`).
 not a reason to open a WAN firewall port.
 
 ```bash
-ssh -N -L 3000:127.0.0.1:3000 user@host
+ssh -N -L 3000:127.0.0.1:3000 user@host   # npm start
+# compose publishes nginx on :80, not gantree :3000:
+ssh -N -L 3000:127.0.0.1:80 user@host
 ```
 
 Browser: **http://127.0.0.1:3000**. Tailscale Serve to that same loopback
@@ -257,7 +259,7 @@ each attached crane so persona and `mcp.toml` land in the agent.
 Missing `GANTREE_HOST_ROOT` bind-mounts `/app/gantries/…` on the host — the
 crane then has no `mcp.toml` and no `data/.config`.
 
-Home LAN: compose publishes host `:80` → container `:3000`
+Home LAN: compose publishes host `:80` (nginx) → gantree `:3000`
 (`http://<headless-lan-ip>/`). Cloud VM: `GANTREE_LISTEN=127.0.0.1` — do
 not open a WAN firewall port.
 

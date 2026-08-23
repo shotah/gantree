@@ -138,12 +138,13 @@ describe("sampleMcp and sampleUptime", () => {
 });
 
 describe("peek and kick", () => {
-  it("kicks host samples without blocking and includes leftover rings", async () => {
+  it("kicks host samples without blocking and does not leak leftover rings", async () => {
     vi.mocked(getGantry).mockImplementation(async (slug: string) => card({ slug }));
     vi.mocked(containerStatsOnce).mockResolvedValue(statsRaw);
     await sampleHost("extra");
     const peeked = kickYardSamples(["kick-a"]);
-    expect(peeked.extra?.length).toBe(1);
+    expect(peeked.extra).toBeUndefined();
+    expect(peeked["kick-a"]).toEqual([]);
     expect(peekHost("kick-a")).toEqual([]);
     await vi.waitFor(() => expect(peekHost("kick-a").length).toBeGreaterThan(0));
   });

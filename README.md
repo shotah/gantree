@@ -133,7 +133,7 @@ Home Mini vs cloud VM, tunnels, attach existing dirs:
 | --- | --- |
 | `npm start` | Console on this host (`127.0.0.1`) |
 | `npm run dev` | Same, with hot reload. Loopback auto-login: `GANTREE_DEV` in `.env` ([security](docs/security.md#dev-auto-login)) |
-| `docker compose up -d` | Hub image `shotah/gantree` — never set `GANTREE_DEV` here |
+| `docker compose up -d` | Hub image `shotah/gantree` behind nginx on `:80` — never set `GANTREE_DEV` here |
 | **[ai-gantry](https://github.com/shotah/ai-gantry)** | Harness only — no yard |
 
 ```bash
@@ -144,8 +144,8 @@ Agents open **zero** inbound ports. If you expose this console, you
 expose it to yourself.
 
 ```text
-browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
-                                                         gantry  gantry  gantry
+browser  →  nginx :80 (compose)  →  gantree  →  Docker + files
+              localhost | Tailscale | tunnel     gantry  gantry  gantry
 ```
 
 The yard is allowed to be a bit meh. It is JS, in a browser, for an

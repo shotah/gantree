@@ -4,8 +4,9 @@ import {
   canManageOperators,
   canMutateCrane,
   canReadCrane,
-  parseCraneSlug,
+  parseStoredCranes,
   parseStoredRole,
+  serializeCranes,
 } from "./access";
 import {
   parseChannelsPatch,
@@ -48,7 +49,7 @@ export type Operator = {
   name: string;
   displayName: string;
   role: OperatorRole;
-  crane: string | null;
+  cranes: string[];
   avatarRev: number | null;
 };
 
@@ -65,7 +66,7 @@ export type OperatorProfilePatch = {
   email?: string;
   description?: string;
   role?: OperatorRole;
-  crane?: string | null;
+  cranes?: string[];
   channels?: OperatorChannels;
 };
 
@@ -278,7 +279,7 @@ export function setupOperator(name: string, passphrase: string): { ok: true; ope
       name: name.trim(),
       displayName: name.trim(),
       role: "admin",
-      crane: null,
+      cranes: [],
       avatarRev: null,
     };
     const { salt, hash } = hashPassphrase(passphrase);
@@ -372,7 +373,7 @@ export function addOperator(
   name: string,
   passphrase: string,
   role: OperatorRole = "admin",
-  crane: string | null = null,
+  cranes: unknown = null,
 ): { ok: true; operator: OperatorRow } | DoorFail {
   if (typeof name !== "string" || typeof passphrase !== "string") {
     return { ok: false, error: "name and passphrase required", status: 400 };
@@ -385,11 +386,7 @@ export function addOperator(
   if (!parsed) {
     return { ok: false, error: "role must be admin, user, or readonly", status: 400 };
   }
-  const slug = parseCraneSlug(crane);
-  if (!slug.ok) {
-    return { ok: false, error: slug.error, status: 400 };
-  }
-  const access = accessForRole(parsed, slug.crane);
+  const access = accessForRole(parsed, cranes);
   if (!access.ok) {
     return { ok: false, error: access.error, status: 400 };
   }
@@ -405,7 +402,7 @@ export function addOperator(
   const { salt, hash } = hashPassphrase(passphrase);
   db.prepare(
     "INSERT INTO operator (id, name, pass_salt, pass_hash, created_at, display_name, email, description, role, crane_slug, channels) VALUES (?, ?, ?, ?, ?, ?, '', '', ?, ?, '{}')",
-  ).run(id, name.trim(), salt, hash, createdAt, name.trim(), access.role, access.crane);
+  ).run(id, name.trim(), salt, hash, createdAt, name.trim(), access.role, serializeCranes(access.cranes));
   const operator = getOperator(id);
   if (!operator) {
     return { ok: false, error: "operator write vanished", status: 500 };
@@ -433,17 +430,13 @@ export function removeOperator(_actorId: string, targetId: string): { ok: true }
 export function setOperatorAccess(
   targetId: string,
   role: OperatorRole,
-  crane: string | null,
+  cranes: unknown = null,
 ): { ok: true; operator: OperatorRow } | DoorFail {
   const parsed = parseRole(role);
   if (!parsed) {
     return { ok: false, error: "role must be admin, user, or readonly", status: 400 };
   }
-  const slug = parseCraneSlug(crane);
-  if (!slug.ok) {
-    return { ok: false, error: slug.error, status: 400 };
-  }
-  const access = accessForRole(parsed, slug.crane);
+  const access = accessForRole(parsed, cranes);
   if (!access.ok) {
     return { ok: false, error: access.error, status: 400 };
   }
@@ -454,7 +447,7 @@ export function setOperatorAccess(
   if (target.role === "admin" && access.role !== "admin" && adminCount() <= 1) {
     return { ok: false, error: "cannot demote the last admin", status: 400 };
   }
-  yardDb().prepare("UPDATE operator SET role = ?, crane_slug = ? WHERE id = ?").run(access.role, access.crane, targetId);
+  yardDb().prepare("UPDATE operator SET role = ?, crane_slug = ? WHERE id = ?").run(access.role, serializeCranes(access.cranes), targetId);
   const next = getOperator(targetId);
   if (!next) {
     return { ok: false, error: "operator write vanished", status: 500 };
@@ -676,7 +669,7 @@ function publicOperator(row: {
     name: row.name,
     displayName: (row.display_name ?? "").trim() || row.name,
     role,
-    crane: role === "user" ? (row.crane_slug ?? null) : null,
+    cranes: role === "admin" ? [] : parseStoredCranes(row.crane_slug),
     avatarRev: operatorAvatarRev(row.id),
   };
 }

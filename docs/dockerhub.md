@@ -8,8 +8,8 @@ This image is the shipping yard around it — a localhost board. Spawn a crane,
 grant MCP, read logs, recreate. Chat stays Telegram. Agents open **zero inbound ports.**
 
 ```text
-browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
-                                                         gantry  gantry  gantry
+browser  →  nginx :80 (compose)  →  gantree  →  Docker + files
+              localhost | Tailscale | tunnel     gantry  gantry  gantry
 ```
 
 Source: [github.com/shotah/gantree](https://github.com/shotah/gantree)
@@ -28,9 +28,9 @@ Run it from the checkout so `GANTREE_HOST_ROOT` is that directory (recreate
 bind-mounts are host paths). Attach existing agents at absolute paths:
 uncomment the same-path volume in `compose.yml` (`/opt/agents:/opt/agents`)
 or the board will see Docker but not persona / `mcp.toml`. Home LAN: host
-`:80` on all interfaces *behind* login (`/setup` first boot). Cloud VM:
-`GANTREE_LISTEN=127.0.0.1` and do not open a WAN firewall port. Mount `./var`
-for yard `gantree.db`.
+`:80` (nginx) on all interfaces *behind* login (`/setup` first boot).
+Gantree itself is unpublished. Cloud VM: `GANTREE_LISTEN=127.0.0.1`
+and do not open a WAN firewall port. Mount `./var` for yard `gantree.db`.
 
 Cranes run as the host user that owns `data/`. Compose picks that up from
 your shell `UID` (or the files on disk). Distroless default uid `65532`
@@ -58,8 +58,9 @@ Also on GHCR: `ghcr.io/shotah/gantree` (same tags). `linux/amd64` only.
 - **Operator plane**, not the chat. Node 22 + Vinext. Needs the Docker socket.
 - Spawns and operates [`shotah/ai-gantry`](https://hub.docker.com/r/shotah/ai-gantry)
   cranes (one container, one persona, one `data/` each).
-- Listens on `0.0.0.0:3000` *inside* the container so the port map works.
-  Compose publishes host `:80` on the LAN (`GANTREE_LISTEN=127.0.0.1` on a VM).
+- Listens on `0.0.0.0:3000` *inside* the container so nginx can reach it.
+  Compose publishes host `:80` (nginx) on the LAN
+  (`GANTREE_LISTEN=127.0.0.1` on a VM). Gantree is unpublished.
 - Does not bake MCP binaries or `gantry.db`. Those stay on the host binds.
 
 Harness image (the cranes): [`shotah/ai-gantry`](https://hub.docker.com/r/shotah/ai-gantry).

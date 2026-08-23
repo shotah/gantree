@@ -60,7 +60,11 @@ export {
   canMutateCrane,
   canReadCrane,
   parseCraneSlug,
+  parseCraneSlugs,
+  parseStoredCranes,
   parseStoredRole,
+  roleNeedsCrane,
+  serializeCranes,
   scopeYard,
 } from "./access";
 export type { AccessSubject } from "./access";

@@ -33,6 +33,7 @@ import {
 } from "@/lib/yard/door/gate";
 import { listYardEvents, recordFromRequest, recordYardEvent } from "@/lib/yard/door/events";
 import { readOperatorAvatar, saveOperatorAvatar } from "@/lib/yard/door/profile";
+import { GET as listEvents } from "@/app/api/events/route";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -261,7 +262,7 @@ describe("the door", () => {
       name: "kit",
       displayName: "kit",
       role: "admin",
-      crane: null,
+      cranes: [],
       avatarRev: null,
     });
   });
@@ -467,7 +468,7 @@ describe("dev auto-login", () => {
 describe("roles", () => {
   const pass = "a-long-enough-pass";
 
-  it("setup is admin, user needs a crane, readonly cannot mutate", () => {
+  it("setup is admin, user and readonly need a crane, readonly cannot mutate", async () => {
     const first = setupOperator("kit", pass);
     expect(first.ok).toBe(true);
     if (!first.ok) {
@@ -475,18 +476,19 @@ describe("roles", () => {
     }
     expect(first.operator.role).toBe("admin");
     expect(addOperator("ada", pass, "user")).toMatchObject({ ok: false, status: 400 });
+    expect(addOperator("look", pass, "readonly")).toMatchObject({ ok: false, status: 400 });
     const user = addOperator("ada", pass, "user", "kit");
     expect(user.ok).toBe(true);
     if (!user.ok) {
       return;
     }
-    expect(user.operator).toMatchObject({ role: "user", crane: "kit" });
-    const reader = addOperator("look", pass, "readonly");
+    expect(user.operator).toMatchObject({ role: "user", cranes: ["kit"] });
+    const reader = addOperator("look", pass, "readonly", "kit");
     expect(reader.ok).toBe(true);
     if (!reader.ok) {
       return;
     }
-    expect(reader.operator).toMatchObject({ role: "readonly", crane: null });
+    expect(reader.operator).toMatchObject({ role: "readonly", cranes: ["kit"] });
 
     const ada = loginOperator("ada", pass);
     const look = loginOperator("look", pass);
@@ -500,9 +502,48 @@ describe("roles", () => {
     expect(denyUnlessCraneMutate(adaReq, "kit")).toBeNull();
     expect(denyUnlessCraneRead(adaReq, "tryout")?.status).toBe(404);
     expect(denyUnlessCraneMutate(lookReq, "kit")?.status).toBe(403);
-    expect(denyUnlessCraneRead(lookReq, "tryout")).toBeNull();
+    expect(denyUnlessCraneRead(lookReq, "tryout")?.status).toBe(404);
     expect(denyUnlessAdmin(adaReq)?.status).toBe(403);
     expect(denyUnlessAdmin(req("http://127.0.0.1/api/operators", first.token))).toBeNull();
+
+    recordYardEvent({ kind: "recreate", slug: "kit", operatorId: first.operator.id });
+    recordYardEvent({ kind: "grant", slug: "tryout", operatorId: first.operator.id });
+    const adaEvents = await listEvents(req("http://127.0.0.1/api/events", ada.token));
+    expect(adaEvents.status).toBe(200);
+    const adaBody = (await adaEvents.json()) as { events: { slug: string | null }[] };
+    expect(adaBody.events.map((e) => e.slug)).toEqual(["kit"]);
+    const peekTryout = await listEvents(req("http://127.0.0.1/api/events?slug=tryout", ada.token));
+    expect(peekTryout.status).toBe(404);
+  });
+
+  it("lets a user hold more than one crane", async () => {
+    const first = setupOperator("kit", pass);
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    const pair = addOperator("ada", pass, "user", ["kit", "tryout"]);
+    expect(pair.ok).toBe(true);
+    if (!pair.ok) {
+      return;
+    }
+    expect(pair.operator).toMatchObject({ role: "user", cranes: ["kit", "tryout"] });
+    const login = loginOperator("ada", pass);
+    expect(login.ok).toBe(true);
+    if (!login.ok) {
+      return;
+    }
+    const pairReq = req("http://127.0.0.1/api/gantries/kit", login.token);
+    expect(denyUnlessCraneRead(pairReq, "kit")).toBeNull();
+    expect(denyUnlessCraneMutate(pairReq, "tryout")).toBeNull();
+    expect(denyUnlessCraneRead(pairReq, "jules")?.status).toBe(404);
+    recordYardEvent({ kind: "recreate", slug: "kit", operatorId: first.operator.id });
+    recordYardEvent({ kind: "recreate", slug: "tryout", operatorId: first.operator.id });
+    recordYardEvent({ kind: "grant", slug: "jules", operatorId: first.operator.id });
+    const listed = await listEvents(req("http://127.0.0.1/api/events", login.token));
+    expect(listed.status).toBe(200);
+    const body = (await listed.json()) as { events: { slug: string | null }[] };
+    expect(body.events.map((e) => e.slug).sort()).toEqual(["kit", "tryout"]);
   });
 
   it("refuses to demote or delete the last admin, and profile cannot self-promote", () => {
@@ -522,8 +563,8 @@ describe("roles", () => {
     if (!partner.ok) {
       return;
     }
-    expect(setOperatorAccess(first.operator.id, "readonly", null).ok).toBe(true);
-    expect(getOperator(first.operator.id)?.role).toBe("readonly");
+    expect(setOperatorAccess(first.operator.id, "readonly", "kit").ok).toBe(true);
+    expect(getOperator(first.operator.id)).toMatchObject({ role: "readonly", cranes: ["kit"] });
     expect(removeOperator(partner.operator.id, partner.operator.id)).toMatchObject({
       ok: false,
       error: "cannot delete the last admin",

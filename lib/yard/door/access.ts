@@ -6,16 +6,18 @@ export const OPERATOR_ROLES = ["admin", "user", "readonly"] as const;
 
 export const ROLE_BLURB: Record<OperatorRole, string> = {
   admin: "full access — every crane, operators, build",
-  user: "one crane — grant, recreate, env; not operators",
-  readonly: "look — board, logs, doctor; not touch",
+  user: "assigned cranes — card and details; grant, recreate, env",
+  readonly: "assigned cranes — look; not touch",
 };
+
+export const MAX_CRANES = 16;
 
 const CRANE_SLUG = /^[a-z][a-z0-9-]{0,31}$/;
 
 /** Session / row shape the checks need. Not the full operator row. */
 export type AccessSubject = {
   role: OperatorRole;
-  crane: string | null;
+  cranes: string[];
 };
 
 export function parseStoredRole(raw: string | null | undefined): OperatorRole {
@@ -39,24 +41,106 @@ export function parseCraneSlug(raw: unknown): { ok: true; crane: string | null }
   return { ok: true, crane: s };
 }
 
+/** JSON list in sqlite, or a leftover single slug from before multi-assign. */
+export function parseStoredCranes(raw: string | null | undefined): string[] {
+  if (raw == null) {
+    return [];
+  }
+  const s = raw.trim();
+  if (!s) {
+    return [];
+  }
+  if (s.startsWith("[")) {
+    try {
+      const v = JSON.parse(s) as unknown;
+      const parsed = parseCraneSlugs(v);
+      return parsed.ok ? parsed.cranes : [];
+    } catch {
+      return [];
+    }
+  }
+  const one = parseCraneSlug(s);
+  return one.ok && one.crane ? [one.crane] : [];
+}
+
+export function serializeCranes(cranes: string[]): string | null {
+  return cranes.length === 0 ? null : JSON.stringify(cranes);
+}
+
+export function parseCraneSlugs(raw: unknown): { ok: true; cranes: string[] } | { ok: false; error: string } {
+  if (raw == null) {
+    return { ok: true, cranes: [] };
+  }
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) {
+      return { ok: true, cranes: [] };
+    }
+    if (s.startsWith("[")) {
+      try {
+        const v = JSON.parse(s) as unknown;
+        if (!Array.isArray(v)) {
+          return { ok: false, error: "cranes must be slugs" };
+        }
+        return finishSlugs(v);
+      } catch {
+        return { ok: false, error: "cranes must be slugs" };
+      }
+    }
+    return finishSlugs(s.split(/[,\s]+/).filter(Boolean));
+  }
+  if (Array.isArray(raw)) {
+    return finishSlugs(raw);
+  }
+  return { ok: false, error: "cranes must be slugs" };
+}
+
+function finishSlugs(raw: unknown[]): { ok: true; cranes: string[] } | { ok: false; error: string } {
+  if (raw.length > MAX_CRANES) {
+    return { ok: false, error: `at most ${MAX_CRANES} cranes` };
+  }
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const p = parseCraneSlug(item);
+    if (!p.ok) {
+      return { ok: false, error: p.error };
+    }
+    if (!p.crane || seen.has(p.crane)) {
+      continue;
+    }
+    seen.add(p.crane);
+    out.push(p.crane);
+  }
+  return { ok: true, cranes: out };
+}
+
+export function roleNeedsCrane(role: OperatorRole): boolean {
+  return role !== "admin";
+}
+
 export function accessForRole(
   role: OperatorRole,
-  crane: string | null,
-): { ok: true; role: OperatorRole; crane: string | null } | { ok: false; error: string } {
-  if (role === "user") {
-    if (!crane) {
-      return { ok: false, error: "user role needs one crane" };
-    }
-    return { ok: true, role, crane };
+  cranes: unknown,
+): { ok: true; role: OperatorRole; cranes: string[] } | { ok: false; error: string } {
+  const parsed = parseCraneSlugs(cranes);
+  if (!parsed.ok) {
+    return parsed;
   }
-  return { ok: true, role, crane: null };
+  if (!roleNeedsCrane(role)) {
+    return { ok: true, role, cranes: [] };
+  }
+  if (parsed.cranes.length === 0) {
+    return { ok: false, error: `${role} role needs at least one crane` };
+  }
+  return { ok: true, role, cranes: parsed.cranes };
 }
 
 export function canReadCrane(op: AccessSubject, slug: string): boolean {
-  if (op.role === "user") {
-    return Boolean(op.crane) && op.crane === slug;
+  if (op.role === "admin") {
+    return true;
   }
-  return true;
+  return op.cranes.includes(slug);
 }
 
 export function canMutateCrane(op: AccessSubject, slug: string): boolean {
@@ -64,7 +148,7 @@ export function canMutateCrane(op: AccessSubject, slug: string): boolean {
     return true;
   }
   if (op.role === "user") {
-    return Boolean(op.crane) && op.crane === slug;
+    return op.cranes.includes(slug);
   }
   return false;
 }
@@ -78,8 +162,9 @@ export function canManageOperators(op: AccessSubject): boolean {
 }
 
 export function scopeYard(yard: YardInventory, op: AccessSubject): YardInventory {
-  if (op.role !== "user") {
+  if (op.role === "admin") {
     return yard;
   }
-  return { ...yard, gantries: yard.gantries.filter((g) => g.slug === op.crane) };
+  const allow = new Set(op.cranes);
+  return { ...yard, gantries: yard.gantries.filter((g) => allow.has(g.slug)) };
 }
