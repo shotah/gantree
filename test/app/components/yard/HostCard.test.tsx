@@ -1,8 +1,8 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { HostCard } from "@/app/components/yard/HostCard";
+import { HostCard, HostMeters } from "@/app/components/yard/HostCard";
 import type { HostSnapshot } from "@/lib/yard/types";
 
 afterEach(() => {
@@ -48,12 +48,16 @@ describe("HostCard", () => {
   it("waits when Docker has not sampled yet", () => {
     render(<HostCard host={{ live: null, spark: [] }} />);
     expect(screen.getByText(/Sampling Docker for host CPU, RAM, and net/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Host/ })).toHaveProperty("href", expect.stringMatching(/\/host$/));
+    const waiting = screen.getByRole("link", { name: /Host/ });
+    expect(waiting).toHaveProperty("href", expect.stringMatching(/\/host$/));
+    expect(waiting.className).toMatch(/min-h-56/);
+    expect(waiting.className).toMatch(/h-full/);
   });
 
   it("surfaces a Docker socket error instead of waiting forever", () => {
     render(<HostCard host={{ live: null, spark: [] }} dockerError="Cannot talk to Docker (permission denied)." />);
     expect(screen.getByText(/Cannot talk to Docker/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Host/ }).className).toMatch(/min-h-56/);
   });
 
   it("splits agents, dashboard, and other against host cores and RAM", () => {
@@ -64,13 +68,27 @@ describe("HostCard", () => {
     expect(heading.querySelector("span")?.className).toContain("rounded-full");
     expect(screen.getAllByText("agents").length).toBeGreaterThan(0);
     expect(screen.getAllByText("dashboard").length).toBeGreaterThan(0);
-    expect(screen.getByText("gantry-tim")).toBeTruthy();
+    expect(screen.queryByText("gantry-tim")).toBeNull();
     expect(screen.getByText("NET")).toBeTruthy();
     expect(screen.getByText(/↓ .+\/s · ↑ .+\/s/)).toBeTruthy();
     expect(screen.getByText(/since those containers started/)).toBeTruthy();
+    const fold = screen.getByRole("button", { name: /3 containers/ });
+    expect(fold).toHaveProperty("ariaExpanded", "false");
+    expect(fold.closest("a")).toBeNull();
+    fireEvent.click(fold);
+    expect(fold).toHaveProperty("ariaExpanded", "true");
+    expect(screen.getByText("gantry-tim")).toBeTruthy();
     const card = screen.getByRole("link", { name: /paddleboy/ });
     expect(card).toHaveProperty("href", expect.stringMatching(/\/host$/));
-    expect(card.className).toMatch(/min-w-0/);
-    expect(card.className).toMatch(/max-w-full/);
+    expect(card.parentElement?.className).toMatch(/min-w-0/);
+    expect(card.parentElement?.className).toMatch(/max-w-full/);
+    expect(card.parentElement?.className).toMatch(/min-h-56/);
+    expect(card.parentElement?.className).toMatch(/h-full/);
+  });
+
+  it("keeps the container list open on the host page meters", () => {
+    render(<HostMeters live={live} spark={[earlier, live]} />);
+    expect(screen.getByText("gantry-tim")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /containers/ })).toBeNull();
   });
 });

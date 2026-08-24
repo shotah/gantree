@@ -76,6 +76,8 @@ describe("YardBoard", () => {
     render(<YardBoard />);
     await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
     expect(screen.getByText("kit").closest("a")?.className).toMatch(/min-w-0/);
+    expect(screen.getByText("kit").closest("a")?.className).toMatch(/min-h-56/);
+    expect(screen.getByText("kit").closest("a")?.className).toMatch(/h-full/);
     expect(screen.getByText("2m ago")).toBeTruthy();
     expect(screen.getByLabelText("2 recoveries")).toBeTruthy();
   });
@@ -206,10 +208,11 @@ describe("YardBoard", () => {
     const lane = screen.getByRole("list", { name: "Yard cards" });
     expect(lane.className).toMatch(/auto-fill/);
     expect(lane.className).toMatch(/minmax\(18rem/);
+    expect(lane.className).not.toMatch(/items-start/);
     expect(lane.className).not.toMatch(/grid-cols-3/);
   });
 
-  it("honors a saved card order and lets a drop move a crane in front of host", async () => {
+  it("pins host first and reorders only cranes", async () => {
     localStorage.setItem(BOARD_ORDER_KEY, JSON.stringify(["tryout", HOST_CARD_ID, "kit"]));
     vi.mocked(yardFetch).mockImplementation(async (input) => {
       const url = String(input);
@@ -228,7 +231,7 @@ describe("YardBoard", () => {
     await waitFor(() => expect(screen.getByText("tryout")).toBeTruthy());
     const lane = screen.getByRole("list", { name: "Yard cards" });
     const hrefs = () => [...lane.querySelectorAll("a")].map((a) => a.getAttribute("href"));
-    expect(hrefs()).toEqual(["/gantries/tryout", "/host", "/gantries/kit"]);
+    expect(hrefs()).toEqual(["/host", "/gantries/tryout", "/gantries/kit"]);
 
     const store: Record<string, string> = {};
     const dataTransfer = {
@@ -240,23 +243,26 @@ describe("YardBoard", () => {
       dropEffect: "move",
     };
     const kit = lane.querySelector("[data-board-id='kit']");
+    const tryout = lane.querySelector("[data-board-id='tryout']");
     const host = lane.querySelector("[data-board-id='" + HOST_CARD_ID + "']");
     expect(kit).toBeTruthy();
+    expect(tryout).toBeTruthy();
     expect(host).toBeTruthy();
+    expect(host?.getAttribute("draggable")).toBeNull();
     fireEvent.dragStart(kit!, { dataTransfer });
-    fireEvent.dragOver(host!, { dataTransfer });
-    fireEvent.drop(host!, { dataTransfer });
-    expect(hrefs()).toEqual(["/gantries/tryout", "/gantries/kit", "/host"]);
-    expect(JSON.parse(localStorage.getItem(BOARD_ORDER_KEY) ?? "[]")).toEqual(["tryout", "kit", HOST_CARD_ID]);
+    fireEvent.dragOver(tryout!, { dataTransfer });
+    fireEvent.drop(tryout!, { dataTransfer });
+    expect(hrefs()).toEqual(["/host", "/gantries/kit", "/gantries/tryout"]);
+    expect(JSON.parse(localStorage.getItem(BOARD_ORDER_KEY) ?? "[]")).toEqual(["kit", "tryout"]);
 
     unmount();
     render(<YardBoard />);
     await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
     const again = screen.getByRole("list", { name: "Yard cards" });
     expect([...again.querySelectorAll("a")].map((a) => a.getAttribute("href"))).toEqual([
-      "/gantries/tryout",
-      "/gantries/kit",
       "/host",
+      "/gantries/kit",
+      "/gantries/tryout",
     ]);
   });
 });

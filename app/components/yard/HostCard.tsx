@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { fmtAgo, fmtBps, fmtBytes, fmtCores, hostShare, lastHostNetRate } from "@/lib/yard/observe/spend";
-import type { HostLive, HostRole, HostSample, HostSnapshot } from "@/lib/yard/types";
+import type { HostLive, HostProc, HostRole, HostSample, HostSnapshot } from "@/lib/yard/types";
 
 const CARD
-  = "block h-full min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5";
+  = "block h-full min-h-56 min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5";
 
 const ROLE_LABEL: Record<HostRole, string> = {
   crane: "agents",
@@ -92,7 +93,67 @@ function HostSpark({ spark }: { spark: HostSample[] }) {
   );
 }
 
-export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: HostSample[] }) {
+function topProcs(live: HostSnapshot): HostProc[] {
+  return live.procs.slice(0, 6);
+}
+
+function HostProcList({ procs }: { procs: HostProc[] }) {
+  return (
+    <ul className="space-y-1">
+      {procs.map((p) => (
+        <li key={p.name} className="flex min-w-0 justify-between gap-2 text-[11px] text-dim">
+          <span className="truncate">
+            <span className={ROLE_TEXT[p.role]}>{ROLE_LABEL[p.role]}</span>
+            {" "}
+            <span className="font-mono text-muted">{p.name}</span>
+          </span>
+          <span className="shrink-0 tabular-nums text-muted">
+            {fmtCores(p.cpuPercent ?? 0)}c · {fmtBytes(p.memBytes ?? 0)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function HostProcFold({ procs }: { procs: HostProc[] }) {
+  const [open, setOpen] = useState(false);
+  if (procs.length === 0) {
+    return null;
+  }
+  const label = procs.length === 1 ? "1 container" : `${procs.length} containers`;
+  return (
+    <div className="mt-3 border-t border-line/80 pt-2">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="pointer-events-auto relative text-left text-[10px] uppercase tracking-wide text-faint hover:text-muted max-sm:min-h-11 max-sm:text-xs"
+      >
+        {open ? "▾" : "▸"}
+        {" "}
+        {label}
+      </button>
+      {open
+        ? (
+            <div className="mt-2">
+              <HostProcList procs={procs} />
+            </div>
+          )
+        : null}
+    </div>
+  );
+}
+
+export function HostMeters({
+  live,
+  spark = [],
+  procs = "show",
+}: {
+  live: HostSnapshot;
+  spark?: HostSample[];
+  procs?: "show" | "fold" | "hide";
+}) {
   const cpuCap = live.ncpu * 100;
   const cpuUsed = live.craneCpu + live.consoleCpu + live.otherCpu;
   const memUsed = live.craneMem + live.consoleMem + live.otherMem;
@@ -116,7 +177,7 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
     { role: "console" as const, value: rate ? rate.consoleRx + rate.consoleTx : live.consoleRx + live.consoleTx },
     { role: "other" as const, value: rate ? rate.otherRx + rate.otherTx : live.otherRx + live.otherTx },
   ];
-  const top = [...live.procs].slice(0, 6);
+  const top = topProcs(live);
 
   return (
     <>
@@ -171,24 +232,15 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
         </div>
       </dl>
 
-      {top.length > 0
-        ? (
-            <ul className="mt-3 space-y-1 border-t border-line/80 pt-2">
-              {top.map((p) => (
-                <li key={p.name} className="flex min-w-0 justify-between gap-2 text-[11px] text-dim">
-                  <span className="truncate">
-                    <span className={ROLE_TEXT[p.role]}>{ROLE_LABEL[p.role]}</span>
-                    {" "}
-                    <span className="font-mono text-muted">{p.name}</span>
-                  </span>
-                  <span className="shrink-0 tabular-nums text-muted">
-                    {fmtCores(p.cpuPercent ?? 0)}c · {fmtBytes(p.memBytes ?? 0)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )
-        : null}
+      {procs === "fold"
+        ? <HostProcFold procs={top} />
+        : procs === "show" && top.length > 0
+          ? (
+              <div className="mt-3 border-t border-line/80 pt-2">
+                <HostProcList procs={top} />
+              </div>
+            )
+          : null}
 
       <p className="mt-2 text-[10px] text-faint">
         Docker share of the Mini ·
@@ -219,21 +271,26 @@ export function HostCard({ host, dockerError }: { host: HostLive | undefined; do
   }
 
   return (
-    <Link href="/host" className={CARD} data-shot="host">
-      <div className="flex min-w-0 items-start justify-between gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
-          <HostAvatar />
-          <span className="truncate">{live.hostname}</span>
-        </h2>
-        <div className="flex shrink-0 items-center gap-2">
-          <HostSpark spark={spark} />
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok">
-            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-            docker
-          </span>
+    <div className={`${CARD} relative`} data-shot="host">
+      <Link href="/host" className="absolute inset-0" aria-label={live.hostname}>
+        <span className="sr-only">{live.hostname}</span>
+      </Link>
+      <div className="pointer-events-none relative">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
+            <HostAvatar />
+            <span className="truncate">{live.hostname}</span>
+          </h2>
+          <div className="flex shrink-0 items-center gap-2">
+            <HostSpark spark={spark} />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok">
+              <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+              docker
+            </span>
+          </div>
         </div>
+        <HostMeters live={live} spark={spark} procs="fold" />
       </div>
-      <HostMeters live={live} spark={spark} />
-    </Link>
+    </div>
   );
 }

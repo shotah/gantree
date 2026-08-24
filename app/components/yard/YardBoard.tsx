@@ -92,7 +92,7 @@ function craneRecoveries(yard: YardInventory, slug: string): number {
 }
 
 const TILE
-  = "min-w-0 cursor-grab active:cursor-grabbing [&_a]:cursor-grab [&_a]:active:cursor-grabbing";
+  = "h-full min-w-0 cursor-grab active:cursor-grabbing [&_a]:cursor-grab [&_a]:active:cursor-grabbing";
 
 function BoardTile({
   id,
@@ -166,7 +166,7 @@ function GantryCardLink({
   return (
     <Link
       href={`/gantries/${g.slug}`}
-      className="block h-full min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5"
+      className="block h-full min-h-56 min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5"
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
         <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
@@ -273,8 +273,8 @@ export function YardBoard() {
   const allTags = [...new Set((yard?.gantries ?? []).flatMap((g) => g.tags))].sort();
   const tagColors = yard?.tagColors ?? {};
   const shown = tagFilter ? (yard?.gantries ?? []).filter((g) => g.tags.includes(tagFilter)) : yard?.gantries;
-  const allIds = [HOST_CARD_ID, ...(yard?.gantries ?? []).map((g) => g.slug)];
-  const visibleIds = [HOST_CARD_ID, ...(shown ?? []).map((g) => g.slug)];
+  const allIds = (yard?.gantries ?? []).map((g) => g.slug);
+  const visibleIds = (shown ?? []).map((g) => g.slug);
   const bySlug = new Map((yard?.gantries ?? []).map((g) => [g.slug, g]));
   const laidOut = applyBoardOrder(allIds, order).filter((id) => visibleIds.includes(id));
 
@@ -356,14 +356,10 @@ export function YardBoard() {
         : null}
 
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(18rem,1fr))]" role="list" aria-label="Yard cards">
+        <div role="listitem" data-board-id={HOST_CARD_ID} className="h-full min-w-0">
+          <HostCard host={yard?.host} dockerError={yard?.dockerError} />
+        </div>
         {laidOut.map((id) => {
-          if (id === HOST_CARD_ID) {
-            return (
-              <BoardTile key={id} id={id} onMove={moveCard}>
-                <HostCard host={yard?.host} dockerError={yard?.dockerError} />
-              </BoardTile>
-            );
-          }
           const g = bySlug.get(id);
           if (!g) {
             return null;
