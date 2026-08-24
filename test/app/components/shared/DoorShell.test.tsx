@@ -50,6 +50,8 @@ describe("DoorShell phone preview", () => {
     );
     await waitFor(() => expect(screen.getByText("Kit")).toBeTruthy());
     expect(screen.getByLabelText("color theme")).toBeTruthy();
+    expect(document.querySelector("header > div")?.className).toMatch(/max-w-screen-2xl/);
+    expect(screen.getByText("board").parentElement?.className).toMatch(/max-w-screen-2xl/);
     expect(document.querySelector('a[href="/?phone=1"]')).toBeNull();
   });
 
@@ -75,6 +77,23 @@ describe("DoorShell phone preview", () => {
     await waitFor(() => expect(screen.getByText("Kit")).toBeTruthy());
     expect(document.querySelector("[data-shot=phone-preview]")).toBeNull();
     expect(screen.getByText("board")).toBeTruthy();
+  });
+
+  it("does not wrap login in the dashboard column", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        json: async () => ({ ready: true, operator: null, bindOpen: false, dev: false }),
+      })),
+    );
+    vi.mocked(usePathname).mockReturnValue("/login");
+    render(
+      <DoorShell>
+        <main>login</main>
+      </DoorShell>,
+    );
+    await waitFor(() => expect(screen.getByText("login")).toBeTruthy());
+    expect(screen.getByText("login").parentElement?.className ?? "").not.toMatch(/max-w-screen-2xl/);
   });
 
   it("frames ?phone=1 when auth is in GANTREE_DEV", async () => {

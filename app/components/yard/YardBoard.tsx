@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
 import { DEFAULT_SPEND_WINDOW, FAT_DATA_DIR_BYTES, fmtAgo, fmtBytes, fmtEstTokens, lastDiskBytes, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BuildCrane } from "./BuildCrane";
@@ -11,6 +11,13 @@ import { EventStrip } from "../shared/EventStrip";
 import { TagChips, tagChipClass } from "../shared/TagChips";
 import { HostCard } from "./HostCard";
 import { SpendBoard } from "./SpendBoard";
+import {
+  applyBoardOrder,
+  HOST_CARD_ID,
+  moveVisibleBoardId,
+  readBoardOrder,
+  writeBoardOrder,
+} from "@/app/lib/boardOrder";
 import { yardFetch } from "@/app/lib/yardFetch";
 
 function Nag({ nag }: { nag: CraneNag }) {
@@ -84,12 +91,166 @@ function craneRecoveries(yard: YardInventory, slug: string): number {
   return yard.spend?.cranes.find((c) => c.slug === slug)?.trajectory.recoveries ?? 0;
 }
 
+const TILE
+  = "min-w-0 cursor-grab active:cursor-grabbing [&_a]:cursor-grab [&_a]:active:cursor-grabbing";
+
+function BoardTile({
+  id,
+  onMove,
+  children,
+}: {
+  id: string;
+  onMove: (from: string, to: string) => void;
+  children: ReactNode;
+}) {
+  const [over, setOver] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const suppressClick = useRef(false);
+  return (
+    <div
+      role="listitem"
+      data-board-id={id}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", id);
+        e.dataTransfer.effectAllowed = "move";
+        suppressClick.current = true;
+        setDragging(true);
+      }}
+      onDragEnd={() => {
+        setDragging(false);
+        setOver(false);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOver(false);
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        const from = e.dataTransfer.getData("text/plain");
+        if (from) {
+          onMove(from, id);
+        }
+      }}
+      onClickCapture={(e) => {
+        if (!suppressClick.current) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        suppressClick.current = false;
+      }}
+      className={`${TILE}${over ? " ring-1 ring-accent" : ""}${dragging ? " opacity-60" : ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function GantryCardLink({
+  g,
+  yard,
+  tagColors,
+}: {
+  g: GantryCard;
+  yard: YardInventory | null;
+  tagColors: Record<string, string>;
+}) {
+  return (
+    <Link
+      href={`/gantries/${g.slug}`}
+      className="block h-full min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5"
+    >
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
+          <CraneAvatar slug={g.slug} rev={g.avatarRev} />
+          <span className="truncate">{g.slug}</span>
+        </h2>
+        <div className="flex shrink-0 items-center gap-2">
+          <Spark samples={yard?.sparks?.[g.slug]} />
+          <RecoverySpark n={yard ? craneRecoveries(yard, g.slug) : 0} />
+          <Badge state={g.state} />
+        </div>
+      </div>
+      {g.tags.length ? <TagChips tags={g.tags} colors={tagColors} className="mt-2" /> : null}
+      <dl className="mt-3 min-w-0 space-y-1 text-xs text-muted max-sm:space-y-1.5 max-sm:text-sm">
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className="shrink-0">model</dt>
+          <dd className="min-w-0 truncate text-fg">{g.model ?? "—"}</dd>
+        </div>
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className="shrink-0">channel</dt>
+          <dd className="min-w-0 truncate text-fg">{g.channel ?? "—"}</dd>
+        </div>
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className="shrink-0">MCP</dt>
+          <dd className="min-w-0 truncate text-fg">
+            {g.mcpPublished}
+            {" "}
+            published ·
+            {g.mcpSkipped}
+            {" "}
+            skipped
+          </dd>
+        </div>
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className="shrink-0">est. tokens</dt>
+          <dd className="min-w-0 truncate text-fg">{yard ? craneSpendLabel(yard, g.slug) : "—"}</dd>
+        </div>
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className="shrink-0">last turn</dt>
+          <dd className="min-w-0 truncate text-fg" title={g.lastTurn ?? ""}>
+            {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
+          </dd>
+        </div>
+        {(() => {
+          const disk = lastDiskBytes(yard?.sparks?.[g.slug]);
+          if (disk == null || disk < FAT_DATA_DIR_BYTES) {
+            return null;
+          }
+          return (
+            <div className="flex min-w-0 justify-between gap-2">
+              <dt className="shrink-0">data dir</dt>
+              <dd className="min-w-0 truncate text-fg">{fmtBytes(disk)}</dd>
+            </div>
+          );
+        })()}
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className="shrink-0">image</dt>
+          <dd className="min-w-0 truncate text-fg" title={g.image ?? ""}>
+            {g.image ?? "—"}
+          </dd>
+        </div>
+      </dl>
+      {g.lastError ? <p className="mt-3 truncate text-xs text-danger/80">{g.lastError}</p> : null}
+      {g.mcpHint ? <p className="mt-2 truncate text-xs text-dim">{g.mcpHint}</p> : null}
+      {g.nags?.length
+        ? (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {g.nags.map((n) => (
+                <Nag key={`${n.kind}:${n.detail}`} nag={n} />
+              ))}
+            </div>
+          )
+        : null}
+    </Link>
+  );
+}
+
 export function YardBoard() {
   const { operator } = useDoor();
   const [yard, setYard] = useState<YardInventory | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [order, setOrder] = useState<string[]>(() => readBoardOrder());
   const eventsSlug = operator?.role === "admin" || (operator?.cranes.length ?? 0) !== 1 ? undefined : operator?.cranes[0];
 
   const load = useCallback(() => {
@@ -112,12 +273,27 @@ export function YardBoard() {
   const allTags = [...new Set((yard?.gantries ?? []).flatMap((g) => g.tags))].sort();
   const tagColors = yard?.tagColors ?? {};
   const shown = tagFilter ? (yard?.gantries ?? []).filter((g) => g.tags.includes(tagFilter)) : yard?.gantries;
+  const allIds = [HOST_CARD_ID, ...(yard?.gantries ?? []).map((g) => g.slug)];
+  const visibleIds = [HOST_CARD_ID, ...(shown ?? []).map((g) => g.slug)];
+  const bySlug = new Map((yard?.gantries ?? []).map((g) => [g.slug, g]));
+  const laidOut = applyBoardOrder(allIds, order).filter((id) => visibleIds.includes(id));
 
   useEffect(() => {
     load();
     const id = setInterval(load, dockerPending ? 1000 : 5000);
     return () => clearInterval(id);
   }, [load, dockerPending]);
+
+  function moveCard(from: string, to: string) {
+    if (from === to) {
+      return;
+    }
+    const full = applyBoardOrder(allIds, order);
+    const visible = full.filter((id) => visibleIds.includes(id));
+    const next = applyBoardOrder(allIds, moveVisibleBoardId(full, visible, from, to));
+    setOrder(next);
+    writeBoardOrder(next);
+  }
 
   return (
     <section className="flex min-w-0 flex-col gap-6" data-shot="yard">
@@ -179,88 +355,25 @@ export function YardBoard() {
           )
         : null}
 
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <HostCard host={yard?.host} dockerError={yard?.dockerError} />
-        {(shown ?? []).map((g) => (
-          <Link
-            key={g.slug}
-            href={`/gantries/${g.slug}`}
-            className="min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5"
-          >
-            <div className="flex min-w-0 items-start justify-between gap-2">
-              <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
-                <CraneAvatar slug={g.slug} rev={g.avatarRev} />
-                <span className="truncate">{g.slug}</span>
-              </h2>
-              <div className="flex shrink-0 items-center gap-2">
-                <Spark samples={yard?.sparks?.[g.slug]} />
-                <RecoverySpark n={yard ? craneRecoveries(yard, g.slug) : 0} />
-                <Badge state={g.state} />
-              </div>
-            </div>
-            {g.tags.length ? <TagChips tags={g.tags} colors={tagColors} className="mt-2" /> : null}
-            <dl className="mt-3 min-w-0 space-y-1 text-xs text-muted max-sm:space-y-1.5 max-sm:text-sm">
-              <div className="flex min-w-0 justify-between gap-2">
-                <dt className="shrink-0">model</dt>
-                <dd className="min-w-0 truncate text-fg">{g.model ?? "—"}</dd>
-              </div>
-              <div className="flex min-w-0 justify-between gap-2">
-                <dt className="shrink-0">channel</dt>
-                <dd className="min-w-0 truncate text-fg">{g.channel ?? "—"}</dd>
-              </div>
-              <div className="flex min-w-0 justify-between gap-2">
-                <dt className="shrink-0">MCP</dt>
-                <dd className="min-w-0 truncate text-fg">
-                  {g.mcpPublished}
-                  {" "}
-                  published ·
-                  {g.mcpSkipped}
-                  {" "}
-                  skipped
-                </dd>
-              </div>
-              <div className="flex min-w-0 justify-between gap-2">
-                <dt className="shrink-0">est. tokens</dt>
-                <dd className="min-w-0 truncate text-fg">{yard ? craneSpendLabel(yard, g.slug) : "—"}</dd>
-              </div>
-              <div className="flex min-w-0 justify-between gap-2">
-                <dt className="shrink-0">last turn</dt>
-                <dd className="min-w-0 truncate text-fg" title={g.lastTurn ?? ""}>
-                  {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
-                </dd>
-              </div>
-              {(() => {
-                const disk = lastDiskBytes(yard?.sparks?.[g.slug]);
-                if (disk == null || disk < FAT_DATA_DIR_BYTES) {
-                  return null;
-                }
-                return (
-                  <div className="flex min-w-0 justify-between gap-2">
-                    <dt className="shrink-0">data dir</dt>
-                    <dd className="min-w-0 truncate text-fg">{fmtBytes(disk)}</dd>
-                  </div>
-                );
-              })()}
-              <div className="flex min-w-0 justify-between gap-2">
-                <dt className="shrink-0">image</dt>
-                <dd className="min-w-0 truncate text-fg" title={g.image ?? ""}>
-                  {g.image ?? "—"}
-                </dd>
-              </div>
-            </dl>
-            {g.lastError ? <p className="mt-3 truncate text-xs text-danger/80">{g.lastError}</p> : null}
-            {g.mcpHint ? <p className="mt-2 truncate text-xs text-dim">{g.mcpHint}</p> : null}
-            {g.nags?.length
-              ? (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {g.nags.map((n) => (
-                      <Nag key={`${n.kind}:${n.detail}`} nag={n} />
-                    ))}
-                  </div>
-                )
-              : null}
-          </Link>
-        ))}
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(18rem,1fr))]" role="list" aria-label="Yard cards">
+        {laidOut.map((id) => {
+          if (id === HOST_CARD_ID) {
+            return (
+              <BoardTile key={id} id={id} onMove={moveCard}>
+                <HostCard host={yard?.host} dockerError={yard?.dockerError} />
+              </BoardTile>
+            );
+          }
+          const g = bySlug.get(id);
+          if (!g) {
+            return null;
+          }
+          return (
+            <BoardTile key={id} id={id} onMove={moveCard}>
+              <GantryCardLink g={g} yard={yard} tagColors={tagColors} />
+            </BoardTile>
+          );
+        })}
       </div>
 
       <EventStrip slug={eventsSlug} />

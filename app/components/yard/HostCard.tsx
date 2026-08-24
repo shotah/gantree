@@ -5,7 +5,7 @@ import { fmtAgo, fmtBps, fmtBytes, fmtCores, hostShare, lastHostNetRate } from "
 import type { HostLive, HostRole, HostSample, HostSnapshot } from "@/lib/yard/types";
 
 const CARD
-  = "min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5";
+  = "block h-full min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5";
 
 const ROLE_LABEL: Record<HostRole, string> = {
   crane: "agents",

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { emptyTrajectory } from "@/lib/yard/observe/spend";
 import type { SpendRollup, YardInventory, YardSpend } from "@/lib/yard/types";
 import { card } from "@/test/yard/card";
+import { BOARD_ORDER_KEY, HOST_CARD_ID } from "@/app/lib/boardOrder";
 import { YardBoard } from "@/app/components/yard/YardBoard";
 
 vi.mock("@/app/lib/yardFetch", () => ({
@@ -19,6 +20,7 @@ import { yardFetch } from "@/app/lib/yardFetch";
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
 });
 
 function crane(partial: Partial<SpendRollup> & Pick<SpendRollup, "slug">): SpendRollup {
@@ -190,5 +192,71 @@ describe("YardBoard", () => {
     expect(screen.queryByText("tryout")).toBeNull();
     fireEvent.click(within(bar).getByRole("button", { name: "home" }));
     expect(screen.getByText("tryout")).toBeTruthy();
+  });
+  it("fills the page column with as many card tracks as fit, not a fixed 3-col grid", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return { ok: true, json: async () => inventory() } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
+    const lane = screen.getByRole("list", { name: "Yard cards" });
+    expect(lane.className).toMatch(/auto-fill/);
+    expect(lane.className).toMatch(/minmax\(18rem/);
+    expect(lane.className).not.toMatch(/grid-cols-3/);
+  });
+
+  it("honors a saved card order and lets a drop move a crane in front of host", async () => {
+    localStorage.setItem(BOARD_ORDER_KEY, JSON.stringify(["tryout", HOST_CARD_ID, "kit"]));
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            gantries: [card({ slug: "kit" }), card({ slug: "tryout" })],
+          }),
+      } as Response;
+    });
+    const { unmount } = render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("tryout")).toBeTruthy());
+    const lane = screen.getByRole("list", { name: "Yard cards" });
+    const hrefs = () => [...lane.querySelectorAll("a")].map((a) => a.getAttribute("href"));
+    expect(hrefs()).toEqual(["/gantries/tryout", "/host", "/gantries/kit"]);
+
+    const store: Record<string, string> = {};
+    const dataTransfer = {
+      setData: (type: string, value: string) => {
+        store[type] = value;
+      },
+      getData: (type: string) => store[type] ?? "",
+      effectAllowed: "move",
+      dropEffect: "move",
+    };
+    const kit = lane.querySelector("[data-board-id='kit']");
+    const host = lane.querySelector("[data-board-id='" + HOST_CARD_ID + "']");
+    expect(kit).toBeTruthy();
+    expect(host).toBeTruthy();
+    fireEvent.dragStart(kit!, { dataTransfer });
+    fireEvent.dragOver(host!, { dataTransfer });
+    fireEvent.drop(host!, { dataTransfer });
+    expect(hrefs()).toEqual(["/gantries/tryout", "/gantries/kit", "/host"]);
+    expect(JSON.parse(localStorage.getItem(BOARD_ORDER_KEY) ?? "[]")).toEqual(["tryout", "kit", HOST_CARD_ID]);
+
+    unmount();
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
+    const again = screen.getByRole("list", { name: "Yard cards" });
+    expect([...again.querySelectorAll("a")].map((a) => a.getAttribute("href"))).toEqual([
+      "/gantries/tryout",
+      "/gantries/kit",
+      "/host",
+    ]);
   });
 });

@@ -7,6 +7,7 @@ import type { OperatorRole } from "@/lib/yard/door/channels";
 import { OperatorAvatar } from "./OperatorAvatar";
 import { GantreeMark } from "./GantreeMark";
 import { ThemeSelect } from "./ThemeSelect";
+import { PAGE_HEADER, PAGE_MAIN } from "@/app/lib/page";
 import { PHONE_PRESETS, phoneFrameSrc, phonePreset, phonePreviewHref } from "@/app/lib/phonePreview";
 
 export type DoorOperator = {
@@ -145,7 +146,7 @@ export function DoorShell({ children }: { children: ReactNode }) {
   return (
     <DoorContext.Provider value={door ?? { ready: false, operator: null, dev: false }}>
       <header className="min-w-0 border-b border-line px-6 py-3 max-sm:px-4 max-sm:pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="mx-auto flex min-w-0 max-w-6xl items-center justify-between gap-4 max-sm:gap-2">
+        <div className={PAGE_HEADER}>
           <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight text-accent max-sm:text-xl">
             <GantreeMark className="h-7 w-7 shrink-0 max-sm:h-8 max-sm:w-8" />
             gantree
@@ -200,7 +201,9 @@ export function DoorShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      {allow ? children : <p className="px-6 py-10 text-sm text-dim">opening the door…</p>}
+      {allow
+        ? (publicPage ? children : <div className={PAGE_MAIN}>{children}</div>)
+        : <p className={`${PAGE_MAIN} text-sm text-dim`}>opening the door…</p>}
     </DoorContext.Provider>
   );
 }
