@@ -72,28 +72,28 @@ export function PeoplePane({
     <>
       <ul className="grid min-w-0 gap-3 text-sm sm:grid-cols-3">
         {OPERATOR_ROLES.map((role) => (
-          <li key={role} className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2">
-            <p className="font-medium text-stone-100">{role}</p>
-            <p className="mt-1 text-xs text-zinc-500">{ROLE_BLURB[role]}</p>
+          <li key={role} className="rounded-lg border border-line bg-panel/40 px-3 py-2">
+            <p className="font-medium text-fg">{role}</p>
+            <p className="mt-1 text-xs text-dim">{ROLE_BLURB[role]}</p>
           </li>
         ))}
       </ul>
 
-      {err ? <p className="text-sm text-amber-200">{err}</p> : null}
-      {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
+      {err ? <p className="text-sm text-mark">{err}</p> : null}
+      {notice ? <p className="text-sm text-body">{notice}</p> : null}
 
       <ul className="space-y-2">
         {operators.map((o) => (
-          <li key={o.id} className="min-w-0 rounded border border-zinc-800 px-3 py-2 text-sm">
+          <li key={o.id} className="min-w-0 rounded border border-line px-3 py-2 text-sm">
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-3">
                 <OperatorAvatar id={o.id} rev={o.avatarRev} name={o.displayName || o.name} />
                 <span>
-                  <span className="font-medium text-stone-100">{o.displayName || o.name}</span>
-                  {you?.id === o.id ? <span className="ml-2 text-xs text-zinc-500">you</span> : null}
-                  <span className="ml-2 text-xs text-zinc-500">{o.role}</span>
-                  {o.cranes?.length ? <span className="ml-1 text-xs text-amber-200/80">{o.cranes.join(", ")}</span> : null}
-                  {o.name !== o.displayName ? <span className="ml-2 text-xs text-zinc-600">{o.name}</span> : null}
+                  <span className="font-medium text-fg">{o.displayName || o.name}</span>
+                  {you?.id === o.id ? <span className="ml-2 text-xs text-dim">you</span> : null}
+                  <span className="ml-2 text-xs text-dim">{o.role}</span>
+                  {o.cranes?.length ? <span className="ml-1 text-xs text-mark/80">{o.cranes.join(", ")}</span> : null}
+                  {o.name !== o.displayName ? <span className="ml-2 text-xs text-faint">{o.name}</span> : null}
                 </span>
               </div>
               {admin
@@ -101,7 +101,7 @@ export function PeoplePane({
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={you?.id === o.id ? "/profile" : `/profile/${o.id}`}
-                        className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700"
+                        className="rounded border border-edge px-2 py-1 text-xs hover:border-accent"
                       >
                         edit
                       </Link>
@@ -118,7 +118,7 @@ export function PeoplePane({
                                 setEditConfirm(false);
                                 setRemoveId(null);
                               }}
-                              className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700 disabled:opacity-50"
+                              className="rounded border border-edge px-2 py-1 text-xs hover:border-accent disabled:opacity-50"
                             >
                               role
                             </button>
@@ -134,7 +134,7 @@ export function PeoplePane({
                                 setRemoveConfirm(false);
                                 setEditId(null);
                               }}
-                              className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700 disabled:opacity-50"
+                              className="rounded border border-edge px-2 py-1 text-xs hover:border-accent disabled:opacity-50"
                               title={last ? "cannot delete the last operator" : "remove"}
                             >
                               remove
@@ -168,14 +168,14 @@ export function PeoplePane({
                   >
                     <RoleSelect value={editRole} onChange={setEditRole} />
                     {roleNeedsCrane(editRole) ? <CranePicks slugs={slugs} value={editCranes} onChange={setEditCranes} /> : null}
-                    <label className="flex items-center gap-2 text-amber-200">
+                    <label className="flex items-center gap-2 text-mark">
                       <input type="checkbox" checked={editConfirm} onChange={(e) => setEditConfirm(e.target.checked)} />
                       I am changing this operator's access
                     </label>
                     <button
                       type="submit"
                       disabled={busy || !editConfirm || (roleNeedsCrane(editRole) && editCranes.length === 0)}
-                      className="rounded border border-amber-800/80 px-2 py-1 text-amber-200 disabled:opacity-50"
+                      className="rounded border border-accent-line px-2 py-1 text-mark disabled:opacity-50"
                     >
                       save access
                     </button>
@@ -185,7 +185,7 @@ export function PeoplePane({
                         setEditId(null);
                         setEditConfirm(false);
                       }}
-                      className="text-zinc-500"
+                      className="text-dim"
                     >
                       cancel
                     </button>
@@ -195,7 +195,7 @@ export function PeoplePane({
             {admin && removeId === o.id
               ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <label className="flex items-center gap-2 text-amber-200">
+                    <label className="flex items-center gap-2 text-mark">
                       <input type="checkbox" checked={removeConfirm} onChange={(e) => setRemoveConfirm(e.target.checked)} />
                       I am removing this operator. Their sessions dies.
                     </label>
@@ -210,7 +210,7 @@ export function PeoplePane({
                           onChanged();
                         }
                       }}
-                      className="rounded border border-red-900/80 px-2 py-1 text-red-300 disabled:opacity-50"
+                      className="rounded border border-danger-line px-2 py-1 text-danger disabled:opacity-50"
                     >
                       confirm remove
                     </button>
@@ -220,7 +220,7 @@ export function PeoplePane({
                         setRemoveId(null);
                         setRemoveConfirm(false);
                       }}
-                      className="text-zinc-500"
+                      className="text-dim"
                     >
                       cancel
                     </button>
@@ -234,7 +234,7 @@ export function PeoplePane({
       {admin
         ? (
             <form
-              className="flex max-w-md flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+              className="flex max-w-md flex-col gap-3 rounded-lg border border-line bg-panel/60 p-4"
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (passphrase !== confirmPass) {
@@ -261,10 +261,10 @@ export function PeoplePane({
                 }
               }}
             >
-              <h2 className="text-sm font-medium text-zinc-400">Add an operator</h2>
+              <h2 className="text-sm font-medium text-muted">Add an operator</h2>
               <HintField label="name" {...HINTS.operatorName}>
                 <input
-                  className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                  className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -276,7 +276,7 @@ export function PeoplePane({
               </HintField>
               <HintField label="passphrase" {...HINTS.operatorPass}>
                 <input
-                  className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                  className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                   type="password"
                   value={passphrase}
                   onChange={(e) => setPassphrase(e.target.value)}
@@ -288,7 +288,7 @@ export function PeoplePane({
               </HintField>
               <HintField label="confirm" {...HINTS.operatorConfirm}>
                 <input
-                  className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                  className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                   type="password"
                   value={confirmPass}
                   onChange={(e) => setConfirmPass(e.target.value)}
@@ -300,14 +300,14 @@ export function PeoplePane({
               </HintField>
               <RoleSelect value={addRole} onChange={setAddRole} />
               {roleNeedsCrane(addRole) ? <CranePicks slugs={slugs} value={addCranes} onChange={setAddCranes} /> : null}
-              <label className="flex items-center gap-2 text-xs text-amber-200">
+              <label className="flex items-center gap-2 text-xs text-mark">
                 <input type="checkbox" checked={addConfirm} onChange={(e) => setAddConfirm(e.target.checked)} />
                 I am adding this operator
               </label>
               <button
                 type="submit"
                 disabled={busy || !addConfirm || (roleNeedsCrane(addRole) && addCranes.length === 0)}
-                className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50"
+                className="rounded border border-accent-line bg-accent-soft px-3 py-2 text-sm text-mark hover:border-accent disabled:opacity-50"
               >
                 Add operator
               </button>
@@ -322,7 +322,7 @@ function RoleSelect({ value, onChange }: { value: OperatorRole; onChange: (role:
   return (
     <HintField label="role" {...HINTS.operatorRole}>
       <select
-        className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+        className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
         value={value}
         onChange={(e) => onChange(e.target.value as OperatorRole)}
       >
@@ -344,7 +344,7 @@ function CranePicks({ slugs, value, onChange }: { slugs: string[]; value: string
     return (
       <HintField label="cranes" {...HINTS.operatorCranes}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           value={value.join(", ")}
           onChange={(e) =>
             onChange(
@@ -360,11 +360,11 @@ function CranePicks({ slugs, value, onChange }: { slugs: string[]; value: string
     );
   }
   return (
-    <HintLegend label="cranes" className="text-xs text-zinc-500" {...HINTS.operatorCranes}>
+    <HintLegend label="cranes" className="text-xs text-dim" {...HINTS.operatorCranes}>
       <ul className="mt-1 flex flex-wrap gap-1.5">
         {slugs.map((slug) => (
           <li key={slug}>
-            <label className="inline-flex items-center gap-1.5 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-stone-100">
+            <label className="inline-flex items-center gap-1.5 rounded border border-line bg-canvas px-2 py-1 text-sm text-fg">
               <input type="checkbox" checked={value.includes(slug)} onChange={() => toggle(slug)} />
               {slug}
             </label>

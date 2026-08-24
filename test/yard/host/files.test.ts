@@ -5,10 +5,12 @@ import {
   backupFiles,
   envKeyNames,
   loadGantreeToml,
+  mergeTomlTagColors,
   parseMcpToml,
   stringifyMcpToml,
   upsertTomlGantry,
   removeTomlGantry,
+  setTomlGantryTags,
   writeText,
 } from "@/lib/yard/host/files";
 
@@ -76,6 +78,26 @@ describe("inventory toml", () => {
     expect(removeTomlGantry("kit")).toBe(false);
     expect(removeTomlGantry("tryout")).toBe(true);
     expect(loadGantreeToml()?.gantry).toEqual([]);
+  });
+
+  it("round-trips crane tags and yard-wide hues", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    process.env.GANTREE_TOML = join(root, "gantree.toml");
+    expect(mergeTomlTagColors({ home: "red" })).toBe(false);
+    expect(setTomlGantryTags("kit", ["home"])).toBe(false);
+    upsertTomlGantry({ slug: "kit" });
+    expect(setTomlGantryTags("kit", ["home", "guest"])).toBe(true);
+    expect(setTomlGantryTags("missing", ["home"])).toBe(false);
+    expect(mergeTomlTagColors({ home: "red" })).toBe(true);
+    expect(mergeTomlTagColors({ guest: "green" })).toBe(true);
+    const doc = loadGantreeToml();
+    expect(doc?.gantry?.[0]?.tags).toEqual(["home", "guest"]);
+    expect(doc?.tag_color).toEqual({ home: "red", guest: "green" });
+    expect(setTomlGantryTags("kit", [])).toBe(true);
+    expect(loadGantreeToml()?.gantry?.[0]?.tags).toBeUndefined();
+    expect(loadGantreeToml()?.tag_color).toEqual({ home: "red", guest: "green" });
   });
 });
 

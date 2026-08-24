@@ -72,16 +72,16 @@ export function YardPane({ admin }: { admin: boolean }) {
   }
 
   if (!prefs) {
-    return <p className="text-sm text-zinc-500">{err || "loading yard prefs…"}</p>;
+    return <p className="text-sm text-dim">{err || "loading yard prefs…"}</p>;
   }
 
   return (
-    <form className="flex max-w-lg flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4" onSubmit={save}>
-      {err ? <p className="text-sm text-amber-200">{err}</p> : null}
-      {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
+    <form className="flex max-w-lg flex-col gap-3 rounded-lg border border-line bg-panel/60 p-4" onSubmit={save}>
+      {err ? <p className="text-sm text-mark">{err}</p> : null}
+      {notice ? <p className="text-sm text-body">{notice}</p> : null}
       <HintField label="host retain days" {...HINTS.hostRetain}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           type="number"
           min={1}
           max={90}
@@ -92,7 +92,7 @@ export function YardPane({ admin }: { admin: boolean }) {
       </HintField>
       <HintField label="turn retain days" {...HINTS.turnRetain}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           type="number"
           min={1}
           max={120}
@@ -103,7 +103,7 @@ export function YardPane({ admin }: { admin: boolean }) {
       </HintField>
       <HintField label="timezone" {...HINTS.timezone}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           value={timezone}
           disabled={!admin}
           placeholder="America/Los_Angeles — blank = local"
@@ -112,16 +112,16 @@ export function YardPane({ admin }: { admin: boolean }) {
       </HintField>
       <HintField label="default image pin" {...HINTS.defaultImage}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           value={image}
           disabled={!admin}
           onChange={(e) => setImage(e.target.value)}
         />
-        <span className="text-xs text-zinc-500">New cranes only. Existing compose tags stay until you pin/recreate.</span>
+        <span className="text-xs text-dim">New cranes only. Existing compose tags stay until you pin/recreate.</span>
       </HintField>
       <HintField label="prompt $/1M" {...HINTS.promptRate}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           value={prompt}
           disabled={!admin}
           inputMode="decimal"
@@ -131,7 +131,7 @@ export function YardPane({ admin }: { admin: boolean }) {
       </HintField>
       <HintField label="gen $/1M" {...HINTS.genRate}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           value={gen}
           disabled={!admin}
           inputMode="decimal"
@@ -139,27 +139,27 @@ export function YardPane({ admin }: { admin: boolean }) {
           onChange={(e) => setGen(e.target.value)}
         />
       </HintField>
-      <p className="text-[11px] text-zinc-600">
+      <p className="text-[11px] text-faint">
         Session idle (7 days) and absolute (30 days) stay in the door code — not toml. See docs/security.md.
       </p>
       {admin
         ? (
             <>
-              <label className="flex items-center gap-2 text-xs text-amber-200">
+              <label className="flex items-center gap-2 text-xs text-mark">
                 <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
                 {shrink ? "I am shortening retain — older sqlite samples will be deleted" : "I am saving yard observe prefs"}
               </label>
               <button
                 type="submit"
                 disabled={busy || !confirm}
-                className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50"
+                className="rounded border border-accent-line bg-accent-soft px-3 py-2 text-sm text-mark hover:border-accent disabled:opacity-50"
               >
                 Save yard prefs
               </button>
             </>
           )
         : (
-            <p className="text-xs text-zinc-500">Rates are visible so spend $ matches. Only admin can write.</p>
+            <p className="text-xs text-dim">Rates are visible so spend $ matches. Only admin can write.</p>
           )}
     </form>
   );

@@ -4,7 +4,7 @@ import { memo } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { filterSamples, hostNetRates, thinChartPoints } from "@/lib/yard/observe/spend";
 import type { HostSample } from "@/lib/yard/types";
-import { ChartFrame, CHART_TOOLTIP, fmtTick, spanOf } from "../shared/ChartFrame";
+import { ChartFrame, CHART_GRID, CHART_TICK, CHART_TOOLTIP, SERIES, wash, fmtTick, spanOf } from "../shared/ChartFrame";
 
 export const HostCharts = memo(function HostCharts({
   spark,
@@ -49,26 +49,26 @@ export const HostCharts = memo(function HostCharts({
       <ChartFrame title="CPU % of host" empty={cpuRows.length === 0} caption="Docker share stacked · leftover is the OS">
         <ResponsiveContainer>
           <AreaChart data={cpuRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={36} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="agents" type="monotone" stackId="cpu" stroke="#f59e0b" fill="#f59e0b33" />
-            <Area dataKey="dashboard" type="monotone" stackId="cpu" stroke="#38bdf8" fill="#38bdf833" />
-            <Area dataKey="other" type="monotone" stackId="cpu" stroke="#71717a" fill="#71717a33" />
+            <Area dataKey="agents" type="monotone" stackId="cpu" stroke={SERIES.accent} fill={wash(SERIES.accent)} />
+            <Area dataKey="dashboard" type="monotone" stackId="cpu" stroke={SERIES.info} fill={wash(SERIES.info)} />
+            <Area dataKey="other" type="monotone" stackId="cpu" stroke={SERIES.dim} fill={wash(SERIES.dim)} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
       <ChartFrame title="RAM (GiB)" empty={cpuRows.length === 0} caption="agents / dashboard / other in Docker">
         <ResponsiveContainer>
           <AreaChart data={cpuRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={36} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="agentsGiB" name="agents" type="monotone" stackId="mem" stroke="#f59e0b" fill="#f59e0b33" />
-            <Area dataKey="dashboardGiB" name="dashboard" type="monotone" stackId="mem" stroke="#38bdf8" fill="#38bdf833" />
-            <Area dataKey="otherGiB" name="other" type="monotone" stackId="mem" stroke="#71717a" fill="#71717a33" />
+            <Area dataKey="agentsGiB" name="agents" type="monotone" stackId="mem" stroke={SERIES.accent} fill={wash(SERIES.accent)} />
+            <Area dataKey="dashboardGiB" name="dashboard" type="monotone" stackId="mem" stroke={SERIES.info} fill={wash(SERIES.info)} />
+            <Area dataKey="otherGiB" name="other" type="monotone" stackId="mem" stroke={SERIES.dim} fill={wash(SERIES.dim)} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
@@ -80,13 +80,13 @@ export const HostCharts = memo(function HostCharts({
       >
         <ResponsiveContainer>
           <AreaChart data={netRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={44} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="agentsRx" name="agents" type="monotone" stackId="rx" stroke="#f59e0b" fill="#f59e0b33" />
-            <Area dataKey="dashboardRx" name="dashboard" type="monotone" stackId="rx" stroke="#38bdf8" fill="#38bdf833" />
-            <Area dataKey="otherRx" name="other" type="monotone" stackId="rx" stroke="#71717a" fill="#71717a33" />
+            <Area dataKey="agentsRx" name="agents" type="monotone" stackId="rx" stroke={SERIES.accent} fill={wash(SERIES.accent)} />
+            <Area dataKey="dashboardRx" name="dashboard" type="monotone" stackId="rx" stroke={SERIES.info} fill={wash(SERIES.info)} />
+            <Area dataKey="otherRx" name="other" type="monotone" stackId="rx" stroke={SERIES.dim} fill={wash(SERIES.dim)} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
@@ -98,13 +98,13 @@ export const HostCharts = memo(function HostCharts({
       >
         <ResponsiveContainer>
           <AreaChart data={netRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={44} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="agentsTx" name="agents" type="monotone" stackId="tx" stroke="#f59e0b" fill="#f59e0b33" />
-            <Area dataKey="dashboardTx" name="dashboard" type="monotone" stackId="tx" stroke="#38bdf8" fill="#38bdf833" />
-            <Area dataKey="otherTx" name="other" type="monotone" stackId="tx" stroke="#71717a" fill="#71717a33" />
+            <Area dataKey="agentsTx" name="agents" type="monotone" stackId="tx" stroke={SERIES.accent} fill={wash(SERIES.accent)} />
+            <Area dataKey="dashboardTx" name="dashboard" type="monotone" stackId="tx" stroke={SERIES.info} fill={wash(SERIES.info)} />
+            <Area dataKey="otherTx" name="other" type="monotone" stackId="tx" stroke={SERIES.dim} fill={wash(SERIES.dim)} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>

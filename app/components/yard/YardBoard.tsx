@@ -8,21 +8,22 @@ import { BuildCrane } from "./BuildCrane";
 import { CraneAvatar } from "../shared/CraneAvatar";
 import { useDoor } from "../shared/DoorShell";
 import { EventStrip } from "../shared/EventStrip";
+import { TagChips, tagChipClass } from "../shared/TagChips";
 import { HostCard } from "./HostCard";
 import { SpendBoard } from "./SpendBoard";
 import { yardFetch } from "@/app/lib/yardFetch";
 
 function Nag({ nag }: { nag: CraneNag }) {
   const color
-    = nag.kind === "dead" ? "border-red-900/70 bg-red-950/40 text-red-200" : "border-amber-900/70 bg-amber-950/40 text-amber-200";
+    = nag.kind === "dead" ? "border-danger-line bg-danger-soft text-danger" : "border-warn-line bg-warn-soft text-warn";
   return <span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${color}`}>{nag.detail}</span>;
 }
 
 function Badge({ state }: { state: GantryCard["state"] }) {
   const on = state === "running";
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${on ? "text-emerald-400" : "text-zinc-500"}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-emerald-400" : "bg-zinc-600"}`} />
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${on ? "text-ok" : "text-dim"}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-ok" : "bg-faint"}`} />
       {state}
     </span>
   );
@@ -55,7 +56,7 @@ function Spark({ samples }: { samples: StatSample[] | undefined }) {
     })
     .join(" ");
   return (
-    <svg width={w} height={h} className="shrink-0 text-amber-500" aria-hidden>
+    <svg width={w} height={h} className="shrink-0 text-accent" aria-hidden>
       <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={pts} />
     </svg>
   );
@@ -71,7 +72,7 @@ function RecoverySpark({ n }: { n: number }) {
   const gap = 2;
   const bw = (w - gap * (bars - 1)) / bars;
   return (
-    <svg width={w} height={h} className="shrink-0 text-red-400/80" aria-label={`${n} ${n === 1 ? "recovery" : "recoveries"}`}>
+    <svg width={w} height={h} className="shrink-0 text-danger/80" aria-label={`${n} ${n === 1 ? "recovery" : "recoveries"}`}>
       {Array.from({ length: bars }, (_, i) => (
         <rect key={i} x={i * (bw + gap)} y={2} width={bw} height={h - 4} rx={0.5} fill="currentColor" />
       ))}
@@ -88,6 +89,7 @@ export function YardBoard() {
   const [yard, setYard] = useState<YardInventory | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const eventsSlug = operator?.role === "admin" || (operator?.cranes.length ?? 0) !== 1 ? undefined : operator?.cranes[0];
 
   const load = useCallback(() => {
@@ -107,6 +109,9 @@ export function YardBoard() {
   }, [spendWindow]);
 
   const dockerPending = !yard || Boolean(yard.dockerPending);
+  const allTags = [...new Set((yard?.gantries ?? []).flatMap((g) => g.tags))].sort();
+  const tagColors = yard?.tagColors ?? {};
+  const shown = tagFilter ? (yard?.gantries ?? []).filter((g) => g.tags.includes(tagFilter)) : yard?.gantries;
 
   useEffect(() => {
     load();
@@ -118,8 +123,8 @@ export function YardBoard() {
     <section className="flex min-w-0 flex-col gap-6" data-shot="yard">
       <div className="flex flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Shipping yard</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold tracking-tight text-fg">Shipping yard</h1>
+          <p className="mt-1 text-sm text-dim">
             {yard
               ? `${yard.gantries.length} crane${yard.gantries.length === 1 ? "" : "s"} · ${yard.source} · ${yard.yard}${yard.dockerPending ? " · checking Docker…" : ""}`
               : "loading…"}
@@ -130,7 +135,7 @@ export function YardBoard() {
 
       {error
         ? (
-            <p className="rounded-md border border-amber-900/60 bg-amber-950/40 px-4 py-3 text-sm text-amber-200">{error}</p>
+            <p className="rounded-md border border-accent-line bg-accent-soft px-4 py-3 text-sm text-mark">{error}</p>
           )
         : null}
 
@@ -138,52 +143,74 @@ export function YardBoard() {
 
       {yard && yard.gantries.length === 0 && !yard.dockerPending
         ? (
-            <div className="rounded-lg border border-dashed border-zinc-800 px-5 py-8 text-sm text-zinc-400">
+            <div className="rounded-lg border border-dashed border-line px-5 py-8 text-sm text-muted">
               <p>
                 No cranes yet. Build one from this board, or copy
                 {" "}
-                <code className="text-amber-500">gantree.toml.example</code>
+                <code className="text-accent">gantree.toml.example</code>
                 {" "}
                 to
                 {" "}
-                <code className="text-amber-500">gantree.toml</code>
+                <code className="text-accent">gantree.toml</code>
                 .
               </p>
             </div>
           )
         : null}
 
+      {allTags.length
+        ? (
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by tag">
+              <span className="text-xs text-dim">tags</span>
+              {allTags.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={tagFilter === t}
+                  onClick={() => setTagFilter((cur) => (cur === t ? null : t))}
+                  className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
+                    tagFilter === t ? `${tagChipClass(tagColors[t])} ring-1 ring-fg` : tagChipClass(tagColors[t])
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )
+        : null}
+
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <HostCard host={yard?.host} dockerError={yard?.dockerError} />
-        {yard?.gantries.map((g) => (
+        {(shown ?? []).map((g) => (
           <Link
             key={g.slug}
             href={`/gantries/${g.slug}`}
-            className="min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70 max-sm:p-5"
+            className="min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5"
           >
             <div className="flex min-w-0 items-start justify-between gap-2">
-              <h2 className="flex min-w-0 items-center gap-2 font-semibold text-stone-100 max-sm:text-lg">
+              <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
                 <CraneAvatar slug={g.slug} rev={g.avatarRev} />
                 <span className="truncate">{g.slug}</span>
               </h2>
               <div className="flex shrink-0 items-center gap-2">
-                <Spark samples={yard.sparks?.[g.slug]} />
-                <RecoverySpark n={craneRecoveries(yard, g.slug)} />
+                <Spark samples={yard?.sparks?.[g.slug]} />
+                <RecoverySpark n={yard ? craneRecoveries(yard, g.slug) : 0} />
                 <Badge state={g.state} />
               </div>
             </div>
-            <dl className="mt-3 min-w-0 space-y-1 text-xs text-zinc-400 max-sm:space-y-1.5 max-sm:text-sm">
+            {g.tags.length ? <TagChips tags={g.tags} colors={tagColors} className="mt-2" /> : null}
+            <dl className="mt-3 min-w-0 space-y-1 text-xs text-muted max-sm:space-y-1.5 max-sm:text-sm">
               <div className="flex min-w-0 justify-between gap-2">
                 <dt className="shrink-0">model</dt>
-                <dd className="min-w-0 truncate text-zinc-200">{g.model ?? "—"}</dd>
+                <dd className="min-w-0 truncate text-fg">{g.model ?? "—"}</dd>
               </div>
               <div className="flex min-w-0 justify-between gap-2">
                 <dt className="shrink-0">channel</dt>
-                <dd className="min-w-0 truncate text-zinc-200">{g.channel ?? "—"}</dd>
+                <dd className="min-w-0 truncate text-fg">{g.channel ?? "—"}</dd>
               </div>
               <div className="flex min-w-0 justify-between gap-2">
                 <dt className="shrink-0">MCP</dt>
-                <dd className="min-w-0 truncate text-zinc-200">
+                <dd className="min-w-0 truncate text-fg">
                   {g.mcpPublished}
                   {" "}
                   published ·
@@ -194,35 +221,35 @@ export function YardBoard() {
               </div>
               <div className="flex min-w-0 justify-between gap-2">
                 <dt className="shrink-0">est. tokens</dt>
-                <dd className="min-w-0 truncate text-zinc-200">{craneSpendLabel(yard, g.slug)}</dd>
+                <dd className="min-w-0 truncate text-fg">{yard ? craneSpendLabel(yard, g.slug) : "—"}</dd>
               </div>
               <div className="flex min-w-0 justify-between gap-2">
                 <dt className="shrink-0">last turn</dt>
-                <dd className="min-w-0 truncate text-zinc-200" title={g.lastTurn ?? ""}>
+                <dd className="min-w-0 truncate text-fg" title={g.lastTurn ?? ""}>
                   {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
                 </dd>
               </div>
               {(() => {
-                const disk = lastDiskBytes(yard.sparks?.[g.slug]);
+                const disk = lastDiskBytes(yard?.sparks?.[g.slug]);
                 if (disk == null || disk < FAT_DATA_DIR_BYTES) {
                   return null;
                 }
                 return (
                   <div className="flex min-w-0 justify-between gap-2">
                     <dt className="shrink-0">data dir</dt>
-                    <dd className="min-w-0 truncate text-zinc-200">{fmtBytes(disk)}</dd>
+                    <dd className="min-w-0 truncate text-fg">{fmtBytes(disk)}</dd>
                   </div>
                 );
               })()}
               <div className="flex min-w-0 justify-between gap-2">
                 <dt className="shrink-0">image</dt>
-                <dd className="min-w-0 truncate text-zinc-200" title={g.image ?? ""}>
+                <dd className="min-w-0 truncate text-fg" title={g.image ?? ""}>
                   {g.image ?? "—"}
                 </dd>
               </div>
             </dl>
-            {g.lastError ? <p className="mt-3 truncate text-xs text-red-300/80">{g.lastError}</p> : null}
-            {g.mcpHint ? <p className="mt-2 truncate text-xs text-zinc-500">{g.mcpHint}</p> : null}
+            {g.lastError ? <p className="mt-3 truncate text-xs text-danger/80">{g.lastError}</p> : null}
+            {g.mcpHint ? <p className="mt-2 truncate text-xs text-dim">{g.mcpHint}</p> : null}
             {g.nags?.length
               ? (
                   <div className="mt-2 flex flex-wrap gap-1">

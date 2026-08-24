@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { HINTS } from "@/lib/yard/hints";
 import { fmtSpendWindow, labelRollup, rollupTurns } from "@/lib/yard/observe/spend";
 import { CraneAvatar } from "../shared/CraneAvatar";
 import { craneLayoutKey, craneLayoutKeys, DashFold, FoldAllBar } from "../shared/DashFold";
 import { DoctorPanel } from "./DoctorPanel";
 import { EventStrip } from "../shared/EventStrip";
+import { TagChips } from "../shared/TagChips";
 import { InjectUserModal } from "./InjectUserModal";
 import { LogViewer } from "./LogViewer";
 import { CraneSpend, SpendScope } from "../yard/SpendBoard";
@@ -18,7 +19,9 @@ import { PersonaFold } from "./PersonaFold";
 import { PhotoFold } from "./PhotoFold";
 import { PinFold } from "./PinFold";
 import { SecretsFold } from "./SecretsFold";
+import { TagsFold } from "./TagsFold";
 import { ToolsFold } from "./ToolsFold";
+import { CloneModal } from "./CloneModal";
 import { useAgentDashboard } from "./useAgentDashboard";
 
 const MetricCharts = lazy(() => import("./MetricCharts").then((m) => ({ default: m.MetricCharts })));
@@ -54,8 +57,10 @@ export function AgentDashboard({ slug }: { slug: string }) {
     now,
     refresh,
     destroy,
+    cloneTo,
     act,
     mutate,
+    canBuild,
     telegramOn,
     since,
     allowedBuckets,
@@ -64,13 +69,15 @@ export function AgentDashboard({ slug }: { slug: string }) {
     setBusy,
   } = dash;
 
+  const [cloneOpen, setCloneOpen] = useState(false);
+
   if (denied) {
     return (
       <section className="flex flex-col gap-3">
-        <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
+        <Link href="/" className="text-xs text-dim hover:text-accent max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
           ← shipping yard
         </Link>
-        <p className="text-sm text-amber-200">No crane here, or it is not in your access.</p>
+        <p className="text-sm text-mark">No crane here, or it is not in your access.</p>
       </section>
     );
   }
@@ -81,13 +88,14 @@ export function AgentDashboard({ slug }: { slug: string }) {
         <div className="flex min-w-0 items-start gap-3">
           <CraneAvatar slug={slug} rev={gantry?.avatarRev ?? null} size="lg" />
           <div className="min-w-0">
-            <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
+            <Link href="/" className="text-xs text-dim hover:text-accent max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
               ← shipping yard
             </Link>
             <h1 className="mt-1 min-w-0 truncate text-2xl font-semibold tracking-tight">{slug}</h1>
-            <p className="text-sm text-zinc-500 max-sm:break-words">
+            <p className="text-sm text-dim max-sm:break-words">
               {gantry ? `${gantry.state} · ${gantry.model ?? "no model"} · ${gantry.channel ?? "no channel"}` : "loading…"}
             </p>
+            {gantry?.tags?.length ? <TagChips tags={gantry.tags} colors={dash.tagColors} className="mt-2" /> : null}
             <FoldAllBar keys={craneLayoutKeys()} />
           </div>
         </div>
@@ -100,11 +108,23 @@ export function AgentDashboard({ slug }: { slug: string }) {
                     type="button"
                     disabled={busy}
                     onClick={() => act(a)}
-                    className="rounded border border-zinc-700 px-3 py-1.5 text-xs capitalize text-stone-200 hover:border-amber-700 disabled:opacity-50 max-sm:text-sm"
+                    className="rounded border border-edge px-3 py-1.5 text-xs capitalize text-body hover:border-accent disabled:opacity-50 max-sm:text-sm"
                   >
                     {a}
                   </button>
                 ))}
+                {canBuild
+                  ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setCloneOpen(true)}
+                        className="rounded border border-edge px-3 py-1.5 text-xs capitalize text-body hover:border-accent disabled:opacity-50 max-sm:text-sm"
+                      >
+                        clone
+                      </button>
+                    )
+                  : null}
                 <button
                   type="button"
                   disabled={busy}
@@ -112,7 +132,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
                     setDestroyFiles(false);
                     setDestroyOpen(true);
                   }}
-                  className="rounded border border-red-900/70 px-3 py-1.5 text-xs capitalize text-red-200 hover:border-red-600 disabled:opacity-50 max-sm:text-sm"
+                  className="rounded border border-danger-line px-3 py-1.5 text-xs capitalize text-danger hover:border-danger disabled:opacity-50 max-sm:text-sm"
                 >
                   destroy
                 </button>
@@ -123,15 +143,16 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       {!mutate
         ? (
-            <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400">
+            <p className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-muted">
               read only — you can look, not grant or recreate.
             </p>
           )
         : null}
 
-      {notice ? <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300">{notice}</p> : null}
+      {notice ? <p className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-body">{notice}</p> : null}
 
       <PhotoFold dash={dash} />
+      <TagsFold dash={dash} />
 
       {telegramOn
         ? (
@@ -181,6 +202,16 @@ export function AgentDashboard({ slug }: { slug: string }) {
       <SecretsFold dash={dash} />
       <PinFold dash={dash} />
 
+      {cloneOpen
+        ? (
+            <CloneModal
+              sourceSlug={slug}
+              busy={busy}
+              onClose={() => setCloneOpen(false)}
+              onClone={(choice) => cloneTo(choice)}
+            />
+          )
+        : null}
       {destroyOpen
         ? (
             <YardModal
@@ -191,7 +222,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
                   <button
                     type="button"
                     onClick={() => setDestroyOpen(false)}
-                    className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-zinc-500"
+                    className="rounded border border-edge px-3 py-1.5 text-xs hover:border-dim"
                   >
                     Cancel
                   </button>
@@ -199,7 +230,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
                     type="button"
                     disabled={busy}
                     onClick={() => void destroy()}
-                    className="rounded border border-red-900/70 bg-red-950/40 px-3 py-1.5 text-xs text-red-200 hover:border-red-600 disabled:opacity-50"
+                    className="rounded border border-danger-line bg-danger-soft px-3 py-1.5 text-xs text-danger hover:border-danger disabled:opacity-50"
                   >
                     Destroy
                   </button>
@@ -207,7 +238,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
               )}
             >
               <p>{HINTS.destroyCrane.hint}</p>
-              <label className="mt-3 flex items-start gap-2 text-sm text-zinc-300">
+              <label className="mt-3 flex items-start gap-2 text-sm text-body">
                 <input
                   type="checkbox"
                   className="mt-0.5"
@@ -216,7 +247,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
                 />
                 <span>
                   Also delete files
-                  <span className="mt-0.5 block text-xs text-zinc-500">{HINTS.destroyFiles.hint}</span>
+                  <span className="mt-0.5 block text-xs text-dim">{HINTS.destroyFiles.hint}</span>
                 </span>
               </label>
             </YardModal>
@@ -232,7 +263,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
                   <button
                     type="button"
                     onClick={() => setEnvRecreateOpen(false)}
-                    className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-zinc-500"
+                    className="rounded border border-edge px-3 py-1.5 text-xs hover:border-dim"
                   >
                     Later
                   </button>
@@ -245,7 +276,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
                             setEnvRecreateOpen(false);
                             void act("recreate");
                           }}
-                          className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
+                          className="rounded border border-accent-line bg-accent-soft px-3 py-1.5 text-xs text-mark hover:border-accent disabled:opacity-50"
                         >
                           Recreate now
                         </button>

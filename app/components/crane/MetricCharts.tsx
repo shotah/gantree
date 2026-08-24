@@ -13,7 +13,7 @@ import {
   type SpendBucket,
 } from "@/lib/yard/observe/spend";
 import type { McpSample, StatSample, TurnSample, UptimeSample } from "@/lib/yard/types";
-import { ChartFrame, CHART_TOOLTIP, fmtTick, mib, spanOf } from "../shared/ChartFrame";
+import { ChartFrame, CHART_GRID, CHART_TICK, CHART_TOOLTIP, SERIES, wash, fmtTick, mib, spanOf } from "../shared/ChartFrame";
 
 export const MetricCharts = memo(function MetricCharts({
   host,
@@ -95,11 +95,11 @@ export const MetricCharts = memo(function MetricCharts({
   const hasSource = turnsIn.some((t) => t.source);
   const sourceKeys = SOURCE_ORDER.filter((k) => sourceRows.some((r) => r[k] > 0));
   const sourceStroke: Record<(typeof SOURCE_ORDER)[number], string> = {
-    user: "#34d399",
-    cron: "#f59e0b",
-    watch: "#38bdf8",
-    reaction: "#a78bfa",
-    unknown: "#71717a",
+    user: SERIES.ok,
+    cron: SERIES.accent,
+    watch: SERIES.info,
+    reaction: SERIES.reaction,
+    unknown: SERIES.dim,
   };
 
   return (
@@ -107,11 +107,11 @@ export const MetricCharts = memo(function MetricCharts({
       <ChartFrame title="CPU %" empty={hostRows.length === 0}>
         <ResponsiveContainer>
           <AreaChart data={hostRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={36} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="cpu" type="monotone" stroke="#f59e0b" fill="#f59e0b33" connectNulls />
+            <Area dataKey="cpu" type="monotone" stroke={SERIES.accent} fill={wash(SERIES.accent)} connectNulls />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
@@ -122,11 +122,11 @@ export const MetricCharts = memo(function MetricCharts({
       >
         <ResponsiveContainer>
           <AreaChart data={hostRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={44} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="mem" type="monotone" stroke="#e7e5e4" fill="#e7e5e422" connectNulls />
+            <Area dataKey="mem" type="monotone" stroke={SERIES.body} fill={wash(SERIES.body, 13)} connectNulls />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
@@ -141,12 +141,12 @@ export const MetricCharts = memo(function MetricCharts({
               >
                 <ResponsiveContainer>
                   <AreaChart data={hostRows}>
-                    <CartesianGrid stroke="#27272a" />
-                    <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-                    <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+                    <CartesianGrid stroke={CHART_GRID} />
+                    <XAxis dataKey="t" tick={CHART_TICK} />
+                    <YAxis tick={CHART_TICK} width={44} />
                     <Tooltip contentStyle={CHART_TOOLTIP} />
-                    <Area dataKey="rx" name="rx" type="monotone" stroke="#38bdf8" fill="#38bdf822" connectNulls />
-                    <Area dataKey="tx" name="tx" type="monotone" stroke="#818cf8" fill="#818cf822" connectNulls />
+                    <Area dataKey="rx" name="rx" type="monotone" stroke={SERIES.info} fill={wash(SERIES.info, 13)} connectNulls />
+                    <Area dataKey="tx" name="tx" type="monotone" stroke={SERIES.tx} fill={wash(SERIES.tx, 13)} connectNulls />
                   </AreaChart>
                 </ResponsiveContainer>
               </ChartFrame>
@@ -158,12 +158,12 @@ export const MetricCharts = memo(function MetricCharts({
               >
                 <ResponsiveContainer>
                   <AreaChart data={hostRows}>
-                    <CartesianGrid stroke="#27272a" />
-                    <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-                    <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+                    <CartesianGrid stroke={CHART_GRID} />
+                    <XAxis dataKey="t" tick={CHART_TICK} />
+                    <YAxis tick={CHART_TICK} width={44} />
                     <Tooltip contentStyle={CHART_TOOLTIP} />
-                    <Area dataKey="blkRead" name="read" type="monotone" stroke="#fbbf24" fill="#fbbf2422" connectNulls />
-                    <Area dataKey="blkWrite" name="write" type="monotone" stroke="#fb923c" fill="#fb923c22" connectNulls />
+                    <Area dataKey="blkRead" name="read" type="monotone" stroke={SERIES.warn} fill={wash(SERIES.warn, 13)} connectNulls />
+                    <Area dataKey="blkWrite" name="write" type="monotone" stroke={SERIES.write} fill={wash(SERIES.write, 13)} connectNulls />
                   </AreaChart>
                 </ResponsiveContainer>
               </ChartFrame>
@@ -179,11 +179,11 @@ export const MetricCharts = memo(function MetricCharts({
             >
               <ResponsiveContainer>
                 <AreaChart data={hostRows}>
-                  <CartesianGrid stroke="#27272a" />
-                  <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-                  <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} />
+                  <CartesianGrid stroke={CHART_GRID} />
+                  <XAxis dataKey="t" tick={CHART_TICK} />
+                  <YAxis tick={CHART_TICK} width={44} />
                   <Tooltip contentStyle={CHART_TOOLTIP} />
-                  <Area dataKey="disk" name="data dir" type="monotone" stroke="#a3e635" fill="#a3e63522" connectNulls />
+                  <Area dataKey="disk" name="data dir" type="monotone" stroke={SERIES.disk} fill={wash(SERIES.disk, 13)} connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartFrame>
@@ -201,19 +201,19 @@ export const MetricCharts = memo(function MetricCharts({
       >
         <ResponsiveContainer>
           <AreaChart data={tokenRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={44} tickFormatter={fmtEstTokens} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={44} tickFormatter={fmtEstTokens} />
             <Tooltip contentStyle={CHART_TOOLTIP} formatter={(value) => fmtEstTokens(typeof value === "number" ? value : 0)} />
             {hasSplit
               ? (
                   <>
-                    <Area dataKey="prompt" name="prompt est" type={tokenLine} stroke="#34d399" fill="#34d39922" stackId="tok" />
-                    <Area dataKey="gen" name="gen est" type={tokenLine} stroke="#6ee7b7" fill="#6ee7b722" stackId="tok" />
+                    <Area dataKey="prompt" name="prompt est" type={tokenLine} stroke={SERIES.ok} fill={wash(SERIES.ok, 13)} stackId="tok" />
+                    <Area dataKey="gen" name="gen est" type={tokenLine} stroke={SERIES.disk} fill={wash(SERIES.disk, 13)} stackId="tok" />
                   </>
                 )
               : (
-                  <Area dataKey="tokens" name="est tokens" type={tokenLine} stroke="#34d399" fill="#34d39922" />
+                  <Area dataKey="tokens" name="est tokens" type={tokenLine} stroke={SERIES.ok} fill={wash(SERIES.ok, 13)} />
                 )}
           </AreaChart>
         </ResponsiveContainer>
@@ -225,12 +225,12 @@ export const MetricCharts = memo(function MetricCharts({
       >
         <ResponsiveContainer>
           <AreaChart data={turnRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={28} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={28} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="rounds" type="monotone" stroke="#38bdf8" fill="#38bdf822" connectNulls />
-            <Area dataKey="recoveries" type="monotone" stroke="#f87171" fill="#f8717122" connectNulls />
+            <Area dataKey="rounds" type="monotone" stroke={SERIES.info} fill={wash(SERIES.info, 13)} connectNulls />
+            <Area dataKey="recoveries" type="monotone" stroke={SERIES.danger} fill={wash(SERIES.danger, 13)} connectNulls />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
@@ -243,9 +243,9 @@ export const MetricCharts = memo(function MetricCharts({
             >
               <ResponsiveContainer>
                 <AreaChart data={sourceRows}>
-                  <CartesianGrid stroke="#27272a" />
-                  <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-                  <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={28} allowDecimals={false} />
+                  <CartesianGrid stroke={CHART_GRID} />
+                  <XAxis dataKey="t" tick={CHART_TICK} />
+                  <YAxis tick={CHART_TICK} width={28} allowDecimals={false} />
                   <Tooltip contentStyle={CHART_TOOLTIP} />
                   {sourceKeys.map((k) => (
                     <Area
@@ -254,7 +254,7 @@ export const MetricCharts = memo(function MetricCharts({
                       name={k}
                       type={tokenLine}
                       stroke={sourceStroke[k]}
-                      fill={`${sourceStroke[k]}22`}
+                      fill={wash(sourceStroke[k], 13)}
                       stackId="src"
                     />
                   ))}
@@ -268,11 +268,11 @@ export const MetricCharts = memo(function MetricCharts({
             <ChartFrame title="Turn duration (s)" empty={false} caption="from slog duration_ms when present">
               <ResponsiveContainer>
                 <AreaChart data={turnRows}>
-                  <CartesianGrid stroke="#27272a" />
-                  <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-                  <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+                  <CartesianGrid stroke={CHART_GRID} />
+                  <XAxis dataKey="t" tick={CHART_TICK} />
+                  <YAxis tick={CHART_TICK} width={36} />
                   <Tooltip contentStyle={CHART_TOOLTIP} />
-                  <Area dataKey="durationS" name="seconds" type="monotone" stroke="#c084fc" fill="#c084fc22" connectNulls />
+                  <Area dataKey="durationS" name="seconds" type="monotone" stroke={SERIES.reaction} fill={wash(SERIES.reaction, 13)} connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartFrame>
@@ -281,24 +281,24 @@ export const MetricCharts = memo(function MetricCharts({
       <ChartFrame title="MCP published vs skipped" empty={mcpRows.length === 0}>
         <ResponsiveContainer>
           <AreaChart data={mcpRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={28} allowDecimals={false} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={28} allowDecimals={false} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="published" type="monotone" stroke="#34d399" fill="#34d39922" />
-            <Area dataKey="skipped" type="monotone" stroke="#fbbf24" fill="#fbbf2422" />
+            <Area dataKey="published" type="monotone" stroke={SERIES.ok} fill={wash(SERIES.ok, 13)} />
+            <Area dataKey="skipped" type="monotone" stroke={SERIES.warn} fill={wash(SERIES.warn, 13)} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>
       <ChartFrame title="Uptime (min) / restarts" empty={uptimeRows.length === 0}>
         <ResponsiveContainer>
           <AreaChart data={uptimeRows}>
-            <CartesianGrid stroke="#27272a" />
-            <XAxis dataKey="t" tick={{ fill: "#71717a", fontSize: 10 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} width={36} />
+            <CartesianGrid stroke={CHART_GRID} />
+            <XAxis dataKey="t" tick={CHART_TICK} />
+            <YAxis tick={CHART_TICK} width={36} />
             <Tooltip contentStyle={CHART_TOOLTIP} />
-            <Area dataKey="uptimeMin" type="monotone" stroke="#a78bfa" fill="#a78bfa22" />
-            <Area dataKey="restarts" type="monotone" stroke="#f87171" fill="#f8717122" />
+            <Area dataKey="uptimeMin" type="monotone" stroke={SERIES.reaction} fill={wash(SERIES.reaction, 13)} />
+            <Area dataKey="restarts" type="monotone" stroke={SERIES.danger} fill={wash(SERIES.danger, 13)} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFrame>

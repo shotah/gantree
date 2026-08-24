@@ -11,12 +11,15 @@ export type TomlGantry = {
   persona_dir?: string;
   mcp_manifest?: string;
   env_file?: string;
+  tags?: string[];
 };
 
 export type GantreeToml = {
   yard?: string;
   gantry?: TomlGantry[];
   observe?: Record<string, unknown>;
+  /** Yard-wide hue per tag name. Same label keeps the same color on every crane. */
+  tag_color?: Record<string, string>;
 };
 
 export function yardRoot(): string {
@@ -53,6 +56,59 @@ export function upsertTomlGantry(row: TomlGantry, yard = "home"): void {
   }
   doc.gantry = list;
   saveGantreeToml(doc);
+}
+
+export function loadTomlTagColors(): Record<string, string> {
+  const raw = loadGantreeToml()?.tag_color;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof v === "string" && v.trim()) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+export function mergeTomlTagColors(patch: Record<string, string>): boolean {
+  const doc = loadGantreeToml();
+  if (!doc) {
+    return false;
+  }
+  const next = { ...loadTomlTagColors(), ...patch };
+  if (Object.keys(next).length) {
+    doc.tag_color = next;
+  } else {
+    delete doc.tag_color;
+  }
+  saveGantreeToml(doc);
+  return true;
+}
+
+export function setTomlGantryTags(slug: string, tags: string[]): boolean {
+  const doc = loadGantreeToml();
+  if (!doc?.gantry?.length) {
+    return false;
+  }
+  const i = doc.gantry.findIndex((g) => g.slug === slug);
+  if (i < 0) {
+    return false;
+  }
+  const cur = doc.gantry[i];
+  if (!cur) {
+    return false;
+  }
+  const next = { ...cur };
+  if (tags.length) {
+    next.tags = tags;
+  } else {
+    delete next.tags;
+  }
+  doc.gantry[i] = next;
+  saveGantreeToml(doc);
+  return true;
 }
 
 export function removeTomlGantry(slug: string): boolean {

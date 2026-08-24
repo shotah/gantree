@@ -29,7 +29,7 @@ describe("DashFold", () => {
     expect(screen.getByText("avatar")).toBeTruthy();
     expect(screen.getByText("persona/avatar.jpg")).toBeTruthy();
     expect(screen.queryByText("photo body")).toBeNull();
-    expect(toggle.closest("section")?.className).toContain("border-zinc-800");
+    expect(toggle.closest("section")?.className).toContain("border-line");
     expect(toggle.closest("section")?.className).toContain("rounded-lg");
     expect(toggle.closest("section")?.className).toContain("min-w-0");
     expect(toggle.querySelector("[aria-hidden]")?.className).toContain("rounded-full");
@@ -42,6 +42,9 @@ describe("DashFold", () => {
       </DashFold>,
     );
     expect(screen.getByText("warn")).toBeTruthy();
+    expect(screen.getByText("warn").className).toContain("border-warn-line");
+    expect(screen.getByText("warn").className).toContain("bg-warn-soft");
+    expect(screen.getByText("warn").className).toContain("text-warn");
     expect(screen.getByText("writes the whole yard")).toBeTruthy();
   });
 
@@ -107,6 +110,7 @@ describe("DashFold", () => {
     expect(craneLayoutKey("logs")).toBe("gantree.fold.v1.crane.logs");
     expect(craneLayoutKey("logs")).not.toBe(craneFoldKey("kit", "logs"));
     expect(craneLayoutKeys()).toContain(craneLayoutKey("photo"));
+    expect(craneLayoutKeys()).toContain(craneLayoutKey("tags"));
     expect(craneLayoutKeys()).toContain(craneLayoutKey("events"));
   });
 

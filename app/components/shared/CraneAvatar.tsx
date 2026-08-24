@@ -11,7 +11,7 @@ export function CraneAvatar({
   const fallback = size === "xl" ? "text-2xl" : "text-sm";
   if (rev == null) {
     return (
-      <span className={`inline-flex ${dim} ${fallback} shrink-0 items-center justify-center rounded-full bg-zinc-800`} aria-hidden>
+      <span className={`inline-flex ${dim} ${fallback} shrink-0 items-center justify-center rounded-full bg-track`} aria-hidden>
         🏗️
       </span>
     );

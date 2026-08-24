@@ -2,7 +2,7 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { ChartFrame } from "@/app/components/shared/ChartFrame";
+import { ChartFrame, wash } from "@/app/components/shared/ChartFrame";
 
 afterEach(() => {
   cleanup();
@@ -23,5 +23,10 @@ describe("ChartFrame", () => {
     expect(plot?.className).toMatch(/min-w-0/);
     expect(plot?.querySelector("[data-chart]")?.className).toMatch(/w-full/);
     expect(plot?.querySelector("[data-chart]")?.className).toMatch(/min-w-0/);
+  });
+
+  it("washes a series color for chart fills", () => {
+    expect(wash("var(--accent)")).toBe("color-mix(in srgb, var(--accent) 20%, transparent)");
+    expect(wash("var(--ok)", 13)).toBe("color-mix(in srgb, var(--ok) 13%, transparent)");
   });
 });

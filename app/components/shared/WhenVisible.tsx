@@ -88,7 +88,7 @@ export function ChartSkeleton({ n, className = "grid min-w-0 gap-3 md:grid-cols-
   return (
     <div className={className} aria-hidden>
       {Array.from({ length: n }, (_, i) => (
-        <div key={i} className="h-40 w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 max-sm:h-52" />
+        <div key={i} className="h-40 w-full min-w-0 rounded-lg border border-line bg-panel/50 max-sm:h-52" />
       ))}
     </div>
   );

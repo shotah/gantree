@@ -40,6 +40,7 @@ describe("EventStrip", () => {
     expect(screen.getByRole("log").className).toMatch(/overflow-auto/);
     expect(screen.queryByRole("option", { name: "login" })).toBeNull();
     expect(screen.queryByRole("option", { name: "logout" })).toBeNull();
+    expect(screen.getByRole("option", { name: "clone" })).toBeTruthy();
     expect(calls().some((u) => u.includes("window=7d") && u.includes("limit=100"))).toBe(true);
   });
 

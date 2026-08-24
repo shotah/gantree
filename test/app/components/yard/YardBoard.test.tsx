@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { emptyTrajectory } from "@/lib/yard/observe/spend";
 import type { SpendRollup, YardInventory, YardSpend } from "@/lib/yard/types";
@@ -160,5 +160,35 @@ describe("YardBoard", () => {
     render(<YardBoard />);
     await waitFor(() => expect(screen.getByText(/checking Docker/)).toBeTruthy());
     expect(screen.queryByText(/No cranes yet/)).toBeNull();
+  });
+
+  it("shows colored chips and filters the board by tag", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            gantries: [
+              card({ slug: "kit", tags: ["home"] }),
+              card({ slug: "tryout", tags: ["guest"] }),
+            ],
+            tagColors: { home: "red", guest: "green" },
+          }),
+      } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("tryout")).toBeTruthy());
+    const bar = screen.getByRole("group", { name: "Filter by tag" });
+    expect(within(bar).getByRole("button", { name: "home" })).toBeTruthy();
+    expect(within(bar).getByRole("button", { name: "guest" })).toBeTruthy();
+    fireEvent.click(within(bar).getByRole("button", { name: "home" }));
+    expect(screen.getByText("kit")).toBeTruthy();
+    expect(screen.queryByText("tryout")).toBeNull();
+    fireEvent.click(within(bar).getByRole("button", { name: "home" }));
+    expect(screen.getByText("tryout")).toBeTruthy();
   });
 });

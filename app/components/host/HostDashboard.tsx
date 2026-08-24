@@ -113,11 +113,11 @@ export function HostDashboard() {
         <div className="flex min-w-0 items-start gap-3">
           <HostAvatar size="lg" />
           <div className="min-w-0">
-            <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
+            <Link href="/" className="text-xs text-dim hover:text-accent max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
               ← shipping yard
             </Link>
             <h1 className="mt-1 min-w-0 truncate text-2xl font-semibold tracking-tight">{name}</h1>
-            <p className="text-sm text-zinc-500 max-sm:break-words">
+            <p className="text-sm text-dim max-sm:break-words">
               {live
                 ? `${live.ncpu} cores · ${fmtBytes(live.memTotalBytes)} · ${meta?.yard ?? "yard"} · ${meta?.source ?? ""}`
                 : meta?.dockerError || "loading…"}
@@ -128,7 +128,7 @@ export function HostDashboard() {
           ? (
               <Link
                 href="/settings"
-                className="rounded border border-zinc-700 px-3 py-1.5 text-xs text-stone-200 hover:border-amber-700 max-sm:text-sm"
+                className="rounded border border-edge px-3 py-1.5 text-xs text-body hover:border-accent max-sm:text-sm"
               >
                 operators
               </Link>
@@ -138,14 +138,14 @@ export function HostDashboard() {
 
       {!mutate && meta
         ? (
-            <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400">
+            <p className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-muted">
               read only — metrics only. An admin can edit gantree.toml and inspect sqlite from here.
             </p>
           )
         : null}
 
-      {notice ? <p className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300">{notice}</p> : null}
-      {meta?.error ? <p className="rounded-md border border-amber-900/60 bg-amber-950/40 px-3 py-2 text-sm text-amber-200">{meta.error}</p> : null}
+      {notice ? <p className="rounded-md border border-line bg-panel px-3 py-2 text-sm text-body">{notice}</p> : null}
+      {meta?.error ? <p className="rounded-md border border-accent-line bg-accent-soft px-3 py-2 text-sm text-mark">{meta.error}</p> : null}
 
       <DashFold
         title="Metrics"
@@ -154,11 +154,11 @@ export function HostDashboard() {
         hint="Mini CPU, RAM, and net vs agents and this dashboard"
         aside={<SpendScope window={spendWindow} onWindow={setSpendWindow} />}
       >
-        {live ? <HostMeters live={live} spark={spark} /> : <p className="text-sm text-zinc-500">{meta?.dockerError || "Sampling Docker…"}</p>}
+        {live ? <HostMeters live={live} spark={spark} /> : <p className="text-sm text-dim">{meta?.dockerError || "Sampling Docker…"}</p>}
         <Suspense fallback={<ChartSkeleton n={4} className="mt-3 grid min-w-0 gap-3 md:grid-cols-2" />}>
           <HostCharts spark={spark} since={since} now={now} timeZone={meta?.observe?.timezone} />
         </Suspense>
-        <p className="mt-2 text-[11px] text-zinc-600">
+        <p className="mt-2 text-[11px] text-faint">
           Window
           {fmtSpendWindow(spendWindow)}
           . Host samples cap at
@@ -171,10 +171,10 @@ export function HostDashboard() {
       {mutate
         ? (
             <DashFold title="Logs" persistKey={craneFoldKey("host", "logs")} hint="gantree container slog — not a crane">
-              <p className="mb-2 text-xs text-zinc-600">
+              <p className="mb-2 text-xs text-faint">
                 Tails the console container when this process is in Docker.
                 {" "}
-                <code className="text-zinc-500">npm start</code>
+                <code className="text-dim">npm start</code>
                 {" "}
                 on the
                 Mini has no container log.
@@ -195,33 +195,33 @@ export function HostDashboard() {
               summary={files?.tomlPath ? files.tomlPath.split(/[/\\]/).slice(-1)[0] : undefined}
               warn
             >
-              <p className="mb-3 rounded-md border border-amber-900/60 bg-amber-950/40 px-3 py-2 text-xs text-amber-200">
+              <p className="mb-3 rounded-md border border-warn-line bg-warn-soft px-3 py-2 text-xs text-warn">
                 This file is the yard. Drop a
                 {" "}
-                <code className="text-amber-100">[[gantry]]</code>
+                <code>[[gantry]]</code>
                 {" "}
                 and that crane vanishes from the
                 board (dirs on disk stay). Invalid toml and the board cannot load. Secrets still live in each crane’s
                 {" "}
-                <code className="text-amber-100">.env</code>
+                <code>.env</code>
                 .
                 {files?.tomlPath
                   ? (
                       <>
                         {" "}
-                        <code className="text-amber-100/80">{files.tomlPath}</code>
+                        <code>{files.tomlPath}</code>
                       </>
                     )
                   : null}
               </p>
               <textarea
-                className="min-h-56 w-full rounded border border-zinc-800 bg-zinc-950 p-3 font-mono text-sm"
+                className="min-h-56 w-full rounded border border-line bg-canvas p-3 font-mono text-sm"
                 value={toml}
                 onChange={(e) => setToml(e.target.value)}
                 spellCheck={false}
                 placeholder="# copy gantree.toml.example"
               />
-              <label className="mt-3 flex items-center gap-2 text-xs text-amber-200">
+              <label className="mt-3 flex items-center gap-2 text-xs text-mark">
                 <input type="checkbox" checked={confirmToml} onChange={(e) => setConfirmToml(e.target.checked)} />
                 I am rewriting gantree.toml
               </label>
@@ -229,7 +229,7 @@ export function HostDashboard() {
                 type="button"
                 disabled={busy || !confirmToml}
                 onClick={() => void saveToml()}
-                className="mt-2 rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+                className="mt-2 rounded border border-edge px-3 py-1.5 text-xs hover:border-accent disabled:opacity-50"
               >
                 Save gantree.toml
               </button>
@@ -245,13 +245,13 @@ export function HostDashboard() {
               hint="yard gantree.db — not a crane’s gantry.db"
               summary={db ? `${db.tables.length} tables` : undefined}
             >
-              <p className="mb-2 text-xs text-zinc-600">
+              <p className="mb-2 text-xs text-faint">
                 Operators, sessions, samples, audit. Counts only — pass hashes never leave this box.
                 {db?.path
                   ? (
                       <>
                         {" "}
-                        <code className="text-zinc-500">{db.path}</code>
+                        <code className="text-dim">{db.path}</code>
                         {db.sizeBytes != null ? ` · ${fmtBytes(db.sizeBytes)}` : ""}
                         {db.journal ? ` · ${db.journal}` : ""}
                       </>
@@ -260,17 +260,17 @@ export function HostDashboard() {
               </p>
               {db
                 ? (
-                    <ul className="space-y-1 text-sm text-zinc-400">
+                    <ul className="space-y-1 text-sm text-muted">
                       {db.tables.map((t) => (
                         <li key={t.name} className="flex min-w-0 justify-between gap-2 font-mono text-xs">
-                          <span className="text-zinc-300">{t.name}</span>
-                          <span className="tabular-nums text-zinc-500">{t.rows}</span>
+                          <span className="text-body">{t.name}</span>
+                          <span className="tabular-nums text-dim">{t.rows}</span>
                         </li>
                       ))}
                     </ul>
                   )
                 : (
-                    <p className="text-sm text-zinc-500">loading…</p>
+                    <p className="text-sm text-dim">loading…</p>
                   )}
             </DashFold>
           )
@@ -279,29 +279,29 @@ export function HostDashboard() {
       {mutate && runtime
         ? (
             <DashFold title="Runtime" persistKey={craneFoldKey("host", "runtime")} hint="how this process was started">
-              <dl className="grid min-w-0 gap-2 text-xs text-zinc-400 sm:grid-cols-2">
+              <dl className="grid min-w-0 gap-2 text-xs text-muted sm:grid-cols-2">
                 <div className="flex min-w-0 justify-between gap-2">
                   <dt>bind</dt>
-                  <dd className="font-mono text-zinc-200">
+                  <dd className="font-mono text-fg">
                     {runtime.bind}
                     {runtime.bindOpen ? " · all interfaces" : ""}
                   </dd>
                 </div>
                 <div className="flex min-w-0 justify-between gap-2">
                   <dt>root</dt>
-                  <dd className="truncate font-mono text-zinc-200" title={runtime.root}>
+                  <dd className="truncate font-mono text-fg" title={runtime.root}>
                     {runtime.root}
                   </dd>
                 </div>
                 <div className="flex min-w-0 justify-between gap-2">
                   <dt>toml</dt>
-                  <dd className="truncate font-mono text-zinc-200" title={runtime.tomlPath}>
+                  <dd className="truncate font-mono text-fg" title={runtime.tomlPath}>
                     {runtime.tomlPath}
                   </dd>
                 </div>
                 <div className="flex min-w-0 justify-between gap-2">
                   <dt>sqlite</dt>
-                  <dd className="truncate font-mono text-zinc-200" title={runtime.dbPath}>
+                  <dd className="truncate font-mono text-fg" title={runtime.dbPath}>
                     {runtime.dbPath}
                   </dd>
                 </div>
@@ -309,19 +309,19 @@ export function HostDashboard() {
                   ? (
                       <div className="flex min-w-0 justify-between gap-2">
                         <dt>crane user</dt>
-                        <dd className="font-mono text-zinc-200">{runtime.craneUser}</dd>
+                        <dd className="font-mono text-fg">{runtime.craneUser}</dd>
                       </div>
                     )
                   : null}
               </dl>
-              <p className="mt-3 text-[10px] uppercase tracking-wide text-zinc-600">process env</p>
-              <ul className="mt-1 space-y-1 font-mono text-xs text-zinc-400">
+              <p className="mt-3 text-[10px] uppercase tracking-wide text-faint">process env</p>
+              <ul className="mt-1 space-y-1 font-mono text-xs text-muted">
                 {Object.entries(runtime.env).map(([k, row]) => {
                   const badge = secretBadge(row, row.value);
                   return (
                     <li key={k} className="flex min-w-0 justify-between gap-2">
                       <span>{k}</span>
-                      <span className={`truncate ${badge.missing ? "text-amber-200" : "text-zinc-300"}`}>{badge.text}</span>
+                      <span className={`truncate ${badge.missing ? "text-mark" : "text-body"}`}>{badge.text}</span>
                     </li>
                   );
                 })}
@@ -329,11 +329,11 @@ export function HostDashboard() {
               {files?.compose
                 ? (
                     <>
-                      <p className="mt-3 text-[10px] uppercase tracking-wide text-zinc-600">
+                      <p className="mt-3 text-[10px] uppercase tracking-wide text-faint">
                         compose.yml
-                        {files.composePath ? <span className="ml-2 normal-case text-zinc-500">{files.composePath}</span> : null}
+                        {files.composePath ? <span className="ml-2 normal-case text-dim">{files.composePath}</span> : null}
                       </p>
-                      <pre className="mt-1 max-h-56 overflow-auto rounded border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-400">
+                      <pre className="mt-1 max-h-56 overflow-auto rounded border border-line bg-canvas p-3 text-xs text-muted">
                         {files.compose}
                       </pre>
                     </>

@@ -253,4 +253,22 @@ container = "kit"
     expect(live.dockerPending).toBe(false);
     expect(live.gantries[0]?.state).toBe("running");
   });
+
+  it("puts toml tags and [tag_color] on cards, dropping junk", async () => {
+    yard(`
+yard = "home"
+[tag_color]
+home = "red"
+guest = "green"
+nope = "pink"
+[[gantry]]
+slug = "kit"
+container = "kit"
+tags = ["home", "NOPE!", "guest"]
+`);
+    vi.mocked(listGantryContainers).mockResolvedValue([listed()]);
+    const inv = await listYard();
+    expect(inv.gantries[0]?.tags).toEqual(["home", "guest"]);
+    expect(inv.tagColors).toEqual({ home: "red", guest: "green" });
+  });
 });

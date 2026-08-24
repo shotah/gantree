@@ -1,9 +1,54 @@
 @import "tailwindcss";
 
+/* Semantic colors resolve to CSS variables set per [data-theme] in app/lib/theme.ts. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-track: var(--track);
+  --color-line: var(--line);
+  --color-edge: var(--edge);
+  --color-fg: var(--fg);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-mark: var(--mark);
+  --color-accent-line: var(--accent-line);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-line: var(--danger-line);
+  --color-danger-soft: var(--danger-soft);
+  --color-ok: var(--ok);
+  --color-info: var(--info);
+  --color-reaction: var(--reaction);
+  --color-warn: var(--warn);
+  --color-warn-line: var(--warn-line);
+  --color-warn-soft: var(--warn-soft);
+  --color-tag-red: var(--tag-red);
+  --color-tag-red-line: var(--tag-red-line);
+  --color-tag-red-soft: var(--tag-red-soft);
+  --color-tag-green: var(--tag-green);
+  --color-tag-green-line: var(--tag-green-line);
+  --color-tag-green-soft: var(--tag-green-soft);
+  --color-tag-amber: var(--tag-amber);
+  --color-tag-amber-line: var(--tag-amber-line);
+  --color-tag-amber-soft: var(--tag-amber-soft);
+  --color-tag-sky: var(--tag-sky);
+  --color-tag-sky-line: var(--tag-sky-line);
+  --color-tag-sky-soft: var(--tag-sky-soft);
+  --color-tag-violet: var(--tag-violet);
+  --color-tag-violet-line: var(--tag-violet-line);
+  --color-tag-violet-soft: var(--tag-violet-soft);
+  --color-tag-rose: var(--tag-rose);
+  --color-tag-rose-line: var(--tag-rose-line);
+  --color-tag-rose-soft: var(--tag-rose-soft);
+}
+
 :root {
-  color-scheme: dark;
-  background: #0c0d10;
-  color: #e7e5e4;
+  background: var(--canvas);
+  color: var(--body);
   font-family:
     IBM Plex Sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -52,7 +97,7 @@ main {
   input[type="radio"] {
     width: 1.25rem;
     height: 1.25rem;
-    accent-color: #f59e0b;
+    accent-color: var(--accent);
   }
 
   button.rounded,

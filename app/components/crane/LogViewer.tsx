@@ -18,18 +18,18 @@ function groupLogsByTurn(lines: LogLine[]): LogTurnGroup[] {
 }
 
 const KIND_CLASS: Record<LogLine["kind"], string> = {
-  error: "text-red-300",
-  skip: "text-amber-300",
-  tool: "text-sky-300",
-  turn: "text-emerald-300",
-  info: "text-zinc-400",
+  error: "text-danger",
+  skip: "text-warn",
+  tool: "text-info",
+  turn: "text-ok",
+  info: "text-muted",
 };
 
 function LineRow({ l }: { l: LogLine }) {
   return (
     <div className={`${KIND_CLASS[l.kind]} max-sm:break-words`}>
-      <span className="mr-2 text-zinc-600">{l.ts ? new Date(l.ts).toLocaleTimeString() : ""}</span>
-      <span className="mr-2 uppercase text-zinc-500">{l.level ?? l.kind}</span>
+      <span className="mr-2 text-faint">{l.ts ? new Date(l.ts).toLocaleTimeString() : ""}</span>
+      <span className="mr-2 uppercase text-dim">{l.level ?? l.kind}</span>
       <span>{l.msg}</span>
     </div>
   );
@@ -114,16 +114,16 @@ export function LogViewer({ slug, src }: { slug?: string; src?: string }) {
   const hasTurnIds = shown.some((l) => l.turnId);
 
   return (
-    <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-950">
-      <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-zinc-800 px-3 py-2">
+    <div className="min-w-0 rounded-lg border border-line bg-canvas">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-line px-3 py-2">
         <input
-          className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs max-sm:text-sm sm:min-w-40"
+          className="min-w-0 flex-1 rounded border border-line bg-panel px-2 py-1 text-xs max-sm:text-sm sm:min-w-40"
           placeholder="search logs"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         <select
-          className="rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs max-sm:text-sm"
+          className="rounded border border-line bg-panel px-2 py-1 text-xs max-sm:text-sm"
           value={level}
           onChange={(e) => setLevel(e.target.value)}
         >
@@ -133,21 +133,21 @@ export function LogViewer({ slug, src }: { slug?: string; src?: string }) {
           <option value="tool">tool</option>
           <option value="turn">turn</option>
         </select>
-        <label className="flex items-center gap-1 text-xs text-zinc-500 max-sm:min-h-11 max-sm:text-sm">
+        <label className="flex items-center gap-1 text-xs text-dim max-sm:min-h-11 max-sm:text-sm">
           <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
           follow
         </label>
-        <label className="flex items-center gap-1 text-xs text-zinc-500 max-sm:min-h-11 max-sm:text-sm" title={hasTurnIds ? undefined : "no turn id in slog yet — groups stay flat"}>
+        <label className="flex items-center gap-1 text-xs text-dim max-sm:min-h-11 max-sm:text-sm" title={hasTurnIds ? undefined : "no turn id in slog yet — groups stay flat"}>
           <input type="checkbox" checked={groupTurns} onChange={(e) => setGroupTurns(e.target.checked)} />
           group by turn
         </label>
-        <span className="text-xs text-zinc-600">
+        <span className="text-xs text-faint">
           {shown.length}
           {" "}
           lines
         </span>
       </div>
-      {error ? <p className="border-b border-zinc-800 px-3 py-2 text-xs text-amber-200">{error}</p> : null}
+      {error ? <p className="border-b border-line px-3 py-2 text-xs text-mark">{error}</p> : null}
       <div className="max-h-[28rem] overflow-auto p-3 text-xs leading-5 max-sm:max-h-[70vh] max-sm:text-sm max-sm:leading-6">
         {groups
           ? groups.map((g, gi) => {
@@ -157,7 +157,7 @@ export function LogViewer({ slug, src }: { slug?: string; src?: string }) {
                 <div key={key} className="mb-1">
                   <button
                     type="button"
-                    className="mb-0.5 text-left text-[10px] uppercase tracking-wide text-zinc-600 hover:text-zinc-400 max-sm:min-h-11 max-sm:text-xs"
+                    className="mb-0.5 text-left text-[10px] uppercase tracking-wide text-faint hover:text-muted max-sm:min-h-11 max-sm:text-xs"
                     aria-expanded={!shut}
                     onClick={() => setCollapsed((c) => ({ ...c, [key]: !c[key] }))}
                   >

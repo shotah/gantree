@@ -51,10 +51,10 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4 max-sm:gap-5" data-shot={setup ? "setup" : "login"}>
       <div className="flex items-start gap-3">
-        <GantreeMark tiled className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-zinc-800 max-sm:h-14 max-sm:w-14" />
+        <GantreeMark tiled className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] ring-1 ring-line max-sm:h-14 max-sm:w-14" />
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-100 max-sm:text-3xl">{setup ? "First operator" : "Log in"}</h1>
-          <p className="mt-1 text-sm text-zinc-500 max-sm:text-base">
+          <h1 className="text-2xl font-semibold tracking-tight text-fg max-sm:text-3xl">{setup ? "First operator" : "Log in"}</h1>
+          <p className="mt-1 text-sm text-dim max-sm:text-base">
             {setup
               ? "This yard has no door yet. Create the operator who owns the box. Passphrase ≥10 characters — not blank, not your name, not a common password. Forgot later: sqlite3 gantree.db, delete from operator."
               : "Same yard. Same files. Chat still stays Telegram."}
@@ -63,7 +63,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
       </div>
       <HintField label="name" {...HINTS.operatorName}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           autoComplete="username"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -75,7 +75,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
       </HintField>
       <HintField label="passphrase" {...HINTS.operatorPass}>
         <input
-          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
           type="password"
           autoComplete={setup ? "new-password" : "current-password"}
           value={passphrase}
@@ -89,7 +89,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
         ? (
             <HintField label="confirm" {...HINTS.operatorConfirm}>
               <input
-                className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                 type="password"
                 autoComplete="new-password"
                 value={confirm}
@@ -101,11 +101,11 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
             </HintField>
           )
         : null}
-      {err ? <p className="text-sm text-amber-200">{err}</p> : null}
+      {err ? <p className="text-sm text-mark">{err}</p> : null}
       <button
         type="submit"
         disabled={busy}
-        className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50 max-sm:min-h-12 max-sm:text-base"
+        className="rounded border border-accent-line bg-accent-soft px-3 py-2 text-sm text-mark hover:border-accent disabled:opacity-50 max-sm:min-h-12 max-sm:text-base"
       >
         {busy ? "…" : setup ? "Create operator" : "Log in"}
       </button>

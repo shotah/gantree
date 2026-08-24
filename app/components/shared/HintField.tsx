@@ -11,7 +11,7 @@ import {
 import type { HintCopy } from "@/lib/yard/hints";
 
 const WRAP = "group/hint relative z-0 flex flex-col gap-1 hover:z-40 focus-within:z-40";
-const LABEL = "w-fit cursor-help border-b border-dotted border-zinc-600 text-xs text-zinc-500 max-sm:text-sm";
+const LABEL = "w-fit cursor-help border-b border-dotted border-muted text-xs text-dim max-sm:text-sm";
 
 type ControlProps = { id?: string; "aria-describedby"?: string };
 
@@ -24,14 +24,14 @@ export function HintBubble({ id, hint, example }: { id: string } & HintCopy) {
     <span
       id={id}
       role="tooltip"
-      className="pointer-events-none invisible absolute left-0 top-full z-30 mt-1 w-[min(20rem,100%)] rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-left text-xs leading-relaxed text-zinc-300 opacity-0 shadow-lg group-hover/hint:visible group-hover/hint:opacity-100 group-focus-within/hint:visible group-focus-within/hint:opacity-100"
+      className="pointer-events-none invisible absolute left-0 top-full z-30 mt-1 w-[min(20rem,100%)] rounded-md border border-edge bg-canvas px-2.5 py-2 text-left text-xs leading-relaxed text-body opacity-0 shadow-lg group-hover/hint:visible group-hover/hint:opacity-100 group-focus-within/hint:visible group-focus-within/hint:opacity-100"
     >
       {hint}
       {example
         ? (
             <>
               {"\n"}
-              <span className="mt-1.5 block break-all font-mono text-[11px] text-zinc-500">
+              <span className="mt-1.5 block break-all font-mono text-[11px] text-dim">
                 e.g. {example}
               </span>
             </>

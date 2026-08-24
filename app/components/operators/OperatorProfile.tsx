@@ -159,13 +159,13 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
       <div>
         {operatorId
           ? (
-              <Link href="/settings" className="text-xs text-zinc-500 hover:text-amber-500">
+              <Link href="/settings" className="text-xs text-dim hover:text-accent">
                 ← settings
               </Link>
             )
           : null}
-        <h1 className={`text-2xl font-semibold tracking-tight text-stone-100 ${operatorId ? "mt-1" : ""}`}>Profile</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className={`text-2xl font-semibold tracking-tight text-fg ${operatorId ? "mt-1" : ""}`}>Profile</h1>
+        <p className="mt-1 text-sm text-dim">
           {mine || !operatorId
             ? "Your face, login name, and passphrase. Roles live under settings"
             : `${who}'s face, login name, email, chat ids, and passphrase. Roles live under settings`}
@@ -177,7 +177,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                   {" "}
                   {mine ? "you are" : `${who} is`}
                   {" "}
-                  <span className="text-zinc-300">{subject.role}</span>
+                  <span className="text-body">{subject.role}</span>
                   {subject.cranes?.length ? ` on ${subject.cranes.join(", ")}` : ""}
                   .
                 </>
@@ -186,14 +186,14 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
         </p>
       </div>
 
-      {err ? <p className="text-sm text-amber-200">{err}</p> : null}
-      {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
+      {err ? <p className="text-sm text-mark">{err}</p> : null}
+      {notice ? <p className="text-sm text-body">{notice}</p> : null}
 
       <div className="flex w-full min-w-0 flex-wrap items-start gap-8">
         {subject
           ? (
               <form
-                className="flex w-full min-w-0 max-w-full grow basis-full flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 sm:min-w-[min(100%,28rem)] sm:basis-[28rem]"
+                className="flex w-full min-w-0 max-w-full grow basis-full flex-col gap-3 rounded-lg border border-line bg-panel/60 p-4 sm:min-w-[min(100%,28rem)] sm:basis-[28rem]"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (
@@ -215,18 +215,18 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                   }
                 }}
               >
-                <h2 className="text-sm font-medium text-zinc-400">{mine ? "You" : who}</h2>
-                <p className="text-[11px] text-zinc-600">
+                <h2 className="text-sm font-medium text-muted">{mine ? "You" : who}</h2>
+                <p className="text-[11px] text-faint">
                   UUID
                   {" "}
-                  <code className="text-zinc-500">{subject.id}</code>
+                  <code className="text-dim">{subject.id}</code>
                   {" "}
                   — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram. Email is a label, not a reset path.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <OperatorAvatar id={subject.id} rev={subject.avatarRev} name={displayName || subject.displayName} size="xl" />
                   <label
-                    className={`inline-flex w-fit rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 ${
+                    className={`inline-flex w-fit rounded border border-accent-line bg-accent-soft px-3 py-1.5 text-xs text-mark hover:border-accent ${
                       busy ? "opacity-50" : "cursor-pointer"
                     }`}
                   >
@@ -248,7 +248,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                 </div>
                 <HintField label="display name" {...HINTS.displayName}>
                   <input
-                    className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     maxLength={MAX_DISPLAY_NAME}
@@ -256,7 +256,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                 </HintField>
                 <HintField label="login name" {...HINTS.loginName}>
                   <input
-                    className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                     value={loginName}
                     onChange={(e) => setLoginName(e.target.value)}
                     required
@@ -268,7 +268,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                 </HintField>
                 <HintField label="email" {...HINTS.email}>
                   <input
-                    className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -278,14 +278,14 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                 </HintField>
                 <HintField label="description" {...HINTS.profileBlurb}>
                   <textarea
-                    className="min-h-16 rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    className="min-h-16 rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     maxLength={MAX_DESCRIPTION}
                   />
                 </HintField>
-                <div className="flex flex-col gap-4 border-t border-zinc-800 pt-3">
-                  <p className="text-xs font-medium text-zinc-500">Chat ids</p>
+                <div className="flex flex-col gap-4 border-t border-line pt-3">
+                  <p className="text-xs font-medium text-dim">Chat ids</p>
                   {OPERATOR_CHANNEL_KINDS.map((kind) => (
                     <IdList
                       key={kind}
@@ -298,7 +298,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-600 disabled:opacity-50"
+                  className="rounded border border-accent-line bg-accent-soft px-3 py-2 text-sm text-mark hover:border-accent disabled:opacity-50"
                 >
                   Save profile
                 </button>
@@ -309,7 +309,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
         {subject
           ? (
               <form
-                className="flex w-full min-w-0 max-w-full grow basis-full flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 sm:min-w-[min(100%,28rem)] sm:basis-[28rem]"
+                className="flex w-full min-w-0 max-w-full grow basis-full flex-col gap-3 rounded-lg border border-line bg-panel/60 p-4 sm:min-w-[min(100%,28rem)] sm:basis-[28rem]"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (next !== nextConfirm) {
@@ -331,14 +331,14 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                   }
                 }}
               >
-                <h2 className="text-sm font-medium text-zinc-400">
+                <h2 className="text-sm font-medium text-muted">
                   {mine ? "Change your passphrase" : `Set ${who}'s passphrase`}
                 </h2>
                 {mine
                   ? (
                       <HintField label="current" {...HINTS.currentPass}>
                         <input
-                          className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                           type="password"
                           value={current}
                           onChange={(e) => setCurrent(e.target.value)}
@@ -348,13 +348,13 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                       </HintField>
                     )
                   : (
-                      <p className="text-[11px] text-zinc-600">
+                      <p className="text-[11px] text-faint">
                         You do not need their current passphrase. Their other sessions die.
                       </p>
                     )}
                 <HintField label="new" {...(mine ? HINTS.newPass : HINTS.adminPass)}>
                   <input
-                    className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                     type="password"
                     value={next}
                     onChange={(e) => setNext(e.target.value)}
@@ -366,7 +366,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                 </HintField>
                 <HintField label="confirm new" {...HINTS.operatorConfirm}>
                   <input
-                    className="rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-stone-100"
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                     type="password"
                     value={nextConfirm}
                     onChange={(e) => setNextConfirm(e.target.value)}
@@ -376,14 +376,14 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                     autoComplete="new-password"
                   />
                 </HintField>
-                <label className="flex items-center gap-2 text-xs text-amber-200">
+                <label className="flex items-center gap-2 text-xs text-mark">
                   <input type="checkbox" checked={passConfirm} onChange={(e) => setPassConfirm(e.target.checked)} />
                   {mine ? "I am changing my passphrase" : "I am setting this operator's passphrase. Their sessions dies."}
                 </label>
                 <button
                   type="submit"
                   disabled={busy || !passConfirm}
-                  className="rounded border border-zinc-700 px-3 py-2 text-sm hover:border-amber-700 disabled:opacity-50"
+                  className="rounded border border-edge px-3 py-2 text-sm hover:border-accent disabled:opacity-50"
                 >
                   Update passphrase
                 </button>
@@ -422,13 +422,13 @@ function IdList({
   return (
     <HintLegend label={meta.label} hint={meta.hint} example={meta.example}>
       <ul className="mt-1 flex flex-wrap gap-1.5">
-        {ids.length === 0 ? <li className="text-xs text-zinc-600">none yet</li> : null}
+        {ids.length === 0 ? <li className="text-xs text-faint">none yet</li> : null}
         {ids.map((id) => (
           <li key={id}>
             <button
               type="button"
               onClick={() => setIds(ids.filter((x) => x !== id))}
-              className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-stone-100 hover:border-red-800 hover:text-red-200"
+              className="rounded border border-edge px-2 py-0.5 text-xs text-fg hover:border-danger hover:text-danger"
               title="remove"
             >
               {id}
@@ -440,7 +440,7 @@ function IdList({
       </ul>
       <div className="mt-1.5 flex flex-wrap gap-2">
         <input
-          className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm sm:min-w-40"
+          className="min-w-0 flex-1 rounded border border-line bg-canvas px-2 py-1 text-sm sm:min-w-40"
           placeholder={meta.placeholder}
           value={draft}
           onChange={(e) => {
@@ -458,12 +458,12 @@ function IdList({
           type="button"
           disabled={!draft.trim()}
           onClick={() => add(draft)}
-          className="rounded border border-zinc-700 px-2 py-1 text-xs hover:border-amber-700 disabled:opacity-50"
+          className="rounded border border-edge px-2 py-1 text-xs hover:border-accent disabled:opacity-50"
         >
           add
         </button>
       </div>
-      {addErr ? <p className="mt-1 text-xs text-amber-200">{addErr}</p> : null}
+      {addErr ? <p className="mt-1 text-xs text-mark">{addErr}</p> : null}
     </HintLegend>
   );
 }

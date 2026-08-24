@@ -32,8 +32,12 @@ export type GantryCard = {
   envFile: string | null;
   /** mtime of persona/avatar.jpg (or png/webp). Null if none. */
   avatarRev: number | null;
+  /** Board labels from gantree.toml — whose keys, which house. Never secrets. */
+  tags: string[];
   /** True when this session may mutate the crane — filled by the get API. */
   canMutate?: boolean;
+  /** True when this session may clone / build a crane — filled by the get API. */
+  canBuild?: boolean;
 };
 
 export type LogLine = {
@@ -295,4 +299,6 @@ export type YardInventory = {
   canBuild?: boolean;
   /** Yard [observe] prefs — filled by the list API. */
   observe?: ObservePrefs;
+  /** Yard-wide tag hues from [tag_color] — same label, same color on every card. */
+  tagColors?: Record<string, string>;
 };

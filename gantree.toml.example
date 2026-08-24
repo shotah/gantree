@@ -20,6 +20,12 @@ yard = "home"
 # persona_dir = "/abs/yard/gantries/kit/persona"
 # mcp_manifest = "/abs/yard/gantries/kit/mcp.toml"
 # env_file = "/abs/yard/gantries/kit/.env"
+# tags = ["home", "guest"]
+#
+# Yard-wide hues (same label, same color on every card):
+# [tag_color]
+# home = "red"
+# guest = "green"
 #
 # Attach an existing tree (needs the compose.yml volume above):
 # [[gantry]]

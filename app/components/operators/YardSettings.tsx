@@ -47,8 +47,8 @@ export function YardSettings() {
   return (
     <section className="flex flex-col gap-8" data-shot="settings">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Settings</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Settings</h1>
+        <p className="mt-1 text-sm text-dim">
           {pane === "yard"
             ? "Retain, timezone, default pin, optional $/1M. Session idle stays in the door — not this table."
             : admin
@@ -57,24 +57,24 @@ export function YardSettings() {
         </p>
       </div>
 
-      <div className="flex gap-1 border-b border-zinc-800 pb-px">
+      <div className="flex gap-1 border-b border-line pb-px">
         <button
           type="button"
-          className={`rounded-t px-3 py-1.5 text-sm ${pane === "people" ? "border border-b-transparent border-zinc-700 bg-zinc-950 text-stone-100" : "text-zinc-500 hover:text-zinc-300"}`}
+          className={`rounded-t px-3 py-1.5 text-sm ${pane === "people" ? "border border-b-transparent border-edge bg-canvas text-fg" : "text-dim hover:text-body"}`}
           onClick={() => setPane("people")}
         >
           People
         </button>
         <button
           type="button"
-          className={`rounded-t px-3 py-1.5 text-sm ${pane === "yard" ? "border border-b-transparent border-zinc-700 bg-zinc-950 text-stone-100" : "text-zinc-500 hover:text-zinc-300"}`}
+          className={`rounded-t px-3 py-1.5 text-sm ${pane === "yard" ? "border border-b-transparent border-edge bg-canvas text-fg" : "text-dim hover:text-body"}`}
           onClick={() => setPane("yard")}
         >
           Yard
         </button>
       </div>
 
-      {err ? <p className="text-sm text-amber-200">{err}</p> : null}
+      {err ? <p className="text-sm text-mark">{err}</p> : null}
 
       {pane === "yard" ? <YardPane admin={admin} /> : null}
 

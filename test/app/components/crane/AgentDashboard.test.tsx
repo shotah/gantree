@@ -58,11 +58,14 @@ function mockCrane(
     env?: Record<string, { set: boolean; secret: boolean; value: string }>;
     servers?: { name: string; command?: string; env_keys?: string[] }[];
     catalog?: { name: string; command: string; envKeys: string[]; optionalEnvKeys?: string[]; blurb: string }[];
+    tags?: string[];
+    tagColors?: Record<string, string>;
   },
   canMutate = true,
+  canBuild = false,
 ) {
   const puts: unknown[] = [];
-  const disk = { ...files };
+  const disk = { ...files, tags: files.tags ?? [], tagColors: files.tagColors ?? {} };
   vi.mocked(yardFetch).mockImplementation((input, init) => {
     const u = String(input);
     if (u.includes("/files") && init?.method === "PUT") {
@@ -129,8 +132,25 @@ function mockCrane(
     if (u === "/api/gantries/noodles" && init?.method === "DELETE") {
       return json({ ok: true, detail: "destroyed noodles", slug: "noodles" });
     }
+    if (u === "/api/gantries/noodles/clone" && init?.method === "POST") {
+      const body = JSON.parse(String(init.body)) as { slug?: string };
+      return json({ ok: true, slug: body.slug ?? "noodles-copy", detail: "cloned" }, 201);
+    }
+    if (u === "/api/gantries/noodles" && init?.method === "PATCH") {
+      const body = JSON.parse(String(init.body)) as { tags?: string[]; tagColors?: Record<string, string> };
+      if (Array.isArray(body.tags)) {
+        disk.tags = body.tags;
+      }
+      if (body.tagColors) {
+        disk.tagColors = { ...disk.tagColors, ...body.tagColors };
+      }
+      return json({ ok: true, tags: disk.tags, tagColors: disk.tagColors });
+    }
     if (u === "/api/gantries/noodles") {
-      return json(card({ slug: "noodles", channel: "stdio", canMutate, personaDir: "/tmp/persona" }));
+      return json({
+        ...card({ slug: "noodles", channel: "stdio", canMutate, canBuild, personaDir: "/tmp/persona", tags: disk.tags }),
+        tagColors: disk.tagColors,
+      });
     }
     if (u.includes("/api/operators")) {
       return json({
@@ -553,6 +573,7 @@ describe("AgentDashboard folds", () => {
     fireEvent.click(screen.getByRole("button", { name: "open all" }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Photo/ })).toHaveProperty("ariaExpanded", "true");
+      expect(screen.getByRole("button", { name: /Tags/ })).toHaveProperty("ariaExpanded", "true");
       expect(screen.getByRole("button", { name: /Persona/ })).toHaveProperty("ariaExpanded", "true");
       expect(screen.getByLabelText("PERSONA.md")).toBeTruthy();
     });
@@ -623,5 +644,125 @@ describe("AgentDashboard destroy", () => {
       ).toBe(true),
     );
     vi.unstubAllGlobals();
+  });
+});
+
+describe("AgentDashboard clone", () => {
+  it("hides clone from a user who can mutate but not build", async () => {
+    vi.mocked(useDoor).mockReturnValue(userDoor);
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    expect(screen.getByRole("button", { name: "destroy" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "clone" })).toBeNull();
+  });
+
+  it("shows clone from the crane GET even when door has no operator", async () => {
+    vi.mocked(useDoor).mockReturnValue({ ready: false, operator: null });
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true }, true, true);
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "clone" })).toBeTruthy());
+    expect(screen.getByRole("button", { name: "destroy" })).toBeTruthy();
+  });
+
+  it("opens the clone modal and sends the chosen parts", async () => {
+    vi.mocked(useDoor).mockReturnValue(adminDoor);
+    const assign = vi.fn();
+    vi.stubGlobal("location", { assign, replace: vi.fn() });
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true }, true, true);
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "clone" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "clone" }));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "Clone noodles" })).toBeTruthy());
+    expect(screen.getByRole("checkbox", { name: /settings/ })).toHaveProperty("checked", true);
+    fireEvent.click(screen.getByRole("checkbox", { name: /persona files/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Clone" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some(
+          (c) =>
+            String(c[0]) === "/api/gantries/noodles/clone"
+            && c[1]?.method === "POST"
+            && String(c[1]?.body ?? "").includes('"settings":true')
+            && String(c[1]?.body ?? "").includes('"persona":true')
+            && String(c[1]?.body ?? "").includes('"database":false'),
+        ),
+      ).toBe(true),
+    );
+    expect(assign).toHaveBeenCalledWith("/gantries/noodles-copy");
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("AgentDashboard tags", () => {
+  it("adds a colored tag and PATCHes yard-wide hue", async () => {
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Tags/ }));
+    await waitFor(() => expect(screen.getByPlaceholderText("home")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "green" }));
+    fireEvent.change(screen.getByPlaceholderText("home"), { target: { value: "guest" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some((c) => {
+          if (String(c[0]) !== "/api/gantries/noodles" || c[1]?.method !== "PATCH") {
+            return false;
+          }
+          const body = JSON.parse(String(c[1]?.body ?? "{}")) as { tags?: string[]; tagColors?: Record<string, string> };
+          return body.tags?.includes("guest") === true && body.tagColors?.guest === "green";
+        }),
+      ).toBe(true),
+    );
+  });
+
+  it("repaints an existing chip and can remove it", async () => {
+    mockCrane({
+      persona: "# you\n",
+      self: "# me\n",
+      writable: true,
+      tags: ["home"],
+      tagColors: { home: "red" },
+    });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    expect(screen.getAllByText("home").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: /Tags/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "home" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "green" }));
+    fireEvent.click(screen.getByRole("button", { name: "home" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some((c) => {
+          if (String(c[0]) !== "/api/gantries/noodles" || c[1]?.method !== "PATCH") {
+            return false;
+          }
+          const body = JSON.parse(String(c[1]?.body ?? "{}")) as { tagColors?: Record<string, string> };
+          return body.tagColors?.home === "green";
+        }),
+      ).toBe(true),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Remove tag home" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some((c) => {
+          if (String(c[0]) !== "/api/gantries/noodles" || c[1]?.method !== "PATCH") {
+            return false;
+          }
+          const body = JSON.parse(String(c[1]?.body ?? "{}")) as { tags?: string[] };
+          return Array.isArray(body.tags) && body.tags.length === 0;
+        }),
+      ).toBe(true),
+    );
+  });
+
+  it("hides the editor when the session cannot mutate", async () => {
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: false, tags: ["home"] }, false);
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Tags/ }));
+    await waitFor(() => expect(screen.getByText("read only")).toBeTruthy());
+    expect(screen.queryByPlaceholderText("home")).toBeNull();
   });
 });

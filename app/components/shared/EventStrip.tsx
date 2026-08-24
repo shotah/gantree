@@ -18,9 +18,11 @@ const EVENT_KINDS = [
   "recreate",
   "pin",
   "backup",
+  "clone",
   "grant",
   "revoke",
   "env",
+  "tags",
   "allowlist",
   "telegram-profile",
   "telegram-new",
@@ -54,12 +56,12 @@ function EventRow({ e, craneSlug }: { e: YardEvent; craneSlug?: string }) {
       ? null
       : e.slug
         ? (
-            <Link href={`/gantries/${e.slug}`} className="truncate text-amber-500/90 hover:text-amber-400 sm:col-start-4">
+            <Link href={`/gantries/${e.slug}`} className="truncate text-accent/90 hover:text-accent-hover sm:col-start-4">
               {e.slug}
             </Link>
           )
         : (
-            <span className="hidden text-zinc-700 sm:col-start-4 sm:inline">—</span>
+            <span className="hidden text-faint sm:col-start-4 sm:inline">—</span>
           );
   return (
     <li
@@ -70,9 +72,9 @@ function EventRow({ e, craneSlug }: { e: YardEvent; craneSlug?: string }) {
       }`}
     >
       <div className="col-span-2 flex min-w-0 items-baseline justify-between gap-2 sm:contents">
-        <span className="min-w-0 truncate font-medium text-zinc-200 sm:col-start-3">{e.kind}</span>
+        <span className="min-w-0 truncate font-medium text-fg sm:col-start-3">{e.kind}</span>
         <time
-          className="shrink-0 tabular-nums text-zinc-500 sm:col-start-1"
+          className="shrink-0 tabular-nums text-dim sm:col-start-1"
           dateTime={e.at}
           title={Number.isNaN(atMs) ? e.at : new Date(e.at).toLocaleString()}
         >
@@ -81,11 +83,11 @@ function EventRow({ e, craneSlug }: { e: YardEvent; craneSlug?: string }) {
         </time>
       </div>
       <div className="col-span-2 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:contents">
-        <span className="truncate text-amber-200/80 sm:col-start-2">{e.operatorName ?? "—"}</span>
+        <span className="truncate text-mark/80 sm:col-start-2">{e.operatorName ?? "—"}</span>
         {crane}
         {e.detail
           ? (
-              <span className={`min-w-0 break-words text-zinc-500 ${craneSlug ? "sm:col-start-4" : "sm:col-start-5"}`}>
+              <span className={`min-w-0 break-words text-dim ${craneSlug ? "sm:col-start-4" : "sm:col-start-5"}`}>
                 {e.detail}
               </span>
             )
@@ -154,10 +156,10 @@ export function EventStrip({ slug, fold }: { slug?: string; fold?: boolean }) {
   const list
     = events.length === 0
       ? (
-          <p className="px-3 py-6 text-center text-xs text-zinc-600">{empty}</p>
+          <p className="px-3 py-6 text-center text-xs text-faint">{empty}</p>
         )
       : (
-          <ul className="min-w-0 divide-y divide-zinc-800/80 text-xs text-zinc-500 max-sm:text-sm">
+          <ul className="min-w-0 divide-y divide-line/80 text-xs text-dim max-sm:text-sm">
             {events.map((e) => (
               <EventRow key={e.id} e={e} craneSlug={slug} />
             ))}
@@ -174,11 +176,11 @@ export function EventStrip({ slug, fold }: { slug?: string; fold?: boolean }) {
       aside={<SpendScope window={eventWindow} onWindow={setEventWindow} />}
     >
       <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <label className="flex min-w-0 items-center gap-2 text-[10px] uppercase tracking-wide text-zinc-600">
+        <label className="flex min-w-0 items-center gap-2 text-[10px] uppercase tracking-wide text-faint">
           kind
           <select
             aria-label="Event kind"
-            className="min-w-0 rounded border border-zinc-800 bg-zinc-950 px-1.5 py-0.5 text-xs normal-case text-zinc-300"
+            className="min-w-0 rounded border border-line bg-canvas px-1.5 py-0.5 text-xs normal-case text-body"
             value={kind}
             onChange={(e) => setKind(e.target.value)}
           >
@@ -192,14 +194,14 @@ export function EventStrip({ slug, fold }: { slug?: string; fold?: boolean }) {
         </label>
         <button
           type="button"
-          className="text-[10px] uppercase tracking-wide text-zinc-500 hover:text-zinc-300 max-sm:min-h-11 max-sm:px-2"
+          className="text-[10px] uppercase tracking-wide text-dim hover:text-body max-sm:min-h-11 max-sm:px-2"
           onClick={() => void downloadJsonl()}
         >
           jsonl
         </button>
       </div>
       <div
-        className="max-h-[28rem] min-w-0 overflow-auto rounded-md border border-zinc-800/80 bg-zinc-950/50 px-3 max-sm:max-h-[20rem] max-sm:px-2.5"
+        className="max-h-[28rem] min-w-0 overflow-auto rounded-md border border-line/80 bg-canvas/50 px-3 max-sm:max-h-[20rem] max-sm:px-2.5"
         role="log"
         aria-label="Yard events"
       >

@@ -49,6 +49,7 @@ describe("DoorShell phone preview", () => {
       </DoorShell>,
     );
     await waitFor(() => expect(screen.getByText("Kit")).toBeTruthy());
+    expect(screen.getByLabelText("color theme")).toBeTruthy();
     expect(document.querySelector('a[href="/?phone=1"]')).toBeNull();
   });
 
@@ -85,6 +86,7 @@ describe("DoorShell phone preview", () => {
       </DoorShell>,
     );
     await waitFor(() => expect(document.querySelector("[data-shot=phone-preview]")).toBeTruthy());
+    expect(screen.getByLabelText("color theme")).toBeTruthy();
     expect(screen.queryByText("board")).toBeNull();
     expect(screen.getByTitle("phone preview")).toBeTruthy();
     expect(screen.getByLabelText("phone size")).toBeTruthy();

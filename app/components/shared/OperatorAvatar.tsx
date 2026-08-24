@@ -25,7 +25,7 @@ export function OperatorAvatar({
   if (rev == null) {
     return (
       <span
-        className={`inline-flex ${dim} ${fallback} shrink-0 items-center justify-center rounded-full bg-zinc-800 font-medium text-zinc-300`}
+        className={`inline-flex ${dim} ${fallback} shrink-0 items-center justify-center rounded-full bg-track font-medium text-body`}
         aria-hidden
       >
         {initials(name)}

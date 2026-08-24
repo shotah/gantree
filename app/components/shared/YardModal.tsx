@@ -35,13 +35,13 @@ export function YardModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[90vh] w-full max-w-md overflow-auto rounded-lg border border-zinc-700 bg-zinc-950 p-4 shadow-xl"
+        className="max-h-[90vh] w-full max-w-md overflow-auto rounded-lg border border-edge bg-canvas p-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id={titleId} className="text-sm font-medium text-stone-100">
+        <h2 id={titleId} className="text-sm font-medium text-fg">
           {title}
         </h2>
-        <div className="mt-2 text-sm text-zinc-400">{children}</div>
+        <div className="mt-2 text-sm text-muted">{children}</div>
         {footer ? <div className="mt-4 flex flex-wrap justify-end gap-2">{footer}</div> : null}
       </div>
     </div>

@@ -31,9 +31,9 @@ function hint(doctor: DoctorReport | null, fails: number, n: number): string {
 
 function CheckRow({ c }: { c: DoctorCheck }) {
   return (
-    <li className="flex gap-3 rounded border border-zinc-800 px-3 py-2 text-sm">
-      <span className={c.ok ? "text-emerald-400" : "text-red-400"}>{c.ok ? "ok" : "fail"}</span>
-      <span className="text-zinc-300">{c.detail}</span>
+    <li className="flex gap-3 rounded border border-line px-3 py-2 text-sm">
+      <span className={c.ok ? "text-ok" : "text-danger"}>{c.ok ? "ok" : "fail"}</span>
+      <span className="text-body">{c.detail}</span>
     </li>
   );
 }
@@ -47,7 +47,7 @@ export function DoctorPanel({ doctor, persistKey }: { doctor: DoctorReport | nul
       title="Doctor"
       persistKey={persistKey}
       summary={(
-        <span className={fails > 0 ? "text-red-400" : doctor ? "text-emerald-400" : "text-zinc-500"}>
+        <span className={fails > 0 ? "text-danger" : doctor ? "text-ok" : "text-dim"}>
           {summary(doctor, fails, checks.length)}
         </span>
       )}

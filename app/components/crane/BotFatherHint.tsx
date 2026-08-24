@@ -17,7 +17,7 @@ export function BotFatherHint({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 text-xs text-zinc-500">
+    <div className="flex flex-col gap-2 text-xs text-dim">
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -25,30 +25,30 @@ export function BotFatherHint({ slug }: { slug: string }) {
             void copy("command", "/newbot");
             window.open(BOTFATHER_URL, "_blank", "noopener,noreferrer");
           }}
-          className="rounded border border-amber-800/80 bg-amber-950/40 px-2 py-1 text-amber-200 hover:border-amber-600"
+          className="rounded border border-accent-line bg-accent-soft px-2 py-1 text-mark hover:border-accent"
         >
           Create with BotFather
         </button>
-        <a className="text-zinc-500 underline hover:text-amber-200" href={BOTFATHER_URL} target="_blank" rel="noreferrer">
+        <a className="text-dim underline hover:text-mark" href={BOTFATHER_URL} target="_blank" rel="noreferrer">
           @BotFather
         </a>
       </div>
       <p>
         Telegram still mints the token. The button copies
         {" "}
-        <code className="text-zinc-400">/newbot</code>
+        <code className="text-muted">/newbot</code>
         {" "}
         and opens the
         chat. Name
         {" "}
-        <button type="button" className="text-amber-200/90 hover:underline" onClick={() => void copy("name", ident.name)}>
+        <button type="button" className="text-mark/90 hover:underline" onClick={() => void copy("name", ident.name)}>
           {ident.name}
         </button>
         , username
         {" "}
         <button
           type="button"
-          className="text-amber-200/90 hover:underline"
+          className="text-mark/90 hover:underline"
           onClick={() => void copy("username", ident.username)}
         >
           @

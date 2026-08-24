@@ -29,7 +29,7 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
     <DashFold title="Persona" persistKey={craneLayoutKey("persona")} hint="PERSONA.md and SELF.md">
       <HintField label="PERSONA.md" {...HINTS.persona}>
         <textarea
-          className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"
+          className="min-h-40 w-full rounded border border-line bg-canvas p-3 text-sm"
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
           disabled={!files?.writable}
@@ -42,7 +42,7 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
           disabled={busy || !files?.writable}
           onClick={() => loadTemplate("persona")}
           aria-label="Replace PERSONA.md from template"
-          className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          className="rounded border border-edge px-3 py-1.5 text-xs hover:border-accent disabled:opacity-50"
         >
           Replace from template
         </button>
@@ -52,7 +52,7 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
                 type="button"
                 disabled={busy}
                 onClick={() => setInjectOpen(true)}
-                className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+                className="rounded border border-edge px-3 py-1.5 text-xs hover:border-accent disabled:opacity-50"
               >
                 Inject user
               </button>
@@ -62,14 +62,14 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
           type="button"
           disabled={busy || !files?.writable || (personaFromTemplate && !confirmPersonaReplace)}
           onClick={() => saveMarkdown("persona")}
-          className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          className="rounded border border-edge px-3 py-1.5 text-xs hover:border-accent disabled:opacity-50"
         >
           Save PERSONA.md
         </button>
       </div>
       {personaFromTemplate
         ? (
-            <label className="mt-2 flex items-center gap-2 text-xs text-amber-200">
+            <label className="mt-2 flex items-center gap-2 text-xs text-mark">
               <input
                 type="checkbox"
                 checked={confirmPersonaReplace}
@@ -82,7 +82,7 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
         : null}
       <HintField label="SELF.md" className="mt-5" {...HINTS.self}>
         <textarea
-          className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"
+          className="min-h-40 w-full rounded border border-line bg-canvas p-3 text-sm"
           value={self}
           onChange={(e) => setSelf(e.target.value)}
           disabled={!files?.writable}
@@ -95,7 +95,7 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
           disabled={busy || !files?.writable}
           onClick={() => loadTemplate("self")}
           aria-label="Replace SELF.md from template"
-          className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          className="rounded border border-edge px-3 py-1.5 text-xs hover:border-accent disabled:opacity-50"
         >
           Replace from template
         </button>
@@ -103,14 +103,14 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
           type="button"
           disabled={busy || !files?.writable || (selfFromTemplate && !confirmSelfReplace)}
           onClick={() => saveMarkdown("self")}
-          className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+          className="rounded border border-edge px-3 py-1.5 text-xs hover:border-accent disabled:opacity-50"
         >
           Save SELF.md
         </button>
       </div>
       {selfFromTemplate
         ? (
-            <label className="mt-2 flex items-center gap-2 text-xs text-amber-200">
+            <label className="mt-2 flex items-center gap-2 text-xs text-mark">
               <input
                 type="checkbox"
                 checked={confirmSelfReplace}

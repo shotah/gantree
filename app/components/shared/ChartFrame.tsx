@@ -4,7 +4,31 @@ import type { ReactNode } from "react";
 import type { SpendBucket } from "@/lib/yard/observe/spend";
 import { WhenVisible } from "./WhenVisible";
 
-export const CHART_TOOLTIP = { background: "#18181b", border: "1px solid #3f3f46" };
+export const CHART_GRID = "var(--line)";
+export const CHART_TICK = { fill: "var(--dim)", fontSize: 10 };
+export const CHART_TOOLTIP = {
+  background: "var(--panel)",
+  border: "1px solid var(--edge)",
+  color: "var(--fg)",
+};
+
+export const SERIES = {
+  accent: "var(--accent)",
+  ok: "var(--ok)",
+  info: "var(--info)",
+  dim: "var(--dim)",
+  body: "var(--body)",
+  danger: "var(--danger)",
+  warn: "var(--warn)",
+  reaction: "var(--reaction)",
+  tx: "var(--chart-tx)",
+  write: "var(--chart-write)",
+  disk: "var(--chart-disk)",
+} as const;
+
+export function wash(color: string, pct = 20): string {
+  return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+}
 
 export function fmtTick(at: number, spanMs: number, bucket: SpendBucket, timeZone?: string | null): string {
   const d = new Date(at);
@@ -46,18 +70,18 @@ export function ChartFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">{title}</h3>
+    <div className="min-w-0 max-w-full rounded-lg border border-line bg-panel/50 p-3">
+      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-dim">{title}</h3>
       {empty
         ? (
-            <p className="py-8 text-center text-xs text-zinc-600">{hint ?? "no samples yet — leave this page open"}</p>
+            <p className="py-8 text-center text-xs text-faint">{hint ?? "no samples yet — leave this page open"}</p>
           )
         : (
             <>
               <div className="h-40 w-full min-w-0 max-sm:h-52">
                 <WhenVisible>{children}</WhenVisible>
               </div>
-              {caption ? <p className="mt-1.5 text-[10px] text-zinc-600">{caption}</p> : null}
+              {caption ? <p className="mt-1.5 text-[10px] text-faint">{caption}</p> : null}
             </>
           )}
     </div>

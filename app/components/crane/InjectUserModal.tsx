@@ -93,7 +93,7 @@ export function InjectUserModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-zinc-500"
+            className="rounded border border-edge px-3 py-1.5 text-xs hover:border-dim"
           >
             Cancel
           </button>
@@ -106,31 +106,31 @@ export function InjectUserModal({
               }
               onInject(injectOperatorIntoPersona(persona, personaOp, fields), op.displayName || op.name);
             }}
-            className="rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 text-xs text-amber-200 hover:border-amber-600 disabled:opacity-50"
+            className="rounded border border-accent-line bg-accent-soft px-3 py-1.5 text-xs text-mark hover:border-accent disabled:opacity-50"
           >
             Inject
           </button>
         </>
       )}
     >
-      <p className="text-xs text-zinc-500">{HINTS.injectUser.hint}</p>
+      <p className="text-xs text-dim">{HINTS.injectUser.hint}</p>
 
-      {err ? <p className="mt-3 text-sm text-amber-200">{err}</p> : null}
-      {operators === null ? <p className="mt-3 text-sm text-zinc-500">loading operators…</p> : null}
+      {err ? <p className="mt-3 text-sm text-mark">{err}</p> : null}
+      {operators === null ? <p className="mt-3 text-sm text-dim">loading operators…</p> : null}
       {operators && operators.length === 0 && !err
         ? (
-            <p className="mt-3 text-sm text-zinc-500">no operators on this yard</p>
+            <p className="mt-3 text-sm text-dim">no operators on this yard</p>
           )
         : null}
 
       {operators && operators.length > 0
         ? (
             <div className="mt-3 flex flex-col gap-3">
-              <label className="flex flex-col gap-1 text-xs text-zinc-500">
+              <label className="flex flex-col gap-1 text-xs text-dim">
                 operator
                 <select
                   autoFocus
-                  className="rounded border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-sm text-stone-100"
+                  className="rounded border border-line bg-canvas px-2 py-1.5 text-sm text-fg"
                   value={selectedId}
                   onChange={(e) => pickOperator(e.target.value)}
                 >
@@ -144,14 +144,14 @@ export function InjectUserModal({
               </label>
 
               <fieldset className="flex flex-col gap-1.5">
-                <legend className="text-xs text-zinc-500">fields</legend>
+                <legend className="text-xs text-dim">fields</legend>
                 {PERSONA_OPERATOR_FIELDS.map((f) => {
                   const value = personaOp ? operatorFieldValue(personaOp, f.key) : "";
                   const checked = fields.includes(f.key);
                   return (
                     <label
                       key={f.key}
-                      className={`flex items-start gap-2 text-sm ${value ? "text-stone-200" : "text-zinc-600"}`}
+                      className={`flex items-start gap-2 text-sm ${value ? "text-body" : "text-faint"}`}
                     >
                       <input
                         type="checkbox"
@@ -161,8 +161,8 @@ export function InjectUserModal({
                         onChange={(e) => toggle(f.key, e.target.checked)}
                       />
                       <span>
-                        <span className="text-zinc-400">{f.label}</span>
-                        <span className="mt-0.5 block font-mono text-xs text-zinc-500">{value || "not set"}</span>
+                        <span className="text-muted">{f.label}</span>
+                        <span className="mt-0.5 block font-mono text-xs text-dim">{value || "not set"}</span>
                       </span>
                     </label>
                   );

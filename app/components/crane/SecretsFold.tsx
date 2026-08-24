@@ -29,11 +29,11 @@ export function SecretsFold({ dash }: { dash: AgentDash }) {
       summary={
         missingSecrets === 1
           ? (
-              <span className="text-amber-200">needs a key</span>
+              <span className="text-mark">needs a key</span>
             )
           : missingSecrets
             ? (
-                <span className="text-amber-200">
+                <span className="text-mark">
                   {missingSecrets}
                   {" "}
                   need a key
@@ -42,7 +42,7 @@ export function SecretsFold({ dash }: { dash: AgentDash }) {
             : undefined
       }
     >
-      <p className="mb-2 text-xs text-zinc-600">
+      <p className="mb-2 text-xs text-faint">
         Only the crane mouth plus keys for
         {" "}
         <em>granted</em>
@@ -72,14 +72,14 @@ export function SecretsFold({ dash }: { dash: AgentDash }) {
               hint={tip.hint}
               example={tip.example}
               aside={(
-                <span className={`text-[11px] ${warn ? "text-amber-200" : "text-zinc-600"}`}>
+                <span className={`text-[11px] ${warn ? "text-warn" : "text-faint"}`}>
                   {badUrl ? "not a URL" : shownLook.status}
                 </span>
               )}
             >
               <input
-                className={`rounded border bg-zinc-950 px-2 py-1 ${
-                  warn ? "border-amber-800/80 placeholder:text-amber-200/90" : "border-zinc-800"
+                className={`rounded border bg-canvas px-2 py-1 ${
+                  warn ? "border-warn-line placeholder:text-warn/90" : "border-line"
                 }`}
                 type={shownLook.type}
                 name={`gantree-env-${k}`}
@@ -96,7 +96,7 @@ export function SecretsFold({ dash }: { dash: AgentDash }) {
           );
         })}
       </div>
-      <label className="mt-3 flex items-center gap-2 text-xs text-amber-200">
+      <label className="mt-3 flex items-center gap-2 text-xs text-mark">
         <input type="checkbox" checked={confirmToken} onChange={(e) => setConfirmToken(e.target.checked)} disabled={!files?.writable} />
         I am overwriting secrets / bot tokens
       </label>
@@ -104,7 +104,7 @@ export function SecretsFold({ dash }: { dash: AgentDash }) {
         type="button"
         disabled={busy || !files?.writable}
         onClick={() => void saveEnv()}
-        className="mt-2 rounded border border-zinc-700 px-3 py-1.5 text-xs hover:border-amber-700 disabled:opacity-50"
+        className="mt-2 rounded border border-edge px-3 py-1.5 text-xs hover:border-accent disabled:opacity-50"
       >
         Save .env
       </button>

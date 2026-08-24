@@ -28,6 +28,7 @@ export type CraneFiles = {
 
 export function useAgentDashboard(slug: string) {
   const [gantry, setGantry] = useState<GantryCard | null>(null);
+  const [tagColors, setTagColors] = useState<Record<string, string>>({});
   const [denied, setDenied] = useState(false);
   const [doctor, setDoctor] = useState<DoctorReport | null>(null);
   const [host, setHost] = useState<StatSample[]>([]);
@@ -69,10 +70,11 @@ export function useAgentDashboard(slug: string) {
           setDenied(true);
           return;
         }
-        const g = (await r.json()) as GantryCard & { error?: string };
+        const g = (await r.json()) as GantryCard & { error?: string; tagColors?: Record<string, string> };
         if (!g.error) {
           setDenied(false);
           setGantry(g);
+          setTagColors(g.tagColors ?? {});
           if (g.image) {
             setPin(g.image);
           }
@@ -136,6 +138,22 @@ export function useAgentDashboard(slug: string) {
       return;
     }
     window.location.replace("/");
+  }
+
+  async function cloneTo(choice: { slug: string; settings: boolean; persona: boolean; database: boolean }): Promise<string | null> {
+    setBusy(true);
+    const res = await yardFetch(`/api/gantries/${slug}/clone`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(choice),
+    });
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; detail?: string; error?: string; slug?: string };
+    if (!res.ok) {
+      setBusy(false);
+      return data.detail || data.error || "could not clone";
+    }
+    window.location.assign(`/gantries/${data.slug || choice.slug}`);
+    return null;
   }
 
   async function act(action: string) {
@@ -297,6 +315,25 @@ export function useAgentDashboard(slug: string) {
     refresh();
   }
 
+  async function saveTags(tags: string[], colors?: Record<string, string>) {
+    setBusy(true);
+    const res = await yardFetch(`/api/gantries/${slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tags, tagColors: colors }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string; tags?: string[]; tagColors?: Record<string, string> };
+    setNotice(res.ok ? "tags saved" : data.error || "could not save tags");
+    if (res.ok && gantry) {
+      setGantry({ ...gantry, tags: data.tags ?? tags });
+      if (data.tagColors) {
+        setTagColors(data.tagColors);
+      }
+    }
+    setBusy(false);
+    refresh();
+  }
+
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
   const secretKeys = secretKeysForGrant([...granted], catalog, files?.servers ?? []);
   const optionalSecretKeys = new Set(optionalKeysForGrant([...granted], catalog));
@@ -312,6 +349,7 @@ export function useAgentDashboard(slug: string) {
   const { operator } = useDoor();
   const admin = operator?.role === "admin";
   const mutate = Boolean(gantry?.canMutate || files?.writable);
+  const canBuild = Boolean(gantry?.canBuild);
   const telegramOn
     = shouldPushTelegram(gantry?.channel ?? null)
       || shouldPushTelegram(files?.env?.CHANNEL?.value ?? null)
@@ -324,6 +362,7 @@ export function useAgentDashboard(slug: string) {
   return {
     slug,
     gantry,
+    tagColors,
     denied,
     doctor,
     host,
@@ -377,6 +416,7 @@ export function useAgentDashboard(slug: string) {
     now,
     refresh,
     destroy,
+    cloneTo,
     act,
     authOp,
     toggleGrant,
@@ -385,11 +425,13 @@ export function useAgentDashboard(slug: string) {
     loadTemplate,
     saveMarkdown,
     saveEnv,
+    saveTags,
     granted,
     secretKeys,
     optionalSecretKeys,
     missingSecrets,
     admin,
+    canBuild,
     mutate,
     telegramOn,
     since,

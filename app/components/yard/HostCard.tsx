@@ -5,7 +5,7 @@ import { fmtAgo, fmtBps, fmtBytes, fmtCores, hostShare, lastHostNetRate } from "
 import type { HostLive, HostRole, HostSample, HostSnapshot } from "@/lib/yard/types";
 
 const CARD
-  = "min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70 max-sm:p-5";
+  = "min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5";
 
 const ROLE_LABEL: Record<HostRole, string> = {
   crane: "agents",
@@ -14,15 +14,15 @@ const ROLE_LABEL: Record<HostRole, string> = {
 };
 
 const ROLE_BAR: Record<HostRole, string> = {
-  crane: "bg-amber-500",
-  console: "bg-sky-400",
-  other: "bg-zinc-500",
+  crane: "bg-accent",
+  console: "bg-info",
+  other: "bg-dim",
 };
 
 const ROLE_TEXT: Record<HostRole, string> = {
-  crane: "text-amber-400",
-  console: "text-sky-400",
-  other: "text-zinc-400",
+  crane: "text-accent-hover",
+  console: "text-info",
+  other: "text-muted",
 };
 
 function Stack({
@@ -35,7 +35,7 @@ function Stack({
   const used = parts.reduce((n, p) => n + p.value, 0);
   const filled = cap > 0 ? Math.min(100, (used / cap) * 100) : 0;
   return (
-    <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+    <div className="h-2 overflow-hidden rounded-full bg-track">
       <div className="flex h-full" style={{ width: `${filled}%` }}>
         {parts.map((p) => {
           const share = used > 0 ? (p.value / used) * 100 : 0;
@@ -54,7 +54,7 @@ export function HostAvatar({ size = "sm" }: { size?: "sm" | "lg" }) {
   const dim = size === "lg" ? "h-12 w-12" : "h-8 w-8";
   return (
     <span
-      className={`inline-flex ${dim} shrink-0 items-center justify-center rounded-full bg-zinc-800 text-amber-500`}
+      className={`inline-flex ${dim} shrink-0 items-center justify-center rounded-full bg-track text-accent`}
       aria-hidden
     >
       <svg viewBox="0 0 24 24" className="h-[58%] w-[58%]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -86,7 +86,7 @@ function HostSpark({ spark }: { spark: HostSample[] }) {
     })
     .join(" ");
   return (
-    <svg width={w} height={h} className="shrink-0 text-amber-500" aria-hidden>
+    <svg width={w} height={h} className="shrink-0 text-accent" aria-hidden>
       <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={pts} />
     </svg>
   );
@@ -120,11 +120,11 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
 
   return (
     <>
-      <dl className="mt-3 min-w-0 space-y-2 text-xs text-zinc-400 max-sm:text-sm">
+      <dl className="mt-3 min-w-0 space-y-2 text-xs text-muted max-sm:text-sm">
         <div>
           <div className="mb-1 flex min-w-0 items-baseline justify-between gap-2">
             <dt className="shrink-0">CPU</dt>
-            <dd className="min-w-0 break-words text-right tabular-nums text-zinc-200">
+            <dd className="min-w-0 break-words text-right tabular-nums text-fg">
               {fmtCores(cpuUsed)} / {live.ncpu} cores · {Math.round(hostShare(cpuUsed, cpuCap) * 100)}%
             </dd>
           </div>
@@ -133,7 +133,7 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
         <div>
           <div className="mb-1 flex min-w-0 items-baseline justify-between gap-2">
             <dt className="shrink-0">RAM</dt>
-            <dd className="min-w-0 break-words text-right tabular-nums text-zinc-200">
+            <dd className="min-w-0 break-words text-right tabular-nums text-fg">
               {fmtBytes(memUsed)} / {fmtBytes(live.memTotalBytes)} · {Math.round(hostShare(memUsed, live.memTotalBytes) * 100)}%
             </dd>
           </div>
@@ -142,30 +142,30 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
         <div>
           <div className="mb-1 flex min-w-0 items-baseline justify-between gap-2">
             <dt className="shrink-0">NET</dt>
-            <dd className="min-w-0 break-words text-right tabular-nums text-zinc-200">
+            <dd className="min-w-0 break-words text-right tabular-nums text-fg">
               ↓ {fmtBps(rxBps)} · ↑ {fmtBps(txBps)}
             </dd>
           </div>
           <Stack parts={netParts} cap={netParts.reduce((n, p) => n + p.value, 0)} />
-          <p className="mt-1 tabular-nums text-[10px] text-zinc-600">
+          <p className="mt-1 tabular-nums text-[10px] text-faint">
             {fmtBytes(netRx)} ↓ · {fmtBytes(netTx)} ↑ since those containers started
           </p>
         </div>
         <div className="flex min-w-0 justify-between gap-2 pt-1">
           <dt className={`shrink-0 ${ROLE_TEXT.crane}`}>agents</dt>
-          <dd className="min-w-0 text-right tabular-nums text-zinc-200">
+          <dd className="min-w-0 text-right tabular-nums text-fg">
             {fmtCores(live.craneCpu)}c · {fmtBytes(live.craneMem)}
           </dd>
         </div>
         <div className="flex min-w-0 justify-between gap-2">
           <dt className={`shrink-0 ${ROLE_TEXT.console}`}>dashboard</dt>
-          <dd className="min-w-0 text-right tabular-nums text-zinc-200">
+          <dd className="min-w-0 text-right tabular-nums text-fg">
             {fmtCores(live.consoleCpu)}c · {fmtBytes(live.consoleMem)}
           </dd>
         </div>
         <div className="flex min-w-0 justify-between gap-2">
           <dt className={`shrink-0 ${ROLE_TEXT.other}`}>other</dt>
-          <dd className="min-w-0 text-right tabular-nums text-zinc-200">
+          <dd className="min-w-0 text-right tabular-nums text-fg">
             {fmtCores(live.otherCpu)}c · {fmtBytes(live.otherMem)}
           </dd>
         </div>
@@ -173,15 +173,15 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
 
       {top.length > 0
         ? (
-            <ul className="mt-3 space-y-1 border-t border-zinc-800/80 pt-2">
+            <ul className="mt-3 space-y-1 border-t border-line/80 pt-2">
               {top.map((p) => (
-                <li key={p.name} className="flex min-w-0 justify-between gap-2 text-[11px] text-zinc-500">
+                <li key={p.name} className="flex min-w-0 justify-between gap-2 text-[11px] text-dim">
                   <span className="truncate">
                     <span className={ROLE_TEXT[p.role]}>{ROLE_LABEL[p.role]}</span>
                     {" "}
-                    <span className="font-mono text-zinc-400">{p.name}</span>
+                    <span className="font-mono text-muted">{p.name}</span>
                   </span>
-                  <span className="shrink-0 tabular-nums text-zinc-400">
+                  <span className="shrink-0 tabular-nums text-muted">
                     {fmtCores(p.cpuPercent ?? 0)}c · {fmtBytes(p.memBytes ?? 0)}
                   </span>
                 </li>
@@ -190,7 +190,7 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
           )
         : null}
 
-      <p className="mt-2 text-[10px] text-zinc-600">
+      <p className="mt-2 text-[10px] text-faint">
         Docker share of the Mini ·
         {" "}
         {fmtAgo(live.at)}
@@ -207,11 +207,11 @@ export function HostCard({ host, dockerError }: { host: HostLive | undefined; do
   if (!live) {
     return (
       <Link href="/host" className={CARD} data-shot="host">
-        <h2 className="flex items-center gap-2 font-semibold text-stone-100">
+        <h2 className="flex items-center gap-2 font-semibold text-fg">
           <HostAvatar />
           Host
         </h2>
-        <p className="mt-3 text-sm text-zinc-500">
+        <p className="mt-3 text-sm text-dim">
           {dockerError || "Sampling Docker for host CPU, RAM, and net…"}
         </p>
       </Link>
@@ -221,14 +221,14 @@ export function HostCard({ host, dockerError }: { host: HostLive | undefined; do
   return (
     <Link href="/host" className={CARD} data-shot="host">
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 font-semibold text-stone-100 max-sm:text-lg">
+        <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
           <HostAvatar />
           <span className="truncate">{live.hostname}</span>
         </h2>
         <div className="flex shrink-0 items-center gap-2">
           <HostSpark spark={spark} />
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok">
+            <span className="h-1.5 w-1.5 rounded-full bg-ok" />
             docker
           </span>
         </div>

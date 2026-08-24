@@ -25,6 +25,7 @@ export function card(over: Partial<GantryCard> = {}): GantryCard {
     mcpManifest: null,
     envFile: null,
     avatarRev: null,
+    tags: [],
     ...over,
   };
 }

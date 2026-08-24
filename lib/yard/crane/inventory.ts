@@ -10,6 +10,7 @@ import {
   type ListedContainer,
 } from "../host/docker";
 import { envKeyNames, loadGantreeToml, tomlPath, yardRoot } from "../host/files";
+import { coerceTagColors, coerceTags } from "./tags";
 import { decodeDockerLogs, parseLogText } from "../host/logs";
 import { craneNags, mcpHint, mcpSnapshot } from "../tools/mcp";
 import type { GantryCard, YardInventory } from "../types";
@@ -161,9 +162,10 @@ function buildInventory(): YardInventory {
         personaDir: abs(row.persona_dir),
         mcpManifest: abs(row.mcp_manifest),
         envFile: abs(row.env_file),
+        tags: coerceTags(row.tags),
       });
     });
-    return { source: "gantree.toml", yard: toml.yard || "home", gantries, dockerError, dockerPending };
+    return { source: "gantree.toml", yard: toml.yard || "home", gantries, dockerError, dockerPending, tagColors: coerceTagColors(toml.tag_color) };
   }
 
   const gantries = listed.map((c) =>
@@ -177,6 +179,7 @@ function buildInventory(): YardInventory {
       personaDir: null,
       mcpManifest: null,
       envFile: null,
+      tags: [],
     }),
   );
   return {
@@ -185,6 +188,7 @@ function buildInventory(): YardInventory {
     gantries,
     dockerError,
     dockerPending,
+    tagColors: coerceTagColors(toml?.tag_color),
   };
 }
 
@@ -198,6 +202,7 @@ function cardFrom(opts: {
   personaDir: string | null;
   mcpManifest: string | null;
   envFile: string | null;
+  tags: string[];
 }): GantryCard {
   const image = opts.enrich?.image ?? opts.listed?.image ?? null;
   const state = opts.enrich?.state ?? opts.listed?.state ?? "unknown";
@@ -243,6 +248,7 @@ function cardFrom(opts: {
     mcpManifest: opts.mcpManifest,
     envFile: opts.envFile,
     avatarRev: findAvatar(opts.personaDir)?.rev ?? null,
+    tags: opts.tags,
   };
 }
 

@@ -148,6 +148,26 @@ export const HINTS = {
   destroyFiles: {
     hint: "Deletes gantries/<slug>/ — persona, data, .env, mcp.toml. Unchecked keeps the folder so a later build can reuse it.",
   },
+  craneTags: {
+    hint: "Board labels — whose keys this crane bills, which house it belongs to. Not secrets. Letter first, then letters, digits, . _ -. Color is yard-wide: the same label stays the same hue on every card.",
+    example: "home",
+  },
+  cloneCrane: {
+    hint: "A new crane from this one. Mix the three: settings for keys and grants, persona files for voice, database for memories.",
+  },
+  cloneSlug: {
+    hint: "New folder and container. Must differ from the source. Lowercase letter first, then letters, digits, or hyphen. Max 32.",
+    example: "kit-copy",
+  },
+  cloneSettings: {
+    hint: ".env keys and URLs, mcp.toml grants, board tags, and the image pin. Two cranes with the same Telegram token cannot both poll — stop one or paste a new token.",
+  },
+  clonePersona: {
+    hint: "PERSONA.md, SELF.md, and avatar. Unchecked seeds the new slug from the template.",
+  },
+  cloneDatabase: {
+    hint: "Copies gantry.db (memories). Unchecked starts empty. OAuth files and MCP bins stay with the source.",
+  },
 } as const satisfies Record<string, HintCopy>;
 
 const ENV_HINTS: Record<string, HintCopy> = {

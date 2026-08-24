@@ -11,6 +11,7 @@ export const CRANE_LAYOUT_ID = "crane";
 
 export const CRANE_FOLD_SECTIONS = [
   "photo",
+  "tags",
   "telegram",
   "metrics",
   "logs",
@@ -89,18 +90,18 @@ export function setFolds(keys: readonly string[], open: boolean): void {
 
 export function FoldAllBar({ keys }: { keys: readonly string[] }) {
   return (
-    <div role="group" aria-label="Sections" className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
+    <div role="group" aria-label="Sections" className="mt-2 flex flex-wrap gap-3 text-xs text-dim">
       <button
         type="button"
         onClick={() => setFolds(keys, true)}
-        className="hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
+        className="hover:text-accent max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
       >
         open all
       </button>
       <button
         type="button"
         onClick={() => setFolds(keys, false)}
-        className="hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
+        className="hover:text-accent max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
       >
         close all
       </button>
@@ -148,7 +149,7 @@ export function DashFold({
     }
   }
 
-  const box = "min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-4";
+  const box = "min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4";
 
   return (
     <section data-shot={shot} className={className ? `${box} ${className}` : box}>
@@ -161,7 +162,7 @@ export function DashFold({
         >
           <span className="flex flex-wrap items-center gap-2">
             <span
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-500 group-hover:border-zinc-500 group-hover:text-zinc-400 max-sm:h-8 max-sm:w-8"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-edge text-dim group-hover:border-dim group-hover:text-muted max-sm:h-8 max-sm:w-8"
               aria-hidden
             >
               <svg
@@ -171,17 +172,17 @@ export function DashFold({
                 <path d="M3.4 2.6v6.8L8.6 6z" />
               </svg>
             </span>
-            <span className="text-sm font-medium text-zinc-400 max-sm:text-base">{title}</span>
+            <span className="text-sm font-medium text-muted max-sm:text-base">{title}</span>
             {warn
               ? (
-                  <span className="rounded border border-amber-900/70 bg-amber-950/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-200">
+                  <span className="rounded border border-warn-line bg-warn-soft px-1.5 py-0.5 text-[10px] font-medium text-warn">
                     warn
                   </span>
                 )
               : null}
-            {summary ? <span className="text-xs text-zinc-500 max-sm:text-sm">{summary}</span> : null}
+            {summary ? <span className="text-xs text-dim max-sm:text-sm">{summary}</span> : null}
           </span>
-          {!open && hint ? <span className="mt-1 block pl-9 text-[11px] text-zinc-600 max-sm:pl-10 max-sm:text-xs">{hint}</span> : null}
+          {!open && hint ? <span className="mt-1 block pl-9 text-[11px] text-faint max-sm:pl-10 max-sm:text-xs">{hint}</span> : null}
         </button>
         {aside}
       </div>
