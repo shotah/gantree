@@ -115,7 +115,7 @@ export function YardBoard() {
   }, [load, dockerPending]);
 
   return (
-    <section className="flex flex-col gap-6" data-shot="yard">
+    <section className="flex min-w-0 flex-col gap-6" data-shot="yard">
       <div className="flex flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Shipping yard</h1>
@@ -153,37 +153,37 @@ export function YardBoard() {
           )
         : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <HostCard host={yard?.host} dockerError={yard?.dockerError} />
         {yard?.gantries.map((g) => (
           <Link
             key={g.slug}
             href={`/gantries/${g.slug}`}
-            className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70 max-sm:p-5"
+            className="min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70 max-sm:p-5"
           >
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="flex items-center gap-2 font-semibold text-stone-100 max-sm:text-lg">
+            <div className="flex min-w-0 items-start justify-between gap-2">
+              <h2 className="flex min-w-0 items-center gap-2 font-semibold text-stone-100 max-sm:text-lg">
                 <CraneAvatar slug={g.slug} rev={g.avatarRev} />
-                {g.slug}
+                <span className="truncate">{g.slug}</span>
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <Spark samples={yard.sparks?.[g.slug]} />
                 <RecoverySpark n={craneRecoveries(yard, g.slug)} />
                 <Badge state={g.state} />
               </div>
             </div>
-            <dl className="mt-3 space-y-1 text-xs text-zinc-400 max-sm:space-y-1.5 max-sm:text-sm">
-              <div className="flex justify-between gap-2">
-                <dt>model</dt>
-                <dd className="text-zinc-200">{g.model ?? "—"}</dd>
+            <dl className="mt-3 min-w-0 space-y-1 text-xs text-zinc-400 max-sm:space-y-1.5 max-sm:text-sm">
+              <div className="flex min-w-0 justify-between gap-2">
+                <dt className="shrink-0">model</dt>
+                <dd className="min-w-0 truncate text-zinc-200">{g.model ?? "—"}</dd>
               </div>
-              <div className="flex justify-between gap-2">
-                <dt>channel</dt>
-                <dd className="text-zinc-200">{g.channel ?? "—"}</dd>
+              <div className="flex min-w-0 justify-between gap-2">
+                <dt className="shrink-0">channel</dt>
+                <dd className="min-w-0 truncate text-zinc-200">{g.channel ?? "—"}</dd>
               </div>
-              <div className="flex justify-between gap-2">
-                <dt>MCP</dt>
-                <dd className="text-zinc-200">
+              <div className="flex min-w-0 justify-between gap-2">
+                <dt className="shrink-0">MCP</dt>
+                <dd className="min-w-0 truncate text-zinc-200">
                   {g.mcpPublished}
                   {" "}
                   published ·
@@ -192,13 +192,13 @@ export function YardBoard() {
                   skipped
                 </dd>
               </div>
-              <div className="flex justify-between gap-2">
-                <dt>est. tokens</dt>
-                <dd className="text-zinc-200">{craneSpendLabel(yard, g.slug)}</dd>
+              <div className="flex min-w-0 justify-between gap-2">
+                <dt className="shrink-0">est. tokens</dt>
+                <dd className="min-w-0 truncate text-zinc-200">{craneSpendLabel(yard, g.slug)}</dd>
               </div>
-              <div className="flex justify-between gap-2">
-                <dt>last turn</dt>
-                <dd className="truncate text-zinc-200" title={g.lastTurn ?? ""}>
+              <div className="flex min-w-0 justify-between gap-2">
+                <dt className="shrink-0">last turn</dt>
+                <dd className="min-w-0 truncate text-zinc-200" title={g.lastTurn ?? ""}>
                   {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
                 </dd>
               </div>
@@ -208,15 +208,15 @@ export function YardBoard() {
                   return null;
                 }
                 return (
-                  <div className="flex justify-between gap-2">
-                    <dt>data dir</dt>
-                    <dd className="text-zinc-200">{fmtBytes(disk)}</dd>
+                  <div className="flex min-w-0 justify-between gap-2">
+                    <dt className="shrink-0">data dir</dt>
+                    <dd className="min-w-0 truncate text-zinc-200">{fmtBytes(disk)}</dd>
                   </div>
                 );
               })()}
-              <div className="flex justify-between gap-2">
-                <dt>image</dt>
-                <dd className="truncate text-zinc-200" title={g.image ?? ""}>
+              <div className="flex min-w-0 justify-between gap-2">
+                <dt className="shrink-0">image</dt>
+                <dd className="min-w-0 truncate text-zinc-200" title={g.image ?? ""}>
                   {g.image ?? "—"}
                 </dd>
               </div>

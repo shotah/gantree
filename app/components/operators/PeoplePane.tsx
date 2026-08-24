@@ -70,7 +70,7 @@ export function PeoplePane({
 
   return (
     <>
-      <ul className="grid gap-3 text-sm sm:grid-cols-3">
+      <ul className="grid min-w-0 gap-3 text-sm sm:grid-cols-3">
         {OPERATOR_ROLES.map((role) => (
           <li key={role} className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2">
             <p className="font-medium text-stone-100">{role}</p>
@@ -84,8 +84,8 @@ export function PeoplePane({
 
       <ul className="space-y-2">
         {operators.map((o) => (
-          <li key={o.id} className="rounded border border-zinc-800 px-3 py-2 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <li key={o.id} className="min-w-0 rounded border border-zinc-800 px-3 py-2 text-sm">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-3">
                 <OperatorAvatar id={o.id} rev={o.avatarRev} name={o.displayName || o.name} />
                 <span>

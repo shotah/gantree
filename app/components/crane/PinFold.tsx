@@ -1,15 +1,15 @@
 "use client";
 
 import { HINTS } from "@/lib/yard/hints";
-import { craneFoldKey, DashFold } from "../shared/DashFold";
+import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import { HintField } from "../shared/HintField";
 import type { AgentDash } from "./useAgentDashboard";
 
 export function PinFold({ dash }: { dash: AgentDash }) {
-  const { slug, pin, setPin, mutate, busy, act } = dash;
+  const { pin, setPin, mutate, busy, act } = dash;
 
   return (
-    <DashFold title="Image pin" persistKey={craneFoldKey(slug, "pin")} hint="pull + recreate tag">
+    <DashFold title="Image pin" persistKey={craneLayoutKey("pin")} hint="pull + recreate tag">
       <p className="mb-2 text-xs text-zinc-600">
         pull + recreate uses this tag, keeps the host uid that owns
         {" "}

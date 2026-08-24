@@ -1,7 +1,7 @@
 "use client";
 
 import { CraneAvatar } from "../shared/CraneAvatar";
-import { craneFoldKey, DashFold } from "../shared/DashFold";
+import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import type { AgentDash } from "./useAgentDashboard";
 
 export function PhotoFold({ dash }: { dash: AgentDash }) {
@@ -10,7 +10,7 @@ export function PhotoFold({ dash }: { dash: AgentDash }) {
   return (
     <DashFold
       title="Photo"
-      persistKey={craneFoldKey(slug, "photo")}
+      persistKey={craneLayoutKey("photo")}
       shot="photo"
       hint="persona/avatar.jpg — Telegram uses the same picture"
     >

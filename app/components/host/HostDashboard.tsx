@@ -108,15 +108,15 @@ export function HostDashboard() {
   const runtime = meta?.runtime;
 
   return (
-    <section className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
-        <div className="flex items-start gap-3">
+    <section className="flex min-w-0 flex-col gap-8">
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
+        <div className="flex min-w-0 items-start gap-3">
           <HostAvatar size="lg" />
-          <div>
+          <div className="min-w-0">
             <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
               ← shipping yard
             </Link>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">{name}</h1>
+            <h1 className="mt-1 min-w-0 truncate text-2xl font-semibold tracking-tight">{name}</h1>
             <p className="text-sm text-zinc-500 max-sm:break-words">
               {live
                 ? `${live.ncpu} cores · ${fmtBytes(live.memTotalBytes)} · ${meta?.yard ?? "yard"} · ${meta?.source ?? ""}`
@@ -155,7 +155,7 @@ export function HostDashboard() {
         aside={<SpendScope window={spendWindow} onWindow={setSpendWindow} />}
       >
         {live ? <HostMeters live={live} spark={spark} /> : <p className="text-sm text-zinc-500">{meta?.dockerError || "Sampling Docker…"}</p>}
-        <Suspense fallback={<ChartSkeleton n={4} className="mt-3 grid gap-3 md:grid-cols-2" />}>
+        <Suspense fallback={<ChartSkeleton n={4} className="mt-3 grid min-w-0 gap-3 md:grid-cols-2" />}>
           <HostCharts spark={spark} since={since} now={now} timeZone={meta?.observe?.timezone} />
         </Suspense>
         <p className="mt-2 text-[11px] text-zinc-600">
@@ -262,7 +262,7 @@ export function HostDashboard() {
                 ? (
                     <ul className="space-y-1 text-sm text-zinc-400">
                       {db.tables.map((t) => (
-                        <li key={t.name} className="flex justify-between gap-2 font-mono text-xs">
+                        <li key={t.name} className="flex min-w-0 justify-between gap-2 font-mono text-xs">
                           <span className="text-zinc-300">{t.name}</span>
                           <span className="tabular-nums text-zinc-500">{t.rows}</span>
                         </li>
@@ -279,27 +279,27 @@ export function HostDashboard() {
       {mutate && runtime
         ? (
             <DashFold title="Runtime" persistKey={craneFoldKey("host", "runtime")} hint="how this process was started">
-              <dl className="grid gap-2 text-xs text-zinc-400 sm:grid-cols-2">
-                <div className="flex justify-between gap-2">
+              <dl className="grid min-w-0 gap-2 text-xs text-zinc-400 sm:grid-cols-2">
+                <div className="flex min-w-0 justify-between gap-2">
                   <dt>bind</dt>
                   <dd className="font-mono text-zinc-200">
                     {runtime.bind}
                     {runtime.bindOpen ? " · all interfaces" : ""}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-2">
+                <div className="flex min-w-0 justify-between gap-2">
                   <dt>root</dt>
                   <dd className="truncate font-mono text-zinc-200" title={runtime.root}>
                     {runtime.root}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-2">
+                <div className="flex min-w-0 justify-between gap-2">
                   <dt>toml</dt>
                   <dd className="truncate font-mono text-zinc-200" title={runtime.tomlPath}>
                     {runtime.tomlPath}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-2">
+                <div className="flex min-w-0 justify-between gap-2">
                   <dt>sqlite</dt>
                   <dd className="truncate font-mono text-zinc-200" title={runtime.dbPath}>
                     {runtime.dbPath}
@@ -307,7 +307,7 @@ export function HostDashboard() {
                 </div>
                 {runtime.craneUser
                   ? (
-                      <div className="flex justify-between gap-2">
+                      <div className="flex min-w-0 justify-between gap-2">
                         <dt>crane user</dt>
                         <dd className="font-mono text-zinc-200">{runtime.craneUser}</dd>
                       </div>
@@ -319,7 +319,7 @@ export function HostDashboard() {
                 {Object.entries(runtime.env).map(([k, row]) => {
                   const badge = secretBadge(row, row.value);
                   return (
-                    <li key={k} className="flex justify-between gap-2">
+                    <li key={k} className="flex min-w-0 justify-between gap-2">
                       <span>{k}</span>
                       <span className={`truncate ${badge.missing ? "text-amber-200" : "text-zinc-300"}`}>{badge.text}</span>
                     </li>

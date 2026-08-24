@@ -100,7 +100,7 @@ export function DoorShell({ children }: { children: ReactNode }) {
   if (phone.on) {
     const size = phone.preset;
     return (
-      <div data-shot="phone-preview" className="flex min-h-screen flex-col items-center bg-zinc-950 px-3 py-3">
+      <div data-shot="phone-preview" className="flex min-h-screen min-w-0 flex-col items-center overflow-x-clip bg-zinc-950 px-3 py-3">
         <p className="mb-2 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-500">
           <label className="flex items-center gap-2">
             <span className="sr-only">phone size</span>
@@ -129,9 +129,10 @@ export function DoorShell({ children }: { children: ReactNode }) {
         <iframe
           title="phone preview"
           src={phone.src}
-          className="max-w-full rounded-[1.25rem] border border-zinc-700 bg-zinc-950 shadow-xl"
+          className="min-w-0 max-w-full overflow-hidden rounded-[1.25rem] border border-zinc-700 bg-zinc-950 shadow-xl"
           style={{
             width: size.width,
+            maxWidth: "100%",
             height: `min(${size.height}px, calc(100dvh - 3.5rem))`,
           }}
         />
@@ -141,13 +142,13 @@ export function DoorShell({ children }: { children: ReactNode }) {
 
   return (
     <DoorContext.Provider value={door ?? { ready: false, operator: null, dev: false }}>
-      <header className="border-b border-zinc-800 px-6 py-3 max-sm:px-4 max-sm:pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 max-sm:gap-2">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-amber-500 max-sm:text-xl">
+      <header className="min-w-0 border-b border-zinc-800 px-6 py-3 max-sm:px-4 max-sm:pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="mx-auto flex min-w-0 max-w-6xl items-center justify-between gap-4 max-sm:gap-2">
+          <Link href="/" className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight text-amber-500 max-sm:text-xl">
             <GantreeMark className="h-7 w-7 shrink-0 max-sm:h-8 max-sm:w-8" />
             gantree
           </Link>
-          <div className="flex items-center gap-3 text-xs text-zinc-500 max-sm:gap-1 max-sm:text-sm">
+          <div className="flex min-w-0 items-center justify-end gap-3 text-xs text-zinc-500 max-sm:gap-1 max-sm:text-sm">
             <p className="max-sm:hidden">shipping yard · not the chat</p>
             {door?.dev
               ? (
@@ -166,12 +167,13 @@ export function DoorShell({ children }: { children: ReactNode }) {
                   <>
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 text-zinc-400 hover:text-amber-200 max-sm:min-h-11"
+                      aria-label={label}
+                      className="flex min-w-0 items-center gap-2 text-zinc-400 hover:text-amber-200 max-sm:min-h-11"
                     >
                       <OperatorAvatar id={you.id} rev={you.avatarRev} name={label} />
-                      <span className="max-sm:max-w-24 max-sm:truncate">
+                      <span className="hidden min-w-0 truncate sm:inline">
                         {label}
-                        <span className="ml-1.5 text-zinc-600 max-sm:hidden">{you.role}</span>
+                        <span className="ml-1.5 text-zinc-600">{you.role}</span>
                       </span>
                     </Link>
                     <Link

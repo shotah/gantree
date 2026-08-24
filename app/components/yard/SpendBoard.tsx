@@ -39,7 +39,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`rounded border px-2 py-0.5 text-[11px] max-sm:min-h-11 max-sm:shrink-0 max-sm:px-3 max-sm:text-xs ${
+      className={`min-w-0 rounded border px-2 py-0.5 text-[11px] max-sm:min-h-11 max-sm:w-full max-sm:text-xs ${
         active ? "border-amber-700 text-amber-400" : "border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
       }`}
     >
@@ -62,8 +62,8 @@ export function SpendScope({
   buckets?: SpendBucket[];
 }) {
   return (
-    <div className="flex flex-col items-end gap-1.5 max-sm:w-full max-sm:items-stretch">
-      <div className="flex flex-wrap justify-end gap-1 max-sm:flex-nowrap max-sm:justify-start max-sm:overflow-x-auto" role="group" aria-label="Time window">
+    <div className="flex min-w-0 flex-col items-end gap-1.5 max-sm:w-full max-sm:items-stretch">
+      <div className="flex min-w-0 flex-wrap justify-end gap-1 max-sm:grid max-sm:grid-cols-[repeat(auto-fit,minmax(4.25rem,1fr))]" role="group" aria-label="Time window">
         {SPEND_WINDOWS.map((w) => (
           <Pill key={w} active={window === w} onClick={() => onWindow(w)}>
             {WINDOW_LABELS[w]}
@@ -72,7 +72,7 @@ export function SpendScope({
       </div>
       {onBucket && buckets && buckets.length > 0
         ? (
-            <div className="flex flex-wrap justify-end gap-1 max-sm:flex-nowrap max-sm:justify-start max-sm:overflow-x-auto" role="group" aria-label="Token grouping">
+            <div className="flex min-w-0 flex-wrap justify-end gap-1 max-sm:grid max-sm:grid-cols-[repeat(auto-fit,minmax(4.25rem,1fr))]" role="group" aria-label="Token grouping">
               {buckets.map((b) => (
                 <Pill key={b} active={bucket === b} onClick={() => onBucket(b)}>
                   {BUCKET_LABELS[b]}
@@ -197,7 +197,7 @@ function CraneRow({ crane, max }: { crane: SpendRollup; max: number }) {
       : "detail";
 
   return (
-    <li className="rounded-md border border-zinc-800/80 bg-zinc-950/40 px-3 py-2">
+    <li className="min-w-0 rounded-md border border-zinc-800/80 bg-zinc-950/40 px-3 py-2">
       <div className="grid grid-cols-[7rem_1fr_auto] items-center gap-2 text-sm max-sm:grid-cols-1 max-sm:gap-1">
         <Link href={`/gantries/${crane.slug}`} className="truncate font-medium text-stone-100 hover:text-amber-400">
           {crane.slug}
@@ -276,8 +276,8 @@ export function SpendBoard({
   const usd = estSpendUsd(spend?.promptEst ?? 0, spend?.genEst ?? 0, observe);
 
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <button
           type="button"
           aria-expanded={open}
@@ -420,8 +420,8 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
   const last = lastTurnLine(rollup.lastTurn, Date.now());
   const usd = estSpendUsd(rollup.promptEst, rollup.genEst, observe);
   return (
-    <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+    <div className="mb-3 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
         <p className="text-[10px] uppercase tracking-wide text-zinc-600">
           sampled turns · {scope}
         </p>
@@ -434,7 +434,7 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
             )
           : null}
       </div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+      <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
         <p className="text-[10px] uppercase tracking-wide text-zinc-600">est. prompt + gen</p>
         <p className="mt-1 text-lg font-semibold tabular-nums text-emerald-400">{fmtEstTokens(rollup.estTokens)}</p>
         <p className="text-[11px] text-zinc-500">
@@ -442,7 +442,7 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
           {usd != null ? ` · ${fmtUsd(usd)}` : ""}
         </p>
       </div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+      <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
         <p className="text-[10px] uppercase tracking-wide text-zinc-600">
           {rollup.byUser.length > 0 ? "top user" : "source"}
         </p>
@@ -465,7 +465,7 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
       </div>
       {rollup.bySource.length > 0
         ? (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+            <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
               <p className="text-[10px] uppercase tracking-wide text-zinc-600">source mix</p>
               <div className="mt-2">
                 <MixBar slices={rollup.bySource} total={rollup.estTokens} />
@@ -474,7 +474,7 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
             </div>
           )
         : null}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+      <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
         <p className="text-[10px] uppercase tracking-wide text-zinc-600">trajectory</p>
         <p className="mt-1 text-sm text-zinc-200">
           {rollup.trajectory.medianRounds != null
@@ -492,7 +492,7 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
             )
           : null}
       </div>
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
+      <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2">
         <p className="text-[10px] uppercase tracking-wide text-zinc-600">per human turn</p>
         <p className="mt-1 text-lg font-semibold tabular-nums text-stone-100">
           {rollup.trajectory.userTurns > 0

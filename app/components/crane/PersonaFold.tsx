@@ -1,13 +1,12 @@
 "use client";
 
 import { HINTS } from "@/lib/yard/hints";
-import { craneFoldKey, DashFold } from "../shared/DashFold";
+import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import { HintField } from "../shared/HintField";
 import type { AgentDash } from "./useAgentDashboard";
 
 export function PersonaFold({ dash }: { dash: AgentDash }) {
   const {
-    slug,
     files,
     persona,
     setPersona,
@@ -27,7 +26,7 @@ export function PersonaFold({ dash }: { dash: AgentDash }) {
   } = dash;
 
   return (
-    <DashFold title="Persona" persistKey={craneFoldKey(slug, "persona")} hint="PERSONA.md and SELF.md">
+    <DashFold title="Persona" persistKey={craneLayoutKey("persona")} hint="PERSONA.md and SELF.md">
       <HintField label="PERSONA.md" {...HINTS.persona}>
         <textarea
           className="min-h-40 w-full rounded border border-zinc-800 bg-zinc-950 p-3 text-sm"

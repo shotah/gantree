@@ -1,13 +1,12 @@
 "use client";
 
 import { HINTS } from "@/lib/yard/hints";
-import { craneFoldKey, DashFold } from "../shared/DashFold";
+import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import { HintField } from "../shared/HintField";
 import type { AgentDash } from "./useAgentDashboard";
 
 export function ToolsFold({ dash }: { dash: AgentDash }) {
   const {
-    slug,
     catalog,
     files,
     granted,
@@ -29,7 +28,7 @@ export function ToolsFold({ dash }: { dash: AgentDash }) {
   return (
     <DashFold
       title="Tools"
-      persistKey={craneFoldKey(slug, "tools")}
+      persistKey={craneLayoutKey("tools")}
       summary={`${granted.size} granted`}
       hint="mcp.toml — recreate fetches bins"
     >
@@ -144,7 +143,7 @@ export function ToolsFold({ dash }: { dash: AgentDash }) {
                         ? null
                         : (
                             <div className="flex flex-wrap items-end gap-2">
-                              <HintField label="auth code" className="min-w-40 flex-1" {...HINTS.authCode}>
+                              <HintField label="auth code" className="min-w-0 flex-1 sm:min-w-40" {...HINTS.authCode}>
                                 <input
                                   className="w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1"
                                   placeholder={c.authFlow === "mfa" ? "MFA code from email" : "paste code"}

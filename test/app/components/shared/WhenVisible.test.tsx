@@ -18,6 +18,8 @@ describe("WhenVisible", () => {
       </WhenVisible>,
     );
     expect(screen.getByText("plot")).toBeTruthy();
+    expect(screen.getByText("plot").parentElement?.className).toMatch(/w-full/);
+    expect(screen.getByText("plot").parentElement?.className).toMatch(/min-w-0/);
   });
 
   it("holds children until the tile intersects", async () => {

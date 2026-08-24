@@ -6,6 +6,30 @@ export function craneFoldKey(slug: string, section: string): string {
   return `gantree.fold.v1.${slug}.${section}`;
 }
 
+/** Shared across every crane so hopping agents keeps the same open set. */
+export const CRANE_LAYOUT_ID = "crane";
+
+export const CRANE_FOLD_SECTIONS = [
+  "photo",
+  "telegram",
+  "metrics",
+  "logs",
+  "events",
+  "doctor",
+  "tools",
+  "persona",
+  "secrets",
+  "pin",
+] as const;
+
+export function craneLayoutKey(section: string): string {
+  return craneFoldKey(CRANE_LAYOUT_ID, section);
+}
+
+export function craneLayoutKeys(): string[] {
+  return CRANE_FOLD_SECTIONS.map((s) => craneLayoutKey(s));
+}
+
 const foldListeners = new Set<() => void>();
 
 function subscribeFold(onChange: () => void): () => void {
@@ -51,6 +75,39 @@ function writeFold(key: string, open: boolean): void {
   notifyFold();
 }
 
+export function setFolds(keys: readonly string[], open: boolean): void {
+  try {
+    const v = open ? "1" : "0";
+    for (const key of keys) {
+      localStorage.setItem(key, v);
+    }
+  } catch {
+    /* private mode */
+  }
+  notifyFold();
+}
+
+export function FoldAllBar({ keys }: { keys: readonly string[] }) {
+  return (
+    <div role="group" aria-label="Sections" className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
+      <button
+        type="button"
+        onClick={() => setFolds(keys, true)}
+        className="hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
+      >
+        open all
+      </button>
+      <button
+        type="button"
+        onClick={() => setFolds(keys, false)}
+        className="hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
+      >
+        close all
+      </button>
+    </div>
+  );
+}
+
 export function DashFold({
   title,
   summary,
@@ -91,11 +148,11 @@ export function DashFold({
     }
   }
 
-  const box = "rounded-lg border border-zinc-800 bg-zinc-900/60 p-4";
+  const box = "min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-4";
 
   return (
     <section data-shot={shot} className={className ? `${box} ${className}` : box}>
-      <div className={`flex flex-wrap items-start justify-between gap-3 ${open ? "mb-3" : ""}`}>
+      <div className={`flex min-w-0 flex-wrap items-start justify-between gap-3 ${open ? "mb-3" : ""}`}>
         <button
           type="button"
           aria-expanded={open}

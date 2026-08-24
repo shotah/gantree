@@ -116,6 +116,16 @@ describe("SpendBoard", () => {
 });
 
 describe("SpendScope", () => {
+  it("wraps window pills instead of a sideways scroller", () => {
+    render(<SpendScope window="24h" onWindow={vi.fn()} />);
+    const group = screen.getByRole("group", { name: "Time window" });
+    expect(group.className).toMatch(/min-w-0/);
+    expect(group.className).toMatch(/flex-wrap/);
+    expect(group.className).not.toMatch(/flex-nowrap/);
+    expect(group.className).not.toMatch(/overflow-x-auto/);
+    expect(screen.getByRole("button", { name: "1h" }).className).not.toMatch(/shrink-0/);
+  });
+
   it("marks the active window and reports a change", () => {
     const onWindow = vi.fn();
     render(<SpendScope window="24h" onWindow={onWindow} />);

@@ -2,7 +2,14 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { craneFoldKey, DashFold } from "@/app/components/shared/DashFold";
+import {
+  craneFoldKey,
+  craneLayoutKey,
+  craneLayoutKeys,
+  DashFold,
+  FoldAllBar,
+  setFolds,
+} from "@/app/components/shared/DashFold";
 
 afterEach(() => {
   cleanup();
@@ -24,6 +31,7 @@ describe("DashFold", () => {
     expect(screen.queryByText("photo body")).toBeNull();
     expect(toggle.closest("section")?.className).toContain("border-zinc-800");
     expect(toggle.closest("section")?.className).toContain("rounded-lg");
+    expect(toggle.closest("section")?.className).toContain("min-w-0");
     expect(toggle.querySelector("[aria-hidden]")?.className).toContain("rounded-full");
   });
 
@@ -93,5 +101,55 @@ describe("DashFold", () => {
     fireEvent.click(screen.getByRole("button", { name: /Logs/ }));
     expect(screen.getByText("slog body")).toBeTruthy();
     expect(localStorage.getItem(key)).toBe("1");
+  });
+
+  it("shares crane layout keys across slugs", () => {
+    expect(craneLayoutKey("logs")).toBe("gantree.fold.v1.crane.logs");
+    expect(craneLayoutKey("logs")).not.toBe(craneFoldKey("kit", "logs"));
+    expect(craneLayoutKeys()).toContain(craneLayoutKey("photo"));
+    expect(craneLayoutKeys()).toContain(craneLayoutKey("events"));
+  });
+
+  it("opens and closes every persistKey from setFolds", async () => {
+    render(
+      <>
+        <DashFold title="Photo" persistKey={craneLayoutKey("photo")} hint="pic">
+          <p>photo body</p>
+        </DashFold>
+        <DashFold title="Logs" persistKey={craneLayoutKey("logs")} defaultOpen>
+          <p>slog body</p>
+        </DashFold>
+      </>,
+    );
+    expect(screen.getByRole("button", { name: /Logs/ })).toHaveProperty("ariaExpanded", "true");
+    expect(screen.getByRole("button", { name: /Photo/ })).toHaveProperty("ariaExpanded", "false");
+
+    setFolds(craneLayoutKeys(), false);
+    await waitFor(() => expect(screen.getByRole("button", { name: /Logs/ })).toHaveProperty("ariaExpanded", "false"));
+    expect(screen.queryByText("slog body")).toBeNull();
+
+    setFolds(craneLayoutKeys(), true);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Photo/ })).toHaveProperty("ariaExpanded", "true");
+      expect(screen.getByText("photo body")).toBeTruthy();
+      expect(screen.getByText("slog body")).toBeTruthy();
+    });
+    expect(localStorage.getItem(craneLayoutKey("logs"))).toBe("1");
+  });
+
+  it("lets FoldAllBar write every layout key", async () => {
+    render(
+      <>
+        <FoldAllBar keys={craneLayoutKeys()} />
+        <DashFold title="Logs" persistKey={craneLayoutKey("logs")} defaultOpen>
+          <p>slog body</p>
+        </DashFold>
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "close all" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Logs/ })).toHaveProperty("ariaExpanded", "false"));
+    fireEvent.click(screen.getByRole("button", { name: "open all" }));
+    await waitFor(() => expect(screen.getByText("slog body")).toBeTruthy());
   });
 });

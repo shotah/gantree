@@ -48,6 +48,8 @@ export function listYardEvents(opts?: {
   kind?: string;
   limit?: number;
   includeSession?: boolean;
+  /** Inclusive lower bound on `at` (epoch ms). */
+  since?: number | null;
 }): YardEvent[] {
   const limit = Math.min(Math.max(opts?.limit ?? 40, 1), 200);
   const slugs = opts?.slugs?.filter(Boolean) ?? [];
@@ -67,6 +69,10 @@ export function listYardEvents(opts?: {
   if (opts?.includeSession === false) {
     where.push(`e.kind NOT IN (${SESSION_EVENT_KINDS.map(() => "?").join(",")})`);
     args.push(...SESSION_EVENT_KINDS);
+  }
+  if (opts?.since != null) {
+    where.push("e.at >= ?");
+    args.push(new Date(opts.since).toISOString());
   }
   const sql = `SELECT e.id, e.at, e.kind, e.slug, e.operator_id, e.detail, o.name AS operator_name
            FROM yard_event e

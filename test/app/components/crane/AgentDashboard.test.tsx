@@ -534,6 +534,40 @@ describe("AgentDashboard secrets", () => {
   });
 });
 
+describe("AgentDashboard folds", () => {
+  it("opens and closes every section from the header", async () => {
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+
+    expect(screen.getByRole("button", { name: /Logs/ })).toHaveProperty("ariaExpanded", "true");
+    expect(screen.getByRole("button", { name: /Photo/ })).toHaveProperty("ariaExpanded", "false");
+
+    fireEvent.click(screen.getByRole("button", { name: "close all" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Logs/ })).toHaveProperty("ariaExpanded", "false");
+      expect(screen.getByRole("button", { name: /Metrics/ })).toHaveProperty("ariaExpanded", "false");
+      expect(screen.getByRole("button", { name: /Photo/ })).toHaveProperty("ariaExpanded", "false");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "open all" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Photo/ })).toHaveProperty("ariaExpanded", "true");
+      expect(screen.getByRole("button", { name: /Persona/ })).toHaveProperty("ariaExpanded", "true");
+      expect(screen.getByLabelText("PERSONA.md")).toBeTruthy();
+    });
+  });
+
+  it("stores fold layout for the operator, not per crane slug", async () => {
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "close all" }));
+    await waitFor(() => expect(localStorage.getItem("gantree.fold.v1.crane.logs")).toBe("0"));
+    expect(localStorage.getItem("gantree.fold.v1.noodles.logs")).toBeNull();
+  });
+});
+
 describe("AgentDashboard destroy", () => {
   it("hides destroy when the crane is read-only", async () => {
     vi.mocked(useDoor).mockReturnValue(readonlyDoor);

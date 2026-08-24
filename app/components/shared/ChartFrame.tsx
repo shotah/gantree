@@ -46,7 +46,7 @@ export function ChartFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+    <div className="min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
       <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">{title}</h3>
       {empty
         ? (
@@ -54,7 +54,7 @@ export function ChartFrame({
           )
         : (
             <>
-              <div className="h-40 max-sm:h-52">
+              <div className="h-40 w-full min-w-0 max-sm:h-52">
                 <WhenVisible>{children}</WhenVisible>
               </div>
               {caption ? <p className="mt-1.5 text-[10px] text-zinc-600">{caption}</p> : null}

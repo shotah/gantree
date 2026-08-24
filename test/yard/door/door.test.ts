@@ -433,6 +433,19 @@ describe("audit", () => {
     expect(listYardEvents().map((e) => e.kind)).toEqual(["grant", "recreate", "setup"]);
     expect(listYardEvents({ kind: "recreate" }).map((e) => e.kind)).toEqual(["recreate"]);
 
+    yardDb().prepare(
+      "INSERT INTO yard_event (at, kind, slug, operator_id, detail) VALUES (?, ?, ?, ?, ?)",
+    ).run(new Date(Date.now() - 8 * 24 * 3600_000).toISOString(), "grant", "stale", created.operator.id, "week-old");
+    expect(listYardEvents().map((e) => e.detail)).toContain("week-old");
+    expect(listYardEvents({ since: Date.now() - 24 * 3600_000 }).map((e) => e.detail)).not.toContain("week-old");
+    expect(listYardEvents({ since: Date.now() - 24 * 3600_000 }).map((e) => e.kind)).toContain("recreate");
+
+    const hour = await listEvents(req("http://127.0.0.1/api/events?window=1h", created.token));
+    expect(hour.status).toBe(200);
+    expect(((await hour.json()) as { events: { detail: string }[] }).events.map((e) => e.detail)).not.toContain("week-old");
+    const all = await listEvents(req("http://127.0.0.1/api/events?window=all", created.token));
+    expect(((await all.json()) as { events: { detail: string }[] }).events.map((e) => e.detail)).toContain("week-old");
+
     const handler = withDoor(async () => Response.json({ events: listYardEvents() }));
     expect((await handler(req())).status).toBe(401);
     expect((await handler(authed)).status).toBe(200);

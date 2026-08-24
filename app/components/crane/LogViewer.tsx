@@ -114,10 +114,10 @@ export function LogViewer({ slug, src }: { slug?: string; src?: string }) {
   const hasTurnIds = shown.some((l) => l.turnId);
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950">
-      <div className="flex flex-wrap items-center gap-2 border-b border-zinc-800 px-3 py-2">
+    <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-950">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-zinc-800 px-3 py-2">
         <input
-          className="min-w-40 flex-1 rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs max-sm:min-w-0 max-sm:text-sm"
+          className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs max-sm:text-sm sm:min-w-40"
           placeholder="search logs"
           value={q}
           onChange={(e) => setQ(e.target.value)}

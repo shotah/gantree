@@ -5,7 +5,7 @@ import { lazy, Suspense } from "react";
 import { HINTS } from "@/lib/yard/hints";
 import { fmtSpendWindow, labelRollup, rollupTurns } from "@/lib/yard/observe/spend";
 import { CraneAvatar } from "../shared/CraneAvatar";
-import { craneFoldKey, DashFold } from "../shared/DashFold";
+import { craneLayoutKey, craneLayoutKeys, DashFold, FoldAllBar } from "../shared/DashFold";
 import { DoctorPanel } from "./DoctorPanel";
 import { EventStrip } from "../shared/EventStrip";
 import { InjectUserModal } from "./InjectUserModal";
@@ -76,23 +76,24 @@ export function AgentDashboard({ slug }: { slug: string }) {
   }
 
   return (
-    <section className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
-        <div className="flex items-start gap-3">
+    <section className="flex min-w-0 flex-col gap-8">
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-3 max-sm:flex-col max-sm:items-stretch">
+        <div className="flex min-w-0 items-start gap-3">
           <CraneAvatar slug={slug} rev={gantry?.avatarRev ?? null} size="lg" />
-          <div>
+          <div className="min-w-0">
             <Link href="/" className="text-xs text-zinc-500 hover:text-amber-500 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center max-sm:text-sm">
               ← shipping yard
             </Link>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">{slug}</h1>
+            <h1 className="mt-1 min-w-0 truncate text-2xl font-semibold tracking-tight">{slug}</h1>
             <p className="text-sm text-zinc-500 max-sm:break-words">
               {gantry ? `${gantry.state} · ${gantry.model ?? "no model"} · ${gantry.channel ?? "no channel"}` : "loading…"}
             </p>
+            <FoldAllBar keys={craneLayoutKeys()} />
           </div>
         </div>
         {mutate
           ? (
-              <div className="flex flex-wrap gap-2 max-sm:grid max-sm:w-full max-sm:grid-cols-2">
+              <div className="flex min-w-0 flex-wrap gap-2 max-sm:grid max-sm:w-full max-sm:grid-cols-2">
                 {(["start", "stop", "recreate", "backup"] as const).map((a) => (
                   <button
                     key={a}
@@ -148,7 +149,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
 
       <DashFold
         title="Metrics"
-        persistKey={craneFoldKey(slug, "metrics")}
+        persistKey={craneLayoutKey("metrics")}
         defaultOpen
         hint="CPU, RAM, MCP, tokens"
         aside={(
@@ -167,13 +168,13 @@ export function AgentDashboard({ slug }: { slug: string }) {
         </Suspense>
       </DashFold>
 
-      <DashFold title="Logs" persistKey={craneFoldKey(slug, "logs")} defaultOpen hint="live slog">
+      <DashFold title="Logs" persistKey={craneLayoutKey("logs")} defaultOpen hint="live slog">
         <LogViewer slug={slug} />
       </DashFold>
 
       <EventStrip slug={slug} />
 
-      <DoctorPanel doctor={doctor} persistKey={craneFoldKey(slug, "doctor")} />
+      <DoctorPanel doctor={doctor} persistKey={craneLayoutKey("doctor")} />
 
       <ToolsFold dash={dash} />
       <PersonaFold dash={dash} />

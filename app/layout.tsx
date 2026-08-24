@@ -28,7 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body className="min-h-screen bg-zinc-950 text-stone-200">
+      <body className="min-h-screen min-w-0 overflow-x-clip bg-zinc-950 text-stone-200">
         <Suspense fallback={<p className="px-6 py-10 text-sm text-zinc-500">opening the door…</p>}>
           <DoorShell>{children}</DoorShell>
         </Suspense>

@@ -103,7 +103,7 @@ export const MetricCharts = memo(function MetricCharts({
   };
 
   return (
-    <div className="grid gap-3 md:grid-cols-2" data-shot="metrics">
+    <div className="grid min-w-0 gap-3 md:grid-cols-2" data-shot="metrics">
       <ChartFrame title="CPU %" empty={hostRows.length === 0}>
         <ResponsiveContainer>
           <AreaChart data={hostRows}>

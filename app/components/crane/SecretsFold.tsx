@@ -2,14 +2,13 @@
 
 import { envHint } from "@/lib/yard/hints";
 import { secretLook, secretNoun } from "@/lib/yard/secretLook";
-import { craneFoldKey, DashFold } from "../shared/DashFold";
+import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import { HintField } from "../shared/HintField";
 import { envRow, fieldValue, looksLikeUrl } from "./agentEnv";
 import type { AgentDash } from "./useAgentDashboard";
 
 export function SecretsFold({ dash }: { dash: AgentDash }) {
   const {
-    slug,
     files,
     secretKeys,
     optionalSecretKeys,
@@ -25,7 +24,7 @@ export function SecretsFold({ dash }: { dash: AgentDash }) {
   return (
     <DashFold
       title="Secrets"
-      persistKey={craneFoldKey(slug, "secrets")}
+      persistKey={craneLayoutKey("secrets")}
       hint="crane mouth plus keys for granted tools"
       summary={
         missingSecrets === 1

@@ -68,6 +68,9 @@ describe("HostCard", () => {
     expect(screen.getByText("NET")).toBeTruthy();
     expect(screen.getByText(/↓ .+\/s · ↑ .+\/s/)).toBeTruthy();
     expect(screen.getByText(/since those containers started/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: /paddleboy/ })).toHaveProperty("href", expect.stringMatching(/\/host$/));
+    const card = screen.getByRole("link", { name: /paddleboy/ });
+    expect(card).toHaveProperty("href", expect.stringMatching(/\/host$/));
+    expect(card.className).toMatch(/min-w-0/);
+    expect(card.className).toMatch(/max-w-full/);
   });
 });

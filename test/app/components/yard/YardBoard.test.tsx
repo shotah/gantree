@@ -73,6 +73,7 @@ describe("YardBoard", () => {
     });
     render(<YardBoard />);
     await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
+    expect(screen.getByText("kit").closest("a")?.className).toMatch(/min-w-0/);
     expect(screen.getByText("2m ago")).toBeTruthy();
     expect(screen.getByLabelText("2 recoveries")).toBeTruthy();
   });

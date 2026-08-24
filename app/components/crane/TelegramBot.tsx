@@ -10,7 +10,7 @@ import {
 } from "@/lib/yard/host/telegram";
 import { HINTS } from "@/lib/yard/hints";
 import { BotFatherHint } from "./BotFatherHint";
-import { craneFoldKey, DashFold } from "../shared/DashFold";
+import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import { HintField } from "../shared/HintField";
 import { yardFetch } from "@/app/lib/yardFetch";
 
@@ -132,7 +132,7 @@ export function TelegramBot({
   return (
     <DashFold
       title="Telegram"
-      persistKey={craneFoldKey(slug, "telegram")}
+      persistKey={craneLayoutKey("telegram")}
       shot="telegram"
       summary={
         snap.bot?.username
@@ -418,7 +418,7 @@ export function TelegramBot({
           : null}
         <div className="mt-2 flex flex-wrap gap-2">
           <input
-            className="min-w-40 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm"
+            className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm sm:min-w-40"
             placeholder="numeric id"
             value={addId}
             disabled={readOnly}

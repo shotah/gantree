@@ -89,7 +89,11 @@ describe("DoorShell phone preview", () => {
     expect(screen.getByTitle("phone preview")).toBeTruthy();
     expect(screen.getByLabelText("phone size")).toBeTruthy();
     expect(screen.getByText("390×844")).toBeTruthy();
-    expect(screen.getByTitle("phone preview").getAttribute("style")).toMatch(/width: 390px/);
+    const frame = screen.getByTitle("phone preview");
+    expect(frame.getAttribute("style")).toMatch(/width: 390px/);
+    expect(frame.className).toMatch(/min-w-0/);
+    expect(frame.className).toMatch(/overflow-hidden/);
+    expect(frame.className).toMatch(/max-w-full/);
   });
 
   it("sizes the frame from ?phone=iphone-max", async () => {

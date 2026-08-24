@@ -44,6 +44,10 @@ describe("OperatorProfile", () => {
     expect(you?.parentElement).toBe(pass?.parentElement);
     expect(you?.parentElement?.className).toMatch(/flex-wrap/);
     expect(you?.parentElement?.className).toMatch(/items-start/);
+    expect(you?.parentElement?.className).toMatch(/min-w-0/);
+    expect(you?.className).toMatch(/min-w-0/);
+    expect(you?.className).toMatch(/basis-full/);
+    expect(you?.className).toMatch(/sm:basis-\[28rem\]/);
   });
 
   it("lets an admin edit another operator without the passphrase form", async () => {

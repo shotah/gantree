@@ -5,7 +5,7 @@ import { fmtAgo, fmtBps, fmtBytes, fmtCores, hostShare, lastHostNetRate } from "
 import type { HostLive, HostRole, HostSample, HostSnapshot } from "@/lib/yard/types";
 
 const CARD
-  = "rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70 max-sm:p-5";
+  = "min-w-0 max-w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-amber-800/70 max-sm:p-5";
 
 const ROLE_LABEL: Record<HostRole, string> = {
   crane: "agents",
@@ -120,29 +120,29 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
 
   return (
     <>
-      <dl className="mt-3 space-y-2 text-xs text-zinc-400 max-sm:text-sm">
+      <dl className="mt-3 min-w-0 space-y-2 text-xs text-zinc-400 max-sm:text-sm">
         <div>
-          <div className="mb-1 flex justify-between gap-2">
-            <dt>CPU</dt>
-            <dd className="tabular-nums text-zinc-200">
+          <div className="mb-1 flex min-w-0 items-baseline justify-between gap-2">
+            <dt className="shrink-0">CPU</dt>
+            <dd className="min-w-0 break-words text-right tabular-nums text-zinc-200">
               {fmtCores(cpuUsed)} / {live.ncpu} cores · {Math.round(hostShare(cpuUsed, cpuCap) * 100)}%
             </dd>
           </div>
           <Stack parts={cpuParts} cap={cpuCap} />
         </div>
         <div>
-          <div className="mb-1 flex justify-between gap-2">
-            <dt>RAM</dt>
-            <dd className="tabular-nums text-zinc-200">
+          <div className="mb-1 flex min-w-0 items-baseline justify-between gap-2">
+            <dt className="shrink-0">RAM</dt>
+            <dd className="min-w-0 break-words text-right tabular-nums text-zinc-200">
               {fmtBytes(memUsed)} / {fmtBytes(live.memTotalBytes)} · {Math.round(hostShare(memUsed, live.memTotalBytes) * 100)}%
             </dd>
           </div>
           <Stack parts={memParts} cap={live.memTotalBytes} />
         </div>
         <div>
-          <div className="mb-1 flex justify-between gap-2">
-            <dt>NET</dt>
-            <dd className="tabular-nums text-zinc-200">
+          <div className="mb-1 flex min-w-0 items-baseline justify-between gap-2">
+            <dt className="shrink-0">NET</dt>
+            <dd className="min-w-0 break-words text-right tabular-nums text-zinc-200">
               ↓ {fmtBps(rxBps)} · ↑ {fmtBps(txBps)}
             </dd>
           </div>
@@ -151,21 +151,21 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
             {fmtBytes(netRx)} ↓ · {fmtBytes(netTx)} ↑ since those containers started
           </p>
         </div>
-        <div className="flex justify-between gap-2 pt-1">
-          <dt className={ROLE_TEXT.crane}>agents</dt>
-          <dd className="tabular-nums text-zinc-200">
+        <div className="flex min-w-0 justify-between gap-2 pt-1">
+          <dt className={`shrink-0 ${ROLE_TEXT.crane}`}>agents</dt>
+          <dd className="min-w-0 text-right tabular-nums text-zinc-200">
             {fmtCores(live.craneCpu)}c · {fmtBytes(live.craneMem)}
           </dd>
         </div>
-        <div className="flex justify-between gap-2">
-          <dt className={ROLE_TEXT.console}>dashboard</dt>
-          <dd className="tabular-nums text-zinc-200">
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className={`shrink-0 ${ROLE_TEXT.console}`}>dashboard</dt>
+          <dd className="min-w-0 text-right tabular-nums text-zinc-200">
             {fmtCores(live.consoleCpu)}c · {fmtBytes(live.consoleMem)}
           </dd>
         </div>
-        <div className="flex justify-between gap-2">
-          <dt className={ROLE_TEXT.other}>other</dt>
-          <dd className="tabular-nums text-zinc-200">
+        <div className="flex min-w-0 justify-between gap-2">
+          <dt className={`shrink-0 ${ROLE_TEXT.other}`}>other</dt>
+          <dd className="min-w-0 text-right tabular-nums text-zinc-200">
             {fmtCores(live.otherCpu)}c · {fmtBytes(live.otherMem)}
           </dd>
         </div>
@@ -175,7 +175,7 @@ export function HostMeters({ live, spark = [] }: { live: HostSnapshot; spark?: H
         ? (
             <ul className="mt-3 space-y-1 border-t border-zinc-800/80 pt-2">
               {top.map((p) => (
-                <li key={p.name} className="flex justify-between gap-2 text-[11px] text-zinc-500">
+                <li key={p.name} className="flex min-w-0 justify-between gap-2 text-[11px] text-zinc-500">
                   <span className="truncate">
                     <span className={ROLE_TEXT[p.role]}>{ROLE_LABEL[p.role]}</span>
                     {" "}
@@ -220,12 +220,12 @@ export function HostCard({ host, dockerError }: { host: HostLive | undefined; do
 
   return (
     <Link href="/host" className={CARD} data-shot="host">
-      <div className="flex items-start justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-semibold text-stone-100 max-sm:text-lg">
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <h2 className="flex min-w-0 items-center gap-2 font-semibold text-stone-100 max-sm:text-lg">
           <HostAvatar />
-          {live.hostname}
+          <span className="truncate">{live.hostname}</span>
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <HostSpark spark={spark} />
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />

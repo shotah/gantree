@@ -45,7 +45,7 @@ export const HostCharts = memo(function HostCharts({
   }));
   const hasRate = spark.length >= 2;
   return (
-    <div className="mt-3 grid gap-3 md:grid-cols-2" data-shot="host-metrics">
+    <div className="mt-3 grid min-w-0 gap-3 md:grid-cols-2" data-shot="host-metrics">
       <ChartFrame title="CPU % of host" empty={cpuRows.length === 0} caption="Docker share stacked · leftover is the OS">
         <ResponsiveContainer>
           <AreaChart data={cpuRows}>

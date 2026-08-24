@@ -189,11 +189,11 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
       {err ? <p className="text-sm text-amber-200">{err}</p> : null}
       {notice ? <p className="text-sm text-zinc-300">{notice}</p> : null}
 
-      <div className="flex flex-wrap items-start gap-8">
+      <div className="flex w-full min-w-0 flex-wrap items-start gap-8">
         {subject
           ? (
               <form
-                className="flex max-w-full min-w-[min(100%,28rem)] grow basis-[28rem] flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+                className="flex w-full min-w-0 max-w-full grow basis-full flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 sm:min-w-[min(100%,28rem)] sm:basis-[28rem]"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (
@@ -309,7 +309,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
         {subject
           ? (
               <form
-                className="flex max-w-full min-w-[min(100%,28rem)] grow basis-[28rem] flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4"
+                className="flex w-full min-w-0 max-w-full grow basis-full flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 sm:min-w-[min(100%,28rem)] sm:basis-[28rem]"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (next !== nextConfirm) {
@@ -440,7 +440,7 @@ function IdList({
       </ul>
       <div className="mt-1.5 flex flex-wrap gap-2">
         <input
-          className="min-w-40 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm"
+          className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm sm:min-w-40"
           placeholder={meta.placeholder}
           value={draft}
           onChange={(e) => {

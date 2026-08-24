@@ -11,23 +11,24 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
-/* Phone only — desktop type, density, and tap targets stay as-is. */
+header,
+main {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Phone only — keep 16px rem so min-widths still fit a 360px frame. */
 @media (max-width: 639px) {
-  html {
-    font-size: 20px;
-  }
-
-  html,
-  body {
-    overflow-x: clip;
-  }
-
   body {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -42,27 +43,26 @@ body {
   select,
   textarea {
     font-size: 1rem !important;
-    min-height: 3.25rem !important;
-    padding-block: 0.75rem;
-    padding-inline: 0.85rem;
+    min-height: 2.75rem !important;
+    padding-block: 0.6rem;
+    padding-inline: 0.7rem;
   }
 
   input[type="checkbox"],
   input[type="radio"] {
-    width: 1.375rem;
-    height: 1.375rem;
+    width: 1.25rem;
+    height: 1.25rem;
     accent-color: #f59e0b;
   }
 
   button.rounded,
   label.rounded {
-    min-height: 3rem;
-    padding-inline: 0.9rem;
+    min-height: 2.75rem;
     touch-action: manipulation;
   }
 
   button[aria-expanded] {
-    min-height: 3rem;
+    min-height: 2.75rem;
     touch-action: manipulation;
   }
 }
