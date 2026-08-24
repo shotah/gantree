@@ -1,5 +1,6 @@
 import type { LastTurn, SpendRollup, SpendSlice, SpendTrajectory, TurnSample, YardSpend } from "../types";
-import { SOURCE_ORDER, windowStart, type SpendWindow } from "./windows";
+import { turnHasNative } from "./chart";
+import { SOURCE_ORDER, spendSource, windowStart, type SpendWindow } from "./windows";
 
 export type { SpendBucket, SpendRateBucket, SpendWindow } from "./windows";
 export {
@@ -10,6 +11,7 @@ export {
   bucketsForWindow,
   monthStart,
   parseSpendWindow,
+  spendSource,
   windowStart,
 } from "./windows";
 export {
@@ -36,6 +38,8 @@ export {
   sourceChartSeries,
   thinChartPoints,
   tokenChartSeries,
+  turnCost,
+  turnHasNative,
 } from "./chart";
 
 export function emptyTrajectory(): SpendTrajectory {
@@ -68,6 +72,11 @@ function lastTurnOf(turns: TurnSample[]): LastTurn | null {
     estTokens: best.estTokens ?? 0,
     rounds: best.rounds,
     durationMs: best.durationMs ?? null,
+    promptTokens: best.promptTokens ?? null,
+    completionTokens: best.completionTokens ?? null,
+    totalTokens: best.totalTokens ?? null,
+    model: best.model ?? null,
+    finishReason: best.finishReason ?? null,
   };
 }
 
@@ -92,6 +101,12 @@ export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
   let promptEst = 0;
   let genEst = 0;
   let estTokens = 0;
+  let promptTokens = 0;
+  let completionTokens = 0;
+  let totalTokens = 0;
+  let nativeTurns = 0;
+  let cachedTokens = 0;
+  let reasoningTokens = 0;
   let lastAt: number | null = null;
   let unattributedTurns = 0;
   let recoveries = 0;
@@ -99,24 +114,33 @@ export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
   let userEst = 0;
   for (const t of turns) {
     const cost = t.estTokens ?? 0;
+    const src = spendSource(t.source);
     promptEst += t.promptEstTokens ?? 0;
     genEst += t.genEstTokens ?? 0;
     estTokens += cost;
+    if (turnHasNative(t)) {
+      nativeTurns += 1;
+      promptTokens += t.promptTokens ?? 0;
+      completionTokens += t.completionTokens ?? 0;
+      totalTokens += t.totalTokens ?? (t.promptTokens ?? 0) + (t.completionTokens ?? 0);
+      cachedTokens += t.cachedTokens ?? 0;
+      reasoningTokens += t.reasoningTokens ?? 0;
+    }
     if (lastAt == null || t.at > lastAt) {
       lastAt = t.at;
     }
     if (t.userId) {
       addSlice(byUser, t.userId, 1, cost);
-    } else {
+    } else if (src === "user" || src === "reaction") {
       unattributedTurns += 1;
     }
-    addSlice(bySource, t.source || "unknown", 1, cost);
+    addSlice(bySource, src, 1, cost);
     addSlice(byOutcome, t.outcome || "ok", 1, cost);
     if (t.rounds != null) {
       roundSamples.push(t.rounds);
     }
     recoveries += t.recoveries ?? 0;
-    if (t.source === "user") {
+    if (src === "user") {
       userTurns += 1;
       userEst += cost;
     }
@@ -127,6 +151,12 @@ export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
     promptEst,
     genEst,
     estTokens,
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    nativeTurns,
+    cachedTokens,
+    reasoningTokens,
     lastAt,
     lastTurn: lastTurnOf(turns),
     byUser: slices(byUser),
@@ -210,6 +240,12 @@ export function combineSpend(cranes: SpendRollup[], now = Date.now()): YardSpend
     promptEst: ranked.reduce((n, c) => n + c.promptEst, 0),
     genEst: ranked.reduce((n, c) => n + c.genEst, 0),
     estTokens: ranked.reduce((n, c) => n + c.estTokens, 0),
+    promptTokens: ranked.reduce((n, c) => n + (c.promptTokens ?? 0), 0),
+    completionTokens: ranked.reduce((n, c) => n + (c.completionTokens ?? 0), 0),
+    totalTokens: ranked.reduce((n, c) => n + (c.totalTokens ?? 0), 0),
+    nativeTurns: ranked.reduce((n, c) => n + (c.nativeTurns ?? 0), 0),
+    cachedTokens: ranked.reduce((n, c) => n + (c.cachedTokens ?? 0), 0),
+    reasoningTokens: ranked.reduce((n, c) => n + (c.reasoningTokens ?? 0), 0),
     lastAt,
     lastTurn,
     bySource: slices(bySource),
@@ -245,6 +281,30 @@ export function spendPace(
   const d = new Date(start);
   const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
   return { perDay, projected: perDay * daysInMonth };
+}
+
+/** USD calculator uses native prompt/completion when every turn in the window had usage. */
+export function spendUsdSides(r: {
+  turns: number;
+  promptEst: number;
+  genEst: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  nativeTurns?: number;
+}): { prompt: number; gen: number; kind: "native" | "est" | "mixed" } {
+  const nativeTurns = r.nativeTurns ?? 0;
+  if (r.turns > 0 && nativeTurns >= r.turns) {
+    return { prompt: r.promptTokens ?? 0, gen: r.completionTokens ?? 0, kind: "native" };
+  }
+  return { prompt: r.promptEst, gen: r.genEst, kind: nativeTurns > 0 ? "mixed" : "est" };
+}
+
+export function unknownShare(r: { turns: number; bySource: SpendSlice[] }): number {
+  if (r.turns <= 0) {
+    return 0;
+  }
+  const unknown = r.bySource.find((s) => s.id === "unknown");
+  return (unknown?.turns ?? 0) / r.turns;
 }
 
 export function orderedSources(slices: SpendSlice[]): SpendSlice[] {

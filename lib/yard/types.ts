@@ -34,6 +34,14 @@ export type GantryCard = {
   avatarRev: number | null;
   /** Board labels from gantree.toml — whose keys, which house. Never secrets. */
   tags: string[];
+  /** Harness semver from `gantry status`. Not the compose `:latest` tag. */
+  version?: string | null;
+  /** Short git sha from `gantry status` when the image was built. */
+  commit?: string | null;
+  /** Short content id of the image this container started. Two `:latest` can differ. */
+  imageId?: string | null;
+  /** Another crane on this yard reported a newer `gantry status` version. */
+  imageBehind?: boolean;
   /** True when this session may mutate the crane — filled by the get API. */
   canMutate?: boolean;
   /** True when this session may clone / build a crane — filled by the get API. */
@@ -78,11 +86,26 @@ export type TurnSample = {
   estTokens: number | null;
   promptEstTokens: number | null;
   genEstTokens: number | null;
+  /** Native OpenAI-compat usage when `turn perf` had it. */
+  promptTokens?: number | null;
+  completionTokens?: number | null;
+  totalTokens?: number | null;
+  usageRounds?: number | null;
+  cachedTokens?: number | null;
+  cacheWriteTokens?: number | null;
+  reasoningTokens?: number | null;
+  promptAudioTokens?: number | null;
+  completionAudioTokens?: number | null;
+  acceptedPredictionTokens?: number | null;
+  rejectedPredictionTokens?: number | null;
+  model?: string | null;
+  finishReason?: string | null;
+  serviceTier?: string | null;
   source: string | null;
   userId: string | null;
   sessionId: string | null;
   outcome: string | null;
-  /** Turn wall time in ms when slog has duration_ms / elapsed_ms. */
+  /** Turn wall time in ms when slog has duration_ms / total_ms / elapsed_ms. */
   durationMs?: number | null;
 };
 
@@ -101,6 +124,11 @@ export type LastTurn = {
   estTokens: number;
   rounds: number | null;
   durationMs?: number | null;
+  promptTokens?: number | null;
+  completionTokens?: number | null;
+  totalTokens?: number | null;
+  model?: string | null;
+  finishReason?: string | null;
 };
 
 export type SpendTrajectory = {
@@ -117,6 +145,12 @@ export type SpendRollup = {
   promptEst: number;
   genEst: number;
   estTokens: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  nativeTurns?: number;
+  cachedTokens?: number;
+  reasoningTokens?: number;
   lastAt: number | null;
   lastTurn: LastTurn | null;
   byUser: SpendSlice[];
@@ -130,6 +164,12 @@ export type YardSpend = {
   promptEst: number;
   genEst: number;
   estTokens: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  nativeTurns?: number;
+  cachedTokens?: number;
+  reasoningTokens?: number;
   lastAt: number | null;
   lastTurn: LastTurn | null;
   bySource: SpendSlice[];

@@ -124,7 +124,7 @@ export const HINTS = {
     example: "tools - list granted MCP",
   },
   imagePin: {
-    hint: "Compose image tag. pull + recreate docker-pulls this, keeps the host uid that owns data/, then waits for doctor.",
+    hint: "Compose image tag. Keep :latest. The yard card shows the binary from gantry status — two :latest containers can still be different builds.",
     example: "shotah/ai-gantry:latest",
   },
   persona: {

@@ -9,6 +9,7 @@ vi.mock("@/lib/yard/host/docker", async (importOriginal) => {
     listGantryContainers: vi.fn(),
     inspectByName: vi.fn(),
     containerLogsBuffer: vi.fn(),
+    execStatus: vi.fn(),
   };
 });
 
@@ -20,7 +21,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
 }));
 
 import { containerDisplayName, getGantry, listYard, resetYardDockerCache } from "@/lib/yard/crane/inventory";
-import { containerLogsBuffer, inspectByName, listGantryContainers } from "@/lib/yard/host/docker";
+import { containerLogsBuffer, execStatus, inspectByName, listGantryContainers } from "@/lib/yard/host/docker";
 import { stringifyMcpToml } from "@/lib/yard/host/files";
 import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
@@ -33,9 +34,11 @@ beforeEach(() => {
   vi.mocked(listGantryContainers).mockReset();
   vi.mocked(inspectByName).mockReset();
   vi.mocked(containerLogsBuffer).mockReset();
+  vi.mocked(execStatus).mockReset();
   vi.mocked(listGantryContainers).mockResolvedValue([]);
   vi.mocked(inspectByName).mockResolvedValue(null);
   vi.mocked(containerLogsBuffer).mockResolvedValue(Buffer.from(""));
+  vi.mocked(execStatus).mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -63,7 +66,7 @@ function yard(toml: string): string {
   return root;
 }
 
-function listed(over: Partial<{ id: string; name: string; image: string; state: "running"; labels: Record<string, string> }> = {}) {
+function listed(over: Partial<{ id: string; name: string; image: string; state: "running" | "exited"; labels: Record<string, string> }> = {}) {
   return {
     id: "abc123def",
     name: "kit",
@@ -270,5 +273,91 @@ tags = ["home", "NOPE!", "guest"]
     const inv = await listYard();
     expect(inv.gantries[0]?.tags).toEqual(["home", "guest"]);
     expect(inv.tagColors).toEqual({ home: "red", guest: "green" });
+  });
+
+  it("reads harness version from gantry status and a short image id from inspect", async () => {
+    yard(`
+[[gantry]]
+slug = "kit"
+container = "kit"
+`);
+    vi.mocked(listGantryContainers).mockResolvedValue([listed()]);
+    vi.mocked(inspectByName).mockResolvedValue({
+      listed: {} as never,
+      info: {
+        Image: "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        Config: { Image: DEFAULT_IMAGE, Env: [] },
+        State: { Status: "running", StartedAt: "2026-08-22T18:00:00.000Z" },
+      },
+    } as never);
+    vi.mocked(execStatus).mockResolvedValue(
+      JSON.stringify({ ok: true, alive: true, version: "1.2.0", commit: "cafebabe" }),
+    );
+
+    const g = (await listYard()).gantries[0];
+    expect(g?.image).toBe(DEFAULT_IMAGE);
+    expect(g?.version).toBe("1.2.0");
+    expect(g?.commit).toBe("cafebabe");
+    expect(g?.imageId).toBe("0123456789ab");
+    expect(g?.imageBehind).toBe(false);
+  });
+
+  it("does not exec status on a stopped container but still records image id", async () => {
+    yard(`
+[[gantry]]
+slug = "kit"
+container = "kit"
+`);
+    vi.mocked(listGantryContainers).mockResolvedValue([listed({ state: "exited" })]);
+    vi.mocked(inspectByName).mockResolvedValue({
+      listed: {} as never,
+      info: {
+        Image: "sha256:aaaaaaaaaaaabbbbbbbbbbbbccccccccccccccccddddddddddddeeeeeeeeeeee",
+        Config: { Image: DEFAULT_IMAGE, Env: [] },
+        State: { Status: "exited", StartedAt: "2026-08-22T18:00:00.000Z" },
+      },
+    } as never);
+
+    const g = (await listYard()).gantries[0];
+    expect(execStatus).not.toHaveBeenCalled();
+    expect(g?.version).toBeNull();
+    expect(g?.imageId).toBe("aaaaaaaaaaaa");
+  });
+
+  it("marks the older peer behind without calling Hub", async () => {
+    yard(`
+[[gantry]]
+slug = "kit"
+container = "kit"
+[[gantry]]
+slug = "old"
+container = "old"
+`);
+    vi.mocked(listGantryContainers).mockResolvedValue([
+      listed({ id: "kit-id", name: "kit", labels: { "gantree.slug": "kit" } }),
+      listed({ id: "old-id", name: "old", labels: { "gantree.slug": "old" } }),
+    ]);
+    vi.mocked(inspectByName).mockResolvedValue({
+      listed: {} as never,
+      info: {
+        Image: "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        Config: { Image: DEFAULT_IMAGE, Env: [] },
+        State: { Status: "running", StartedAt: "2026-08-22T18:00:00.000Z" },
+      },
+    } as never);
+    vi.mocked(execStatus).mockImplementation(async (id) => {
+      if (id === "old-id") {
+        return JSON.stringify({ ok: true, alive: true, version: "0.9.0", commit: "deadbee" });
+      }
+      return JSON.stringify({ ok: true, alive: true, version: "1.2.0", commit: "cafebabe" });
+    });
+
+    const inv = await listYard();
+    const kit = inv.gantries.find((g) => g.slug === "kit");
+    const old = inv.gantries.find((g) => g.slug === "old");
+    expect(kit?.version).toBe("1.2.0");
+    expect(kit?.imageBehind).toBe(false);
+    expect(old?.version).toBe("0.9.0");
+    expect(old?.imageBehind).toBe(true);
   });
 });

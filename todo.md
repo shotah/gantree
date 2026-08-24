@@ -363,34 +363,32 @@ Shipped in the harness (needs an image pin bump before Mini cranes emit it):
       `gen_est_tokens`, `iterations`, `recoveries`; gantree consumes them)
 - [x] `user_id` + `session_id` on `turn perf`
 - [x] Stable file/env contract docs the console can write against
+- [x] **`source` always on `turn perf`.** Contract set: `user` / `cron` /
+      `watch` / `reaction`. Anything else (or empty, on old images) is
+      spend **unknown**. Spark / examples wake as `cron`. Cron/watch may
+      omit `user_id`. User/reaction with a channel id must not.
+- [x] **Native OpenAI-compat `usage` on the same line** when Completer
+      had it: `prompt_tokens`, `completion_tokens`, `total_tokens`,
+      `usage_rounds`. Details when the provider sent them:
+      `cached_tokens`, `cache_write_tokens`, `reasoning_tokens`,
+      audio / prediction counts, `service_tier`. `prompt_est_tokens` /
+      `gen_est_tokens` stay the chars/4 fallback. Streaming uses
+      `stream_options.include_usage` (no extra HTTP).
+- [x] **`model` + `finish_reason`** (+ `duration_ms` alias of `total_ms`)
+      on that line. See
+      [repos/ai-gantry/docs/gantree-contract.md](repos/ai-gantry/docs/gantree-contract.md)
+      slog section.
 
 The harness never learns instance names. Gantree never sits in the
 token path of a chat turn. Consume slog / `status` the crane already
 emits. Do not ask the harness to grow dashboard hooks.
 
-Still open — **slog what the Completer already returned**. No second
-HTTP call, no provider usage API, no dashboard port. If it would add
-latency to a turn, it is the wrong want.
-
-- [ ] **`source` is always on `turn perf`.** `user` / `cron` / `watch` /
-      `reaction` (or the real harness names — pick one set and keep it).
-      Missing `source` is why Gantree spend shows **unknown**. Cron may
-      omit `user_id`. A user turn with a channel id must not.
-- [ ] **Native OpenAI-compat `usage` on the same line** when the
-      Completer response had it: `prompt_tokens`, `completion_tokens`,
-      `total_tokens`. Details when the provider sent them:
-      `cached_tokens`, `reasoning_tokens` (and audio / prediction
-      counts if they are already on the object). Keep
-      `prompt_est_tokens` / `gen_est_tokens` as the chars/4 fallback.
-      Gantree estimates today because we drop the real usage blob.
-- [ ] **`model` + `finish_reason`** on that line when the response
-      had them — chart without scraping a nested dump.
-- [x] Copy these into
-      [repos/ai-gantry/gantree_todo.md](repos/ai-gantry/gantree_todo.md)
-      (harness walk lives there too, not only this file).
-
-Gantree will parse the keys. Until they exist, native-token tiles
-stay empty and spend `unknown` stays an honest bucket, not a guess.
+**Here (parse, don’t re-ask the harness):** Mini cranes emit the new
+keys only after a pin/recreate onto an image that has this slog.
+Gantree now parses native `usage`, `model`, `finish_reason`, and
+`total_ms` off `turn perf` (spend + charts). Recreate Mini cranes or
+the new keys never show up. `unknown` remains for invalid/legacy
+`source` only.
 
 - [x] **Here:** pin Hub image to `shotah/ai-gantry:latest` (one constant,
       not a semver chase). Existing cranes keep their compose tag until you
@@ -931,9 +929,10 @@ v1–v3 gates still hold. Deltas:
    usage is copied off the Completer response the harness already
    has (see **Push into ai-gantry**). No provider billing API here —
    that stays Later.
-7. **Estimates stay estimates** until native `usage` lands. chars/4
-   and a pasted $/1M remain the calculator. `unknown` on spend is a
-   hole (missing `source`), not a personality.
+7. **Estimates stay labeled estimates.** Native Completer `usage` is
+   what we chart when `turn perf` had it. chars/4 and a pasted $/1M
+   remain the fallback calculator. `unknown` on spend is a hole
+   (legacy/invalid `source`), not a personality.
 8. **Not Prometheus. Not Grafana. Not a metric company.**
 
 ---
@@ -960,19 +959,18 @@ log. The supermarket without three named watches is a miss.
 
 ## vDashboarding now
 
-Not started. v3 still owns richer series on the **existing** pages
-(net, duration, source mix). This track starts with a **catalog of
-holes**, then one attention surface, then a builder — in that order.
+Not started as a catalog/builder. v3 still owns richer series on the
+**existing** pages (net, duration, source mix). This track starts with
+a **catalog of holes**, then one attention surface, then a builder —
+in that order. Native slog parse for spend is already on those pages.
 
-Spend **unknown** is already real: `turn perf` with empty `source`
-lands in `unknown` (`lib/yard/observe/spend.ts`). That is a harness
-gap first (always set `source`), then a yard nag (count the bucket,
-don’t hide it).
-
-Native OpenAI-compat usage is sitting on Completer responses and
-getting dropped. chars/4 is the fallback we parse (`prompt_est_tokens`
-+ `gen_est_tokens`). Downstream work is **Push into ai-gantry**
-above; this track only consumes the keys.
+Harness slog is **done** (contract + `gantree_todo.md`). Recreate Mini
+cranes onto the pinned image so they emit it. Gantree parse of native
+`usage` / `model` / `finish_reason` is **in**: spend and charts use
+Completer tokens when `turn perf` has them, chars/4 otherwise.
+`unknown` is a missing/invalid `source` (old image, or a string
+outside `user|cron|watch|reaction`). `unknown` on a *new* image is a
+bug.
 
 ---
 
@@ -1003,29 +1001,33 @@ Each entry: id, grain, unit, filters it honors, viz it can be
       because Docker didn’t send it. That list is the push into
       `ai-gantry` / v3 parse work, not a new sampler.
 - [ ] **Walk:** open the catalog in a test. `spend.estTokens` and
-      `host.cpu` exist. `spend.nativeTokens` exists and is empty until
-      slog grows `prompt_tokens`. `spend.unknown` exists and is the
+      `host.cpu` exist. `spend.nativeTokens` exists (empty until slog
+      has `prompt_tokens`). `spend.unknown` exists and is the
       unlabeled-source count.
 
 ---
 
 ## vDashboarding Milestone 1 — fill the holes
 
-Catalog without data is a menu. This milestone is **parse + slog**,
-not layout.
+Catalog without data is a menu. This milestone is **parse** (slog is
+already on the contract). Recreate Mini cranes first or the new keys
+will not show up.
 
-**Spend / turns (harness + parse)**
+**Spend / turns (parse the contract)**
 
-- [ ] Consume native `prompt_tokens` / `completion_tokens` /
-      `total_tokens` / `cached_tokens` / `reasoning_tokens` when
-      `turn perf` has them (ai-gantry work above). Chart next to
-      chars/4; label which is which. Empty if absent.
-- [ ] Spend mix: `unknown` is a first-class slice with a count, not
-      a grey leftover. Nag on the yard when the bucket is most of
-      the window — “harness is not setting `source`.”
-- [ ] Unattributed user turns (`user_id` missing on a `user` turn)
-      called out the same way. Profile names already map ids we *do*
-      have (v3 M1).
+- [x] Consume native `prompt_tokens` / `completion_tokens` /
+      `total_tokens` / `usage_rounds` / `cached_tokens` /
+      `cache_write_tokens` / `reasoning_tokens` (and audio / prediction
+      counts) when `turn perf` has them. Chart next to chars/4; label
+      which is which. Empty if absent.
+- [x] Parse `model` / `finish_reason` / `duration_ms` when present.
+- [x] Spend mix: `unknown` is a first-class slice with a count, not
+      a grey leftover. Nag when the bucket is most of the window —
+      old image, or a `source` string outside
+      `user|cron|watch|reaction`.
+- [x] Unattributed user turns (`user_id` missing on a `user` /
+      `reaction` turn) called out the same way. Profile names already
+      map ids we *do* have (v3 M1).
 
 **Health / logs (already on pages, not tiles yet)**
 
@@ -1039,10 +1041,11 @@ not layout.
 - [ ] Point catalog tiles at v3 series we already sample (net, disk,
       published vs skipped). No new Docker poller.
 
-- [ ] **Walk:** talk to Kit. If the image slog’s OpenAI `usage`,
-      spend shows native tokens. If not, estimate stays labeled
-      estimate. A turn with no `source` increments `unknown` and the
-      yard says so.
+- [ ] **Walk:** pin/recreate Kit. Talk to it. Spend shows native
+      tokens when Completer sent `usage`; otherwise labeled estimate.
+      A turn with `source` outside the contract set (or a pre-pin
+      image with empty `source`) increments `unknown` and the yard
+      says so.
 
 ---
 

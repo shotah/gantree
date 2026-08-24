@@ -10,6 +10,7 @@ import {
   sourceChartSeries,
   thinChartPoints,
   tokenChartSeries,
+  turnHasNative,
   type SpendBucket,
 } from "@/lib/yard/observe/spend";
 import type { McpSample, StatSample, TurnSample, UptimeSample } from "@/lib/yard/types";
@@ -87,12 +88,13 @@ export const MetricCharts = memo(function MetricCharts({
     restarts: s.restartCount,
   }));
   const hasSplit = tokenPts.some((r) => r.prompt > 0 || r.gen > 0);
+  const nativeUsage = turnsIn.some(turnHasNative);
   const tokenLine = bucket === "cumulative" ? "stepAfter" : "monotone";
   const hasNet = hostIn.some((s) => s.netRxBytes != null || s.netTxBytes != null);
   const hasBlk = hostIn.some((s) => s.blkReadBytes != null || s.blkWriteBytes != null);
   const hasDisk = hostIn.some((s) => s.diskBytes != null);
   const hasDuration = turnsIn.some((t) => t.durationMs != null);
-  const hasSource = turnsIn.some((t) => t.source);
+  const hasSource = turnsIn.length > 0;
   const sourceKeys = SOURCE_ORDER.filter((k) => sourceRows.some((r) => r[k] > 0));
   const sourceStroke: Record<(typeof SOURCE_ORDER)[number], string> = {
     user: SERIES.ok,
@@ -190,7 +192,7 @@ export const MetricCharts = memo(function MetricCharts({
           )
         : null}
       <ChartFrame
-        title={fmtSpendBucketTitle(bucket)}
+        title={fmtSpendBucketTitle(bucket, nativeUsage ? "native" : "est")}
         empty={tokenRows.length === 0}
         hint="no turn perf in docker logs — send a chat, then refresh"
         caption={
@@ -208,12 +210,12 @@ export const MetricCharts = memo(function MetricCharts({
             {hasSplit
               ? (
                   <>
-                    <Area dataKey="prompt" name="prompt est" type={tokenLine} stroke={SERIES.ok} fill={wash(SERIES.ok, 13)} stackId="tok" />
-                    <Area dataKey="gen" name="gen est" type={tokenLine} stroke={SERIES.disk} fill={wash(SERIES.disk, 13)} stackId="tok" />
+                    <Area dataKey="prompt" name={nativeUsage ? "prompt" : "prompt est"} type={tokenLine} stroke={SERIES.ok} fill={wash(SERIES.ok, 13)} stackId="tok" />
+                    <Area dataKey="gen" name={nativeUsage ? "gen" : "gen est"} type={tokenLine} stroke={SERIES.disk} fill={wash(SERIES.disk, 13)} stackId="tok" />
                   </>
                 )
               : (
-                  <Area dataKey="tokens" name="est tokens" type={tokenLine} stroke={SERIES.ok} fill={wash(SERIES.ok, 13)} />
+                  <Area dataKey="tokens" name={nativeUsage ? "tokens" : "est tokens"} type={tokenLine} stroke={SERIES.ok} fill={wash(SERIES.ok, 13)} />
                 )}
           </AreaChart>
         </ResponsiveContainer>

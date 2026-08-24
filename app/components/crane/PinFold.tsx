@@ -1,15 +1,23 @@
 "use client";
 
+import { fmtGantryBuild } from "@/lib/yard/crane/status";
 import { HINTS } from "@/lib/yard/hints";
 import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import { HintField } from "../shared/HintField";
 import type { AgentDash } from "./useAgentDashboard";
 
 export function PinFold({ dash }: { dash: AgentDash }) {
-  const { pin, setPin, mutate, busy, act } = dash;
+  const { pin, setPin, mutate, busy, act, gantry } = dash;
+  const running = gantry ? fmtGantryBuild(gantry) : null;
 
   return (
-    <DashFold title="Image pin" persistKey={craneLayoutKey("pin")} hint="pull + recreate tag">
+    <DashFold
+      title="Image pin"
+      persistKey={craneLayoutKey("pin")}
+      hint="pull + recreate tag"
+      summary={running ?? undefined}
+      warn={Boolean(gantry?.imageBehind)}
+    >
       <p className="mb-2 text-xs text-faint">
         pull + recreate uses this tag, keeps the host uid that owns
         {" "}
@@ -17,6 +25,16 @@ export function PinFold({ dash }: { dash: AgentDash }) {
         , and
         waits for doctor. Recreate without pull does the same uid keep — it does not docker pull.
       </p>
+      {running
+        ? (
+            <p className={`mb-2 text-xs ${gantry?.imageBehind ? "text-warn" : "text-dim"}`}>
+              this container:
+              {" "}
+              {running}
+              {gantry?.imageBehind ? " · older — pull + recreate" : ""}
+            </p>
+          )
+        : null}
       <div className="flex flex-wrap items-end gap-2">
         <HintField label="image" className="min-w-64 flex-1 max-sm:min-w-0 max-sm:w-full" {...HINTS.imagePin}>
           <input

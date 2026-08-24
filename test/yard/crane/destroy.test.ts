@@ -10,6 +10,7 @@ vi.mock("@/lib/yard/host/docker", async (importOriginal) => {
     inspectByName: vi.fn(),
     docker: vi.fn(),
     containerLogsBuffer: vi.fn(),
+    execStatus: vi.fn(),
   };
 });
 

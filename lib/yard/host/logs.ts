@@ -178,6 +178,20 @@ export function turnFromLog(line: LogLine): {
   estTokens: number | null;
   promptEstTokens: number | null;
   genEstTokens: number | null;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  usageRounds: number | null;
+  cachedTokens: number | null;
+  cacheWriteTokens: number | null;
+  reasoningTokens: number | null;
+  promptAudioTokens: number | null;
+  completionAudioTokens: number | null;
+  acceptedPredictionTokens: number | null;
+  rejectedPredictionTokens: number | null;
+  model: string | null;
+  finishReason: string | null;
+  serviceTier: string | null;
   source: string | null;
   userId: string | null;
   sessionId: string | null;
@@ -191,6 +205,9 @@ export function turnFromLog(line: LogLine): {
   const isTurnPerf = /^turn perf$/i.test(msg) || /^turn done$/i.test(msg);
   const promptEstTokens = num(line.json.prompt_est_tokens);
   const genEstTokens = num(line.json.gen_est_tokens);
+  const promptTokens = num(line.json.prompt_tokens);
+  const completionTokens = num(line.json.completion_tokens);
+  const totalTokens = num(line.json.total_tokens);
   const rounds = num(line.json.iterations ?? line.json.rounds ?? line.json.invocations ?? line.json.completer_rounds);
   const recoveries = num(line.json.recoveries ?? line.json.recovery);
   const legacyTokens = num(line.json.est_tokens ?? line.json.estTokens ?? line.json.tokens);
@@ -200,7 +217,8 @@ export function turnFromLog(line: LogLine): {
   } else if (legacyTokens != null && (isTurnPerf || rounds != null || recoveries != null || line.turnId != null)) {
     estTokens = legacyTokens;
   }
-  if (!isTurnPerf && promptEstTokens == null && genEstTokens == null && estTokens == null) {
+  const hasNative = promptTokens != null || completionTokens != null || totalTokens != null;
+  if (!isTurnPerf && promptEstTokens == null && genEstTokens == null && estTokens == null && !hasNative) {
     return null;
   }
   return {
@@ -209,11 +227,27 @@ export function turnFromLog(line: LogLine): {
     estTokens,
     promptEstTokens,
     genEstTokens,
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    usageRounds: num(line.json.usage_rounds),
+    cachedTokens: num(line.json.cached_tokens),
+    cacheWriteTokens: num(line.json.cache_write_tokens),
+    reasoningTokens: num(line.json.reasoning_tokens),
+    promptAudioTokens: num(line.json.prompt_audio_tokens),
+    completionAudioTokens: num(line.json.completion_audio_tokens),
+    acceptedPredictionTokens: num(line.json.accepted_prediction_tokens),
+    rejectedPredictionTokens: num(line.json.rejected_prediction_tokens),
+    model: str(line.json.model),
+    finishReason: str(line.json.finish_reason),
+    serviceTier: str(line.json.service_tier),
     source: str(line.json.source),
     userId: str(line.json.user_id ?? line.json.userId),
     sessionId: str(line.json.session_id ?? line.json.sessionId),
     outcome: str(line.json.outcome),
-    durationMs: num(line.json.duration_ms ?? line.json.elapsed_ms ?? line.json.latency_ms ?? line.json.ms),
+    durationMs: num(
+      line.json.duration_ms ?? line.json.total_ms ?? line.json.elapsed_ms ?? line.json.latency_ms ?? line.json.ms,
+    ),
   };
 }
 

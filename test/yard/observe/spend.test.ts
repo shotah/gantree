@@ -57,7 +57,7 @@ describe("rollupTurns", () => {
     expect(r.estTokens).toBe(361);
     expect(r.promptEst).toBe(311);
     expect(r.genEst).toBe(50);
-    expect(r.unattributedTurns).toBe(2);
+    expect(r.unattributedTurns).toBe(1);
     expect(r.byUser.map((s) => [s.id, s.estTokens, s.turns])).toEqual([
       ["1", 300, 2],
       ["2", 50, 1],
@@ -68,6 +68,38 @@ describe("rollupTurns", () => {
     expect(r.trajectory.userTurns).toBe(3);
     expect(r.trajectory.userEst).toBe(160);
     expect(r.trajectory.byOutcome[0]).toMatchObject({ id: "ok" });
+  });
+
+  it("charts invalid source as unknown and sums native usage", () => {
+    const r = rollupTurns("ada", [
+      turn({
+        at: 1,
+        key: "a",
+        source: "spark",
+        estTokens: 10,
+        promptEstTokens: 8,
+        genEstTokens: 2,
+        promptTokens: 100,
+        completionTokens: 20,
+        totalTokens: 120,
+      }),
+      turn({
+        at: 2,
+        key: "b",
+        source: "user",
+        userId: "9",
+        estTokens: 5,
+        promptEstTokens: 4,
+        genEstTokens: 1,
+      }),
+    ]);
+    expect(r.bySource.find((s) => s.id === "unknown")?.turns).toBe(1);
+    expect(r.bySource.find((s) => s.id === "spark")).toBeUndefined();
+    expect(r.nativeTurns).toBe(1);
+    expect(r.promptTokens).toBe(100);
+    expect(r.completionTokens).toBe(20);
+    expect(r.totalTokens).toBe(120);
+    expect(r.unattributedTurns).toBe(0);
   });
 });
 
@@ -250,6 +282,15 @@ describe("sourceChartSeries", () => {
     expect(series[1]).toMatchObject({ user: 1, cron: 0 });
     expect(series[2]).toMatchObject({ user: 1, cron: 1 });
     expect(series[3]).toMatchObject({ user: 2, cron: 1 });
+  });
+
+  it("buckets a source outside the contract set as unknown", () => {
+    const now = 10_000;
+    const series = sourceChartSeries(
+      [turn({ at: 9_000, key: "a", source: "spark" })],
+      { bucket: "cumulative", since: 8_000, now },
+    );
+    expect(series.at(-2)).toMatchObject({ unknown: 1, user: 0 });
   });
 });
 

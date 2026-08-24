@@ -111,6 +111,34 @@ describe("yard memory", () => {
     expect(recalled.host[0]?.blkWriteBytes).toBe(4);
     expect(recalled.host[0]?.diskBytes).toBe(9001);
     expect(recalled.turns[0]?.durationMs).toBe(1500);
+    persistTurn("kit", {
+      at: Date.now() + 1,
+      key: "turn-native",
+      rounds: 1,
+      recoveries: 0,
+      estTokens: 12,
+      promptEstTokens: 10,
+      genEstTokens: 2,
+      promptTokens: 90,
+      completionTokens: 12,
+      totalTokens: 102,
+      usageRounds: 2,
+      cachedTokens: 8,
+      model: "gpt-4.1",
+      finishReason: "stop",
+      source: "user",
+      userId: "1",
+      sessionId: "s",
+      outcome: "ok",
+    });
+    const native = recallSamples("kit", { host: 720, turns: 400, mcp: 200, uptime: 720 });
+    expect(native.turns.find((t) => t.key === "turn-native")).toMatchObject({
+      promptTokens: 90,
+      completionTokens: 12,
+      totalTokens: 102,
+      model: "gpt-4.1",
+      finishReason: "stop",
+    });
     expect(recalled.mcp[0]?.skipped).toBe(1);
     expect(recalled.uptime[0]?.restartCount).toBe(0);
 

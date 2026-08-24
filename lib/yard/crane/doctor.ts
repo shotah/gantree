@@ -7,6 +7,9 @@ import { envKeysForServer } from "../tools/packages";
 import { oauthSessionPresent } from "../tools/mcp";
 import type { DoctorCheck, DoctorReport } from "../types";
 import { getGantry } from "./inventory";
+import { parseGantryStatusJson, type GantryStatusJson } from "./status";
+
+export { parseGantryStatusJson, type GantryStatusJson } from "./status";
 
 export async function doctor(slug: string): Promise<DoctorReport | null> {
   const g = await getGantry(slug);
@@ -69,6 +72,8 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
         const mcp = parsed.mcp;
         statusServers = mcp?.servers ?? [];
         const summary = [
+          parsed.version,
+          parsed.commit && parsed.commit.toLowerCase() !== "none" ? parsed.commit : null,
           parsed.channel,
           parsed.reason,
           mcp ? `listed=${mcp.listed ?? "?"} connected=${mcp.connected ?? "?"} skipped=${mcp.skipped ?? "?"}` : null,
@@ -186,44 +191,3 @@ function pushFileMcpChecks(
     }
   }
 }
-
-/** Parse `gantry status` JSON. `"ok":false` must not be regex-matched as healthy. */
-export function parseGantryStatusJson(text: string): GantryStatusJson | null {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) {
-    return null;
-  }
-  try {
-    const j: unknown = JSON.parse(text.slice(start, end + 1));
-    if (!j || typeof j !== "object" || Array.isArray(j)) {
-      return null;
-    }
-    const rec = j as Record<string, unknown>;
-    if (typeof rec.alive !== "boolean" && typeof rec.ok !== "boolean") {
-      return null;
-    }
-    return rec as GantryStatusJson;
-  } catch {
-    return null;
-  }
-}
-
-export type GantryStatusJson = {
-  alive?: boolean;
-  ok?: boolean;
-  reason?: string;
-  channel?: string;
-  mcp?: {
-    listed?: number;
-    connected?: number;
-    skipped?: number;
-    servers?: Array<{
-      name?: string;
-      state?: string;
-      reason?: string;
-      note?: string;
-      auth?: boolean;
-    }>;
-  };
-};

@@ -1,5 +1,5 @@
 import type { HostSample, TurnSample } from "../types";
-import { SOURCE_ORDER, type SpendBucket, type SpendRateBucket } from "./windows";
+import { SOURCE_ORDER, spendSource, type SpendBucket, type SpendRateBucket } from "./windows";
 
 export type TokenChartPoint = {
   at: number;
@@ -65,12 +65,27 @@ function nextBucket(at: number, bucket: SpendRateBucket): number {
   return d.getTime();
 }
 
-function addCost(row: TokenChartPoint, t: TurnSample): void {
+export function turnHasNative(t: TurnSample): boolean {
+  return t.promptTokens != null || t.completionTokens != null || t.totalTokens != null;
+}
+
+/** Native Completer usage when slog had it; chars/4 estimate otherwise. */
+export function turnCost(t: TurnSample): { prompt: number; gen: number; tokens: number; native: boolean } {
+  if (turnHasNative(t)) {
+    const prompt = t.promptTokens ?? 0;
+    const gen = t.completionTokens ?? 0;
+    return { prompt, gen, tokens: t.totalTokens ?? prompt + gen, native: true };
+  }
   const prompt = t.promptEstTokens ?? 0;
   const gen = t.genEstTokens ?? 0;
-  row.prompt += prompt;
-  row.gen += gen;
-  row.tokens += t.estTokens ?? prompt + gen;
+  return { prompt, gen, tokens: t.estTokens ?? prompt + gen, native: false };
+}
+
+function addCost(row: TokenChartPoint, t: TurnSample): void {
+  const cost = turnCost(t);
+  row.prompt += cost.prompt;
+  row.gen += cost.gen;
+  row.tokens += cost.tokens;
   row.turns += 1;
 }
 
@@ -122,10 +137,7 @@ export function tokenChartSeries(
 }
 
 function sourceKey(source: string | null): (typeof SOURCE_ORDER)[number] {
-  if (source && (SOURCE_ORDER as readonly string[]).includes(source)) {
-    return source as (typeof SOURCE_ORDER)[number];
-  }
-  return "unknown";
+  return spendSource(source);
 }
 
 function emptySources(at: number): SourceChartPoint {

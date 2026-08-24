@@ -7,6 +7,15 @@ export type SpendBucket = (typeof SPEND_BUCKETS)[number];
 export type SpendRateBucket = Exclude<SpendBucket, "cumulative">;
 
 export const SOURCE_ORDER = ["user", "cron", "watch", "reaction", "unknown"] as const;
+export const CONTRACT_SOURCES = ["user", "cron", "watch", "reaction"] as const;
+
+/** Contract `source` only. Empty, legacy, or any other string charts as unknown. */
+export function spendSource(source: string | null | undefined): (typeof SOURCE_ORDER)[number] {
+  if (source && (CONTRACT_SOURCES as readonly string[]).includes(source)) {
+    return source as (typeof CONTRACT_SOURCES)[number];
+  }
+  return "unknown";
+}
 
 export function parseSpendWindow(raw: string | null | undefined): SpendWindow {
   return SPEND_WINDOWS.includes(raw as SpendWindow) ? (raw as SpendWindow) : DEFAULT_SPEND_WINDOW;

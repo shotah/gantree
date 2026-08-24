@@ -248,4 +248,21 @@ describe("doctor", () => {
     expect(parsed?.reason).toBe("no_heartbeat");
     expect(parseGantryStatusJson("ok: channel telegram")).toBeNull();
   });
+
+  it("puts version and commit on gantry-status detail", async () => {
+    const files = craneFiles({ oauth: true });
+    vi.mocked(getGantry).mockResolvedValue(card({ ...files }));
+    vi.mocked(execStatus).mockResolvedValue(
+      JSON.stringify({
+        alive: true,
+        ok: true,
+        version: "1.2.0",
+        commit: "cafebabe",
+        channel: "telegram",
+      }),
+    );
+    const report = await doctor("kit");
+    expect(report?.checks.find((c) => c.id === "gantry-status")?.detail).toMatch(/1\.2\.0/);
+    expect(report?.checks.find((c) => c.id === "gantry-status")?.detail).toMatch(/cafebabe/);
+  });
 });

@@ -3,6 +3,7 @@ import { findAvatar } from "../host/avatar";
 import {
   containerLogsBuffer,
   dockerErrorMessage,
+  execStatus,
   inspectByName,
   listGantryContainers,
   normalizeName,
@@ -14,11 +15,15 @@ import { coerceTagColors, coerceTags } from "./tags";
 import { decodeDockerLogs, parseLogText } from "../host/logs";
 import { craneNags, mcpHint, mcpSnapshot } from "../tools/mcp";
 import type { GantryCard, YardInventory } from "../types";
+import { gantryBehind, newestGantryVersion, parseGantryStatusJson, shortImageId } from "./status";
 
 export type ListYardOpts = { waitDocker?: boolean };
 
 type DockerEnrich = {
   image: string | null;
+  imageId: string | null;
+  version: string | null;
+  commit: string | null;
   state: GantryCard["state"];
   health: string | null;
   startedAt: string | null;
@@ -91,6 +96,9 @@ async function refreshYardDocker(): Promise<void> {
 
 async function dockerEnrich(listed: ListedContainer): Promise<DockerEnrich> {
   let image = listed.image ?? null;
+  let imageId: string | null = null;
+  let version: string | null = null;
+  let commit: string | null = null;
   let state = listed.state ?? "unknown";
   let health: string | null = null;
   let startedAt: string | null = null;
@@ -101,6 +109,7 @@ async function dockerEnrich(listed: ListedContainer): Promise<DockerEnrich> {
     const inspected = await inspectByName(listed.id);
     if (inspected) {
       image = inspected.info.Config.Image || image;
+      imageId = shortImageId(inspected.info.Image);
       const st = inspected.info.State;
       state = stateOf(st.Status, { running: st.Running, paused: st.Paused });
       health = inspected.info.State.Health?.Status ?? null;
@@ -113,9 +122,24 @@ async function dockerEnrich(listed: ListedContainer): Promise<DockerEnrich> {
   } catch {
     /* inspect is best-effort */
   }
+  if (listed.id && state === "running") {
+    try {
+      const text = await execStatus(listed.id);
+      const parsed = text ? parseGantryStatusJson(text) : null;
+      const ver = typeof parsed?.version === "string" ? parsed.version.trim() : "";
+      const sha = typeof parsed?.commit === "string" ? parsed.commit.trim() : "";
+      version = ver || null;
+      commit = sha && sha.toLowerCase() !== "none" ? sha : null;
+    } catch {
+      /* status is best-effort */
+    }
+  }
   const peek = await peekLogHints(listed.id);
   return {
     image,
+    imageId,
+    version,
+    commit,
     state,
     health,
     startedAt,
@@ -165,7 +189,7 @@ function buildInventory(): YardInventory {
         tags: coerceTags(row.tags),
       });
     });
-    return { source: "gantree.toml", yard: toml.yard || "home", gantries, dockerError, dockerPending, tagColors: coerceTagColors(toml.tag_color) };
+    return { source: "gantree.toml", yard: toml.yard || "home", gantries: markBehind(gantries), dockerError, dockerPending, tagColors: coerceTagColors(toml.tag_color) };
   }
 
   const gantries = listed.map((c) =>
@@ -185,7 +209,7 @@ function buildInventory(): YardInventory {
   return {
     source: "docker-discover",
     yard: toml?.yard || "home",
-    gantries,
+    gantries: markBehind(gantries),
     dockerError,
     dockerPending,
     tagColors: coerceTagColors(toml?.tag_color),
@@ -238,6 +262,9 @@ function cardFrom(opts: {
     channel,
     lastError,
     lastTurn,
+    version: opts.enrich?.version ?? null,
+    commit: opts.enrich?.commit ?? null,
+    imageId: opts.enrich?.imageId ?? null,
     mcpListed: snapMcp.listed,
     mcpPublished: snapMcp.published,
     mcpSkipped: snapMcp.skipped,
@@ -250,6 +277,11 @@ function cardFrom(opts: {
     avatarRev: findAvatar(opts.personaDir)?.rev ?? null,
     tags: opts.tags,
   };
+}
+
+function markBehind(gantries: GantryCard[]): GantryCard[] {
+  const newest = newestGantryVersion(gantries.map((g) => g.version));
+  return gantries.map((g) => ({ ...g, imageBehind: gantryBehind(g.version, newest) }));
 }
 
 function saneStarted(raw: string | undefined): string | null {

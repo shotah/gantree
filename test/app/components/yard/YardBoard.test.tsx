@@ -265,4 +265,27 @@ describe("YardBoard", () => {
       "/gantries/tryout",
     ]);
   });
+
+  it("shows gantry status version on the card and warns when a peer is older", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            gantries: [
+              card({ slug: "kit", version: "1.2.0", commit: "cafebabe", imageBehind: false }),
+              card({ slug: "old", version: "0.9.0", commit: "deadbee", imageBehind: true }),
+            ],
+          }),
+      } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("1.2.0 · cafebabe")).toBeTruthy());
+    const older = screen.getByText("0.9.0 · deadbee · older");
+    expect(older.className).toMatch(/text-warn/);
+  });
 });

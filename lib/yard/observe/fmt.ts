@@ -119,17 +119,18 @@ export function hostShare(used: number, total: number): number {
   return Math.max(0, Math.min(1, used / total));
 }
 
-export function fmtSpendBucketTitle(bucket: SpendBucket): string {
+export function fmtSpendBucketTitle(bucket: SpendBucket, unit: "est" | "native" = "est"): string {
+  const noun = unit === "native" ? "tokens" : "est. tokens";
   switch (bucket) {
     case "cumulative":
-      return "est. tokens (cumulative)";
+      return `${noun} (cumulative)`;
     case "hour":
-      return "est. tokens / hour";
+      return `${noun} / hour`;
     case "6h":
-      return "est. tokens / 6h";
+      return `${noun} / 6h`;
     case "12h":
-      return "est. tokens / 12h";
+      return `${noun} / 12h`;
     case "day":
-      return "est. tokens / day";
+      return `${noun} / day`;
   }
 }

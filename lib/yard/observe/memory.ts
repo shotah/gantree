@@ -51,8 +51,13 @@ export function persistTurn(slug: string, sample: TurnSample): void {
       .prepare(
         `INSERT OR IGNORE INTO sample_turn (
            slug, at, key, rounds, recoveries, est_tokens, prompt_est_tokens, gen_est_tokens,
-           source, user_id, session_id, outcome, duration_ms
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           source, user_id, session_id, outcome, duration_ms,
+           prompt_tokens, completion_tokens, total_tokens, usage_rounds,
+           cached_tokens, cache_write_tokens, reasoning_tokens,
+           prompt_audio_tokens, completion_audio_tokens,
+           accepted_prediction_tokens, rejected_prediction_tokens,
+           model, finish_reason, service_tier
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         slug,
@@ -68,6 +73,20 @@ export function persistTurn(slug: string, sample: TurnSample): void {
         sample.sessionId,
         sample.outcome,
         sample.durationMs ?? null,
+        sample.promptTokens ?? null,
+        sample.completionTokens ?? null,
+        sample.totalTokens ?? null,
+        sample.usageRounds ?? null,
+        sample.cachedTokens ?? null,
+        sample.cacheWriteTokens ?? null,
+        sample.reasoningTokens ?? null,
+        sample.promptAudioTokens ?? null,
+        sample.completionAudioTokens ?? null,
+        sample.acceptedPredictionTokens ?? null,
+        sample.rejectedPredictionTokens ?? null,
+        sample.model ?? null,
+        sample.finishReason ?? null,
+        sample.serviceTier ?? null,
       );
     prune(yardDb(), "sample_turn", slug, TURN_CAP, turnRetainMs());
   } catch {
@@ -197,7 +216,12 @@ export function recallSamples(slug: string, limits: { host: number; turns: numbe
       db
         .prepare(
           `SELECT at, key, rounds, recoveries, est_tokens, prompt_est_tokens, gen_est_tokens,
-                  source, user_id, session_id, outcome, duration_ms
+                  source, user_id, session_id, outcome, duration_ms,
+                  prompt_tokens, completion_tokens, total_tokens, usage_rounds,
+                  cached_tokens, cache_write_tokens, reasoning_tokens,
+                  prompt_audio_tokens, completion_audio_tokens,
+                  accepted_prediction_tokens, rejected_prediction_tokens,
+                  model, finish_reason, service_tier
            FROM sample_turn WHERE slug = ? AND at >= ? ORDER BY at ASC`,
         )
         .all(slug, turnCutoff) as TurnRow[]
@@ -216,6 +240,20 @@ export function recallSamples(slug: string, limits: { host: number; turns: numbe
         sessionId: r.session_id,
         outcome: r.outcome,
         durationMs: num(r.duration_ms),
+        promptTokens: num(r.prompt_tokens),
+        completionTokens: num(r.completion_tokens),
+        totalTokens: num(r.total_tokens),
+        usageRounds: num(r.usage_rounds),
+        cachedTokens: num(r.cached_tokens),
+        cacheWriteTokens: num(r.cache_write_tokens),
+        reasoningTokens: num(r.reasoning_tokens),
+        promptAudioTokens: num(r.prompt_audio_tokens),
+        completionAudioTokens: num(r.completion_audio_tokens),
+        acceptedPredictionTokens: num(r.accepted_prediction_tokens),
+        rejectedPredictionTokens: num(r.rejected_prediction_tokens),
+        model: r.model,
+        finishReason: r.finish_reason,
+        serviceTier: r.service_tier,
       }));
     const mcp = (
       db
@@ -271,6 +309,20 @@ type TurnRow = {
   session_id: string | null;
   outcome: string | null;
   duration_ms: number | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  total_tokens: number | null;
+  usage_rounds: number | null;
+  cached_tokens: number | null;
+  cache_write_tokens: number | null;
+  reasoning_tokens: number | null;
+  prompt_audio_tokens: number | null;
+  completion_audio_tokens: number | null;
+  accepted_prediction_tokens: number | null;
+  rejected_prediction_tokens: number | null;
+  model: string | null;
+  finish_reason: string | null;
+  service_tier: string | null;
 };
 type McpRow = { at: number; published: number; skipped: number };
 type UptimeRow = { at: number; uptime_seconds: number | null; restart_count: number | null };

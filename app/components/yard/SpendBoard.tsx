@@ -10,6 +10,8 @@ import {
   fmtUsd,
   orderedSources,
   spendPace,
+  spendUsdSides,
+  unknownShare,
   SPEND_WINDOWS,
   type SpendBucket,
   type SpendWindow,
@@ -136,7 +138,15 @@ function lastTurnLine(turn: LastTurn | null | undefined, now: number): string | 
   if (!turn) {
     return null;
   }
-  const bits = [fmtAgo(turn.at, now), turn.source || "turn", turn.outcome || "ok", fmtEstTokens(turn.estTokens)];
+  const tokens
+    = turn.totalTokens
+      ?? ((turn.promptTokens != null || turn.completionTokens != null)
+        ? (turn.promptTokens ?? 0) + (turn.completionTokens ?? 0)
+        : turn.estTokens);
+  const bits = [fmtAgo(turn.at, now), turn.source || "turn", turn.outcome || "ok", fmtEstTokens(tokens)];
+  if (turn.model) {
+    bits.push(turn.model);
+  }
   if (turn.rounds != null) {
     bits.push(`${turn.rounds} round${turn.rounds === 1 ? "" : "s"}`);
   }
@@ -273,7 +283,13 @@ export function SpendBoard({
   const pace = spend && spend.estTokens > 0 ? spendPace(spend.estTokens, window, now) : null;
   const last = lastTurnLine(spend?.lastTurn, now);
   const mix = spend?.bySource ?? [];
-  const usd = estSpendUsd(spend?.promptEst ?? 0, spend?.genEst ?? 0, observe);
+  const usdSides = spend
+    ? spendUsdSides(spend)
+    : { prompt: 0, gen: 0, kind: "est" as const };
+  const nativeAll = usdSides.kind === "native";
+  const shown = nativeAll ? (spend?.totalTokens ?? spend?.estTokens ?? 0) : (spend?.estTokens ?? 0);
+  const usd = estSpendUsd(usdSides.prompt, usdSides.gen, observe);
+  const unknownHeavy = spend ? unknownShare(spend) > 0.5 : false;
 
   return (
     <section className="min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4">
@@ -291,21 +307,28 @@ export function SpendBoard({
               </span>
               <span>
                 <span className="block text-xs font-medium uppercase tracking-wide text-dim">
-                  Est. token spend ·
+                  {nativeAll ? "Token spend" : "Est. token spend"}
+                  {" "}
+                  ·
                   {" "}
                   {scope}
                 </span>
                 <span className="mt-1 block text-2xl font-semibold tabular-nums text-fg">
-                  {fmtEstTokens(spend?.estTokens ?? 0)}
-                  <span className="ml-2 text-sm font-normal text-dim">est. tokens</span>
+                  {fmtEstTokens(shown)}
+                  <span className="ml-2 text-sm font-normal text-dim">{nativeAll ? "tokens" : "est. tokens"}</span>
                   {usd != null ? <span className="ml-2 text-sm font-normal text-ok/90">{fmtUsd(usd)}</span> : null}
                 </span>
               </span>
             </span>
             <span className="text-xs text-dim">
               {spend?.turns ?? 0} turn{(spend?.turns ?? 0) === 1 ? "" : "s"}
-              {spend && spend.promptEst + spend.genEst > 0
-                ? ` · prompt ${fmtEstTokens(spend.promptEst)} · gen ${fmtEstTokens(spend.genEst)}`
+              {nativeAll && spend
+                ? ` · prompt ${fmtEstTokens(spend.promptTokens ?? 0)} · gen ${fmtEstTokens(spend.completionTokens ?? 0)}`
+                : spend && spend.promptEst + spend.genEst > 0
+                  ? ` · prompt ${fmtEstTokens(spend.promptEst)} · gen ${fmtEstTokens(spend.genEst)}`
+                  : ""}
+              {usdSides.kind === "mixed" && spend
+                ? ` · native ${fmtEstTokens(spend.totalTokens ?? 0)}`
                 : ""}
             </span>
           </span>
@@ -340,6 +363,13 @@ export function SpendBoard({
                         </span>
                       )
                     : null}
+                  {unknownHeavy
+                    ? (
+                        <span className="mt-1 block text-warn">
+                          most turns have no contract source — pin/recreate onto the pinned image
+                        </span>
+                      )
+                    : null}
                 </span>
               )
             : null}
@@ -350,21 +380,64 @@ export function SpendBoard({
         ? (
             <>
               <p className="mt-2 text-[11px] text-faint">
-                Sum of
+                {nativeAll
+                  ? (
+                      <>
+                        Sum of
+                        {" "}
+                        <code className="text-dim">prompt_tokens</code>
+                        {" "}
+                        +
+                        {" "}
+                        <code className="text-dim">completion_tokens</code>
+                        {" "}
+                        from Completer
+                        {" "}
+                        <code className="text-dim">usage</code>
+                        {" "}
+                        on
+                        {" "}
+                        <code className="text-dim">turn perf</code>
+                        . Chars/4 estimates stay on the est fields.
+                      </>
+                    )
+                  : (
+                      <>
+                        Sum of
+                        {" "}
+                        <code className="text-dim">prompt_est_tokens</code>
+                        {" "}
+                        +
+                        {" "}
+                        <code className="text-dim">gen_est_tokens</code>
+                        {" "}
+                        in this window from
+                        {" "}
+                        <code className="text-dim">turn perf</code>
+                        {" "}
+                        (chars/4). Native
+                        {" "}
+                        <code className="text-dim">usage</code>
+                        {" "}
+                        fills when Completer sent it.
+                      </>
+                    )}
                 {" "}
-                <code className="text-dim">prompt_est_tokens</code>
-                {" "}
-                +
-                {" "}
-                <code className="text-dim">gen_est_tokens</code>
-                {" "}
-                in this window from
-                {" "}
-                <code className="text-dim">turn perf</code>
-                {" "}
-                (chars/4). Each finished call adds; idle does not.
-                Not billed dollars — a GCP usage pull is later.
+                Each finished call adds; idle does not. Not billed dollars — a GCP usage pull is later.
               </p>
+              {unknownHeavy
+                ? (
+                    <p className="mt-1 text-[11px] text-warn">
+                      Most turns in this window have
+                      {" "}
+                      <code>source</code>
+                      {" "}
+                      outside
+                      {" "}
+                      user/cron/watch/reaction (or empty on an old image). Pin and recreate the crane.
+                    </p>
+                  )
+                : null}
               {mix.length > 0
                 ? (
                     <div className="mt-2">
@@ -418,7 +491,10 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
     );
   }
   const last = lastTurnLine(rollup.lastTurn, Date.now());
-  const usd = estSpendUsd(rollup.promptEst, rollup.genEst, observe);
+  const usdSides = spendUsdSides(rollup);
+  const nativeAll = usdSides.kind === "native";
+  const usd = estSpendUsd(usdSides.prompt, usdSides.gen, observe);
+  const shown = nativeAll ? (rollup.totalTokens ?? rollup.estTokens) : rollup.estTokens;
   return (
     <div className="mb-3 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div className="min-w-0 rounded-lg border border-line bg-panel/50 px-3 py-2">
@@ -435,11 +511,16 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
           : null}
       </div>
       <div className="min-w-0 rounded-lg border border-line bg-panel/50 px-3 py-2">
-        <p className="text-[10px] uppercase tracking-wide text-faint">est. prompt + gen</p>
-        <p className="mt-1 text-lg font-semibold tabular-nums text-ok">{fmtEstTokens(rollup.estTokens)}</p>
+        <p className="text-[10px] uppercase tracking-wide text-faint">
+          {nativeAll ? "prompt + gen" : "est. prompt + gen"}
+        </p>
+        <p className="mt-1 text-lg font-semibold tabular-nums text-ok">{fmtEstTokens(shown)}</p>
         <p className="text-[11px] text-dim">
-          {fmtEstTokens(rollup.promptEst)} prompt · {fmtEstTokens(rollup.genEst)} gen
+          {nativeAll
+            ? `${fmtEstTokens(rollup.promptTokens ?? 0)} prompt · ${fmtEstTokens(rollup.completionTokens ?? 0)} gen`
+            : `${fmtEstTokens(rollup.promptEst)} prompt · ${fmtEstTokens(rollup.genEst)} gen`}
           {usd != null ? ` · ${fmtUsd(usd)}` : ""}
+          {usdSides.kind === "mixed" ? ` · native ${fmtEstTokens(rollup.totalTokens ?? 0)}` : ""}
         </p>
       </div>
       <div className="min-w-0 rounded-lg border border-line bg-panel/50 px-3 py-2">
@@ -459,7 +540,12 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
         {rollup.byUser.length > 1 ? <ExtraUsers slices={rollup.byUser} max={rollup.estTokens} /> : null}
         {rollup.byUser.length === 0 && rollup.unattributedTurns > 0
           ? (
-              <p className="mt-1 text-[11px] text-faint">user_id not on slog yet</p>
+              <p className="mt-1 text-[11px] text-faint">user_id missing on a user/reaction turn</p>
+            )
+          : null}
+        {unknownShare(rollup) > 0.5
+          ? (
+              <p className="mt-1 text-[11px] text-warn">most turns have no contract source — pin/recreate</p>
             )
           : null}
       </div>

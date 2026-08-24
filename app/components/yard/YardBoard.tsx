@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { fmtGantryBuild } from "@/lib/yard/crane/status";
 import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
 import { DEFAULT_SPEND_WINDOW, FAT_DATA_DIR_BYTES, fmtAgo, fmtBytes, fmtEstTokens, lastDiskBytes, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BuildCrane } from "./BuildCrane";
@@ -223,9 +224,13 @@ function GantryCardLink({
           );
         })()}
         <div className="flex min-w-0 justify-between gap-2">
-          <dt className="shrink-0">image</dt>
-          <dd className="min-w-0 truncate text-fg" title={g.image ?? ""}>
-            {g.image ?? "—"}
+          <dt className="shrink-0">gantry</dt>
+          <dd
+            className={`min-w-0 truncate ${g.imageBehind ? "text-warn" : "text-fg"}`}
+            title={[g.image, g.imageId].filter(Boolean).join(" ")}
+          >
+            {fmtGantryBuild(g) ?? g.image ?? "—"}
+            {g.imageBehind ? " · older" : ""}
           </dd>
         </div>
       </dl>

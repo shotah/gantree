@@ -41,6 +41,23 @@ describe("parseLogLine", () => {
     expect(t?.durationMs).toBe(1500);
   });
 
+  it("reads native Completer usage and total_ms from turn perf", () => {
+    const line = parseLogLine(
+      '{"time":"2026-08-22T18:00:00.000Z","level":"INFO","msg":"turn perf","source":"user","user_id":"42","prompt_est_tokens":8000,"gen_est_tokens":400,"prompt_tokens":1200,"completion_tokens":80,"total_tokens":1280,"usage_rounds":2,"cached_tokens":300,"reasoning_tokens":16,"model":"gpt-4.1","finish_reason":"stop","total_ms":1500}',
+    );
+    const t = turnFromLog(line);
+    expect(t?.promptTokens).toBe(1200);
+    expect(t?.completionTokens).toBe(80);
+    expect(t?.totalTokens).toBe(1280);
+    expect(t?.usageRounds).toBe(2);
+    expect(t?.cachedTokens).toBe(300);
+    expect(t?.reasoningTokens).toBe(16);
+    expect(t?.model).toBe("gpt-4.1");
+    expect(t?.finishReason).toBe("stop");
+    expect(t?.durationMs).toBe(1500);
+    expect(t?.estTokens).toBe(8400);
+  });
+
   it("ignores boot schema est_tokens", () => {
     const line = parseLogLine('{"time":"2026-08-22T18:00:00Z","msg":"tools_published","est_tokens":16000}');
     expect(turnFromLog(line)).toBeNull();
