@@ -3,8 +3,10 @@ import { SetupForm } from "../components/operators/AuthForms";
 
 export default function SetupPage() {
   return (
-    <main className={PAGE_AUTH}>
-      <SetupForm />
+    <main className="min-w-0">
+      <div className={PAGE_AUTH}>
+        <SetupForm />
+      </div>
     </main>
   );
 }

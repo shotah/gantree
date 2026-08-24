@@ -3,8 +3,10 @@ import { LoginForm } from "../components/operators/AuthForms";
 
 export default function LoginPage() {
   return (
-    <main className={PAGE_AUTH}>
-      <LoginForm />
+    <main className="min-w-0">
+      <div className={PAGE_AUTH}>
+        <LoginForm />
+      </div>
     </main>
   );
 }

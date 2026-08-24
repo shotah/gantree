@@ -368,6 +368,30 @@ The harness never learns instance names. Gantree never sits in the
 token path of a chat turn. Consume slog / `status` the crane already
 emits. Do not ask the harness to grow dashboard hooks.
 
+Still open — **slog what the Completer already returned**. No second
+HTTP call, no provider usage API, no dashboard port. If it would add
+latency to a turn, it is the wrong want.
+
+- [ ] **`source` is always on `turn perf`.** `user` / `cron` / `watch` /
+      `reaction` (or the real harness names — pick one set and keep it).
+      Missing `source` is why Gantree spend shows **unknown**. Cron may
+      omit `user_id`. A user turn with a channel id must not.
+- [ ] **Native OpenAI-compat `usage` on the same line** when the
+      Completer response had it: `prompt_tokens`, `completion_tokens`,
+      `total_tokens`. Details when the provider sent them:
+      `cached_tokens`, `reasoning_tokens` (and audio / prediction
+      counts if they are already on the object). Keep
+      `prompt_est_tokens` / `gen_est_tokens` as the chars/4 fallback.
+      Gantree estimates today because we drop the real usage blob.
+- [ ] **`model` + `finish_reason`** on that line when the response
+      had them — chart without scraping a nested dump.
+- [x] Copy these into
+      [repos/ai-gantry/gantree_todo.md](repos/ai-gantry/gantree_todo.md)
+      (harness walk lives there too, not only this file).
+
+Gantree will parse the keys. Until they exist, native-token tiles
+stay empty and spend `unknown` stays an honest bucket, not a guess.
+
 - [x] **Here:** pin Hub image to `shotah/ai-gantry:latest` (one constant,
       not a semver chase). Existing cranes keep their compose tag until you
       pin/recreate.
@@ -845,8 +869,219 @@ metrics company.
 
 ---
 
+## vDashboarding looks like (the end)
+
+The yard is already a dashboard: host, spend, cards, events. A second
+**dashboard** page is not Grafana and not a replacement yard. It is a
+**saved watch** — one question the opinionated board will not answer
+without hopping (yard → crane → host → logs).
+
+If we cannot name three of those questions, we do not build a widget
+supermarket.
+
+**Home.** `/dashboards` lists *your* watches (per operator, sqlite, not
+`localStorage`). Open one: one context bar (window, tags, crane set)
+and a grid of tiles you arranged. Click a tile, leave — recoveries go
+to that crane, host CPU to `/host`, an error line to logs. The watch
+is an index, not a second home for every editor.
+
+**Typical watches (the job, not the mechanism)**
+
+- *Are my cranes dying?* state, nags, recoveries, last error — not the
+  token chart
+- *Who is burning money?* spend by crane / source / window, native
+  tokens when slog has them, next to turns
+- *Is the Mini the bottleneck?* host CPU/RAM/net next to the noisy
+  cranes
+- *Did that MCP or tag change land?* skipped MCP, grant events, one
+  tag filter
+
+A “window into all the metrics” is **one slice of everything** (this
+tag, last 24h, health + spend) — not a wall of every Docker stat.
+
+**What we do not do**
+
+- Replace the yard with an empty board (new operators land in nothing)
+- Per-tile filter bars (dashboard-level context, or the product goes
+  feral)
+- A scrape, a `/metrics` port, or extra Completer I/O so a chart looks
+  busy (fit gate 10 still wins)
+- Invent numbers. Empty tile if slog / Docker did not say
+
+---
+
+## vDashboarding fit gates
+
+v1–v3 gates still hold. Deltas:
+
+1. **Catalog first** A tile is a named object (id,
+   grain, unit, which filters it honors, which viz it can be) — not
+   “embed this React tree.” Drag-and-drop without a catalog is interior
+   decoration.
+2. **One context bar.** Time window, tags, crane set apply to every
+   tile. A tile that cannot honor the filter shows n/a, it does not
+   lie.
+3. **Grain is a type.** Yard / host / crane / operator. Do not drop
+   host CPU into a per-crane row.
+4. **Click-through.** Tiles are windows. Detail stays on the page
+   that already owns it.
+5. **Yard stays canonical.** Saved watches are personal or
+   situational. The board is still the ops home.
+6. **Pull, don’t punch.** Same slog + `docker stats` + files. Native
+   usage is copied off the Completer response the harness already
+   has (see **Push into ai-gantry**). No provider billing API here —
+   that stays Later.
+7. **Estimates stay estimates** until native `usage` lands. chars/4
+   and a pasted $/1M remain the calculator. `unknown` on spend is a
+   hole (missing `source`), not a personality.
+8. **Not Prometheus. Not Grafana. Not a metric company.**
+
+---
+
+## vDashboarding ships
+
+| Surface | What “done” means |
+| --- | --- |
+| Catalog | ~15 named tiles from what we already compute (and what slog grows). Missing fields = empty, not fake. |
+| Attention | One curated surface: dead, nags, recoveries, last error. Tag + window filters. Higher leverage than a builder if that is all anyone pins. |
+| Spend honesty | `unknown` is visible and counted. Native tokens when `turn perf` has OpenAI-compat `usage`; chars/4 labeled estimate otherwise. Unattributed user turns called out. |
+| `/dashboards` | List of saved watches. Open, rename, delete. Per operator. |
+| Same auto-fill grid as the yard. Drag from catalog. Dashboard-level filters. Click-through. |
+| Persist | sqlite, not the browser. Survives a new laptop. |
+
+**Not this track:** billed GCP invoices, scraping every cgroup, a
+public widget store, replacing the yard.
+
+vDashboarding *ships* when a stranger can save “home-tag, 24h, health
++ spend”, reopen it tomorrow, and click an error into that crane’s
+log. The supermarket without three named watches is a miss.
+
+---
+
+## vDashboarding now
+
+Not started. v3 still owns richer series on the **existing** pages
+(net, duration, source mix). This track starts with a **catalog of
+holes**, then one attention surface, then a builder — in that order.
+
+Spend **unknown** is already real: `turn perf` with empty `source`
+lands in `unknown` (`lib/yard/observe/spend.ts`). That is a harness
+gap first (always set `source`), then a yard nag (count the bucket,
+don’t hide it).
+
+Native OpenAI-compat usage is sitting on Completer responses and
+getting dropped. chars/4 is the fallback we parse (`prompt_est_tokens`
++ `gen_est_tokens`). Downstream work is **Push into ai-gantry**
+above; this track only consumes the keys.
+
+---
+
+## vDashboarding Milestone 0 — the catalog
+
+Name the tiles.
+
+First catalog (small on purpose). If a number is not here, it is a
+crane-page detail, not a dashboard metric:
+
+| Bucket | Tiles |
+| --- | --- |
+| Health | state, nags, recoveries, last error, last-turn age |
+| Spend | est. tokens (chars/4), native tokens when slog has them, turns, by source, by user, pace, **unknown/unattributed** |
+| Host | CPU / RAM / net share, fat data dirs |
+| MCP | published vs skipped |
+| Door | events by kind, grants, logins (admin) |
+| Logs | tail filtered by crane + error level |
+
+Each entry: id, grain, unit, filters it honors, viz it can be
+(number / spark / table / log tail). Logs are not a sparkline.
+
+- [ ] Write the catalog as data Gantree can import (one module), not
+      a wiki. Tests: every live ring/rollup we already have maps to a
+      tile or is explicitly “not a tile.”
+- [ ] List **holes** next to the tile: empty because we don’t parse
+      it yet vs empty because the harness never slog’d it vs empty
+      because Docker didn’t send it. That list is the push into
+      `ai-gantry` / v3 parse work, not a new sampler.
+- [ ] **Walk:** open the catalog in a test. `spend.estTokens` and
+      `host.cpu` exist. `spend.nativeTokens` exists and is empty until
+      slog grows `prompt_tokens`. `spend.unknown` exists and is the
+      unlabeled-source count.
+
+---
+
+## vDashboarding Milestone 1 — fill the holes
+
+Catalog without data is a menu. This milestone is **parse + slog**,
+not layout.
+
+**Spend / turns (harness + parse)**
+
+- [ ] Consume native `prompt_tokens` / `completion_tokens` /
+      `total_tokens` / `cached_tokens` / `reasoning_tokens` when
+      `turn perf` has them (ai-gantry work above). Chart next to
+      chars/4; label which is which. Empty if absent.
+- [ ] Spend mix: `unknown` is a first-class slice with a count, not
+      a grey leftover. Nag on the yard when the bucket is most of
+      the window — “harness is not setting `source`.”
+- [ ] Unattributed user turns (`user_id` missing on a `user` turn)
+      called out the same way. Profile names already map ids we *do*
+      have (v3 M1).
+
+**Health / logs (already on pages, not tiles yet)**
+
+- [ ] Last error / last nag / last-turn age as catalog fields (crane
+      card already shows pieces).
+- [ ] Error log tail as a tile source (filter + last N), not a second
+      log product.
+
+**Host / MCP**
+
+- [ ] Point catalog tiles at v3 series we already sample (net, disk,
+      published vs skipped). No new Docker poller.
+
+- [ ] **Walk:** talk to Kit. If the image slog’s OpenAI `usage`,
+      spend shows native tokens. If not, estimate stays labeled
+      estimate. A turn with no `source` increments `unknown` and the
+      yard says so.
+
+---
+
+## vDashboarding Milestone 2 — one attention surface
+
+Before drag-and-drop: one curated page that is the watch everyone
+would pin anyway.
+
+- [ ] `/attention` (or a yard fold): dead + nags + recoveries + last
+      error, tag filter, spend window. Same pull.
+- [ ] Click-through to the crane. Empty when the yard is quiet.
+- [ ] **Walk:** stop Kit. Attention shows dead. Tag `home`. Spend
+      unknown still visible if the slog is mute on `source`.
+
+If this page is enough for months, **stop**. The builder waits until
+someone wants a second watch this page cannot be.
+
+---
+
+## vDashboarding Milestone 3 — saved watches
+
+Only after M0–M2 have named tiles and one real watch.
+
+- [ ] `/dashboards` list. Create / rename / delete. Per operator
+      (sqlite).
+- [ ] auto-fill grid (same as the yard). Drag from catalog.
+      One context bar (window, tags, cranes). Persist layout.
+- [ ] Click-through. Pin-one-as-home is later, and must not hide the
+      yard from operators who did not pin.
+- [ ] **Walk:** save “home-tag, 24h, health + spend.” Sign out, other
+      browser, same operator: the watch is there. A `readonly`
+      operator cannot mutate yours.
+
+---
+
 ## Later (after v3)
 
+- Operator saved watches / drag-and-drop tiles — **vDashboarding**
+  (above). Not Prometheus. Catalog + attention page before a dashboard.
 - systemd yards, not only compose
 - A `gantree` CLI (only if the UI + `npm` scripts are genuinely not
   enough — still TypeScript, not a Go Makefile)
