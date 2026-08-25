@@ -27,8 +27,21 @@ describe("persona seed", () => {
     expect(text).toContain("memory_store");
     expect(text).toContain("mcp_enable");
     expect(text).toContain("Review `[mcp prefixes]` on vs off");
-    expect(text).toContain("Seeded from ai-gantry PERSONA.example.md.");
     expect(selfMarkdown()).toContain("Who You Are Becoming");
+  });
+
+  it("drops operator/harness callouts so they are not handed to the model", () => {
+    const text = personaMarkdown("kit");
+    expect(text).not.toContain("make init");
+    expect(text).not.toContain("Seeded from");
+    expect(text).not.toContain("Harness overwrites");
+    expect(text).not.toContain("agent-written");
+    expect(text).not.toContain("<!--");
+    expect(text).toContain("## Self-notes");
+    expect(text).toContain("## Location pins");
+    expect(text).toContain("## Directives");
+    expect(text).toContain("north-star");
+    expect(selfMarkdown()).not.toMatch(/bullets only|stamps the header/i);
   });
 
   it("writes both files into an empty persona dir", () => {

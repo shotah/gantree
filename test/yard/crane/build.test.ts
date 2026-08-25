@@ -50,7 +50,7 @@ describe("writeCraneFiles", () => {
     expect(persona).toContain("## Memory hygiene");
     expect(persona).not.toContain("A long-horizon personal agent");
     expect(self).toContain("Who You Are Becoming");
-    expect(self).toContain("north-star");
+    expect(self).not.toMatch(/bullets only|stamps the header/i);
     expect(persona).not.toBe(self);
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("math");
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("github.com/shotah/mcp-gemini-search");
