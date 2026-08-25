@@ -162,6 +162,8 @@ function mockCrane(
             displayName: "Ada",
             email: "ada@example.com",
             description: "likes rye",
+            timezone: "America/New_York",
+            location: "Brooklyn, New York",
             channels: { telegram: ["99"], slack: [], discord: [] },
           },
         ],
@@ -322,6 +324,8 @@ describe("AgentDashboard persona files", () => {
     );
     expect((screen.getByLabelText("PERSONA.md") as HTMLTextAreaElement).value).toContain("**Name:** Noodles");
     expect((screen.getByLabelText("PERSONA.md") as HTMLTextAreaElement).value).toContain("ada@example.com");
+    expect((screen.getByLabelText("PERSONA.md") as HTMLTextAreaElement).value).toContain("America/New_York");
+    expect((screen.getByLabelText("PERSONA.md") as HTMLTextAreaElement).value).toContain("Brooklyn, New York");
     expect(puts).toEqual([]);
     fireEvent.click(screen.getByRole("button", { name: "Save PERSONA.md" }));
     await waitFor(() => expect(puts.length).toBe(1));

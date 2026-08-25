@@ -139,6 +139,8 @@ function migrate(d: DatabaseSync): void {
   ensureColumn(d, "operator", "role", "TEXT NOT NULL DEFAULT 'admin'");
   ensureColumn(d, "operator", "crane_slug", "TEXT");
   ensureColumn(d, "operator", "channels", "TEXT NOT NULL DEFAULT '{}'");
+  ensureColumn(d, "operator", "timezone", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(d, "operator", "location", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(d, "sample_host", "net_rx_bytes", "INTEGER");
   ensureColumn(d, "sample_host", "net_tx_bytes", "INTEGER");
   ensureColumn(d, "sample_host", "blk_read_bytes", "INTEGER");

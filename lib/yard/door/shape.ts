@@ -14,6 +14,8 @@ export type Operator = {
 export type OperatorRow = Operator & {
   email: string;
   description: string;
+  timezone: string;
+  location: string;
   channels: OperatorChannels;
   createdAt: string;
 };
@@ -23,6 +25,8 @@ export type OperatorProfilePatch = {
   displayName?: string;
   email?: string;
   description?: string;
+  timezone?: string;
+  location?: string;
   role?: OperatorRole;
   cranes?: string[];
   channels?: OperatorChannels;
@@ -44,6 +48,8 @@ export type OperatorDb = {
   display_name: string | null;
   email: string | null;
   description: string | null;
+  timezone: string | null;
+  location: string | null;
   role: string | null;
   crane_slug: string | null;
   channels: string | null;
@@ -73,6 +79,8 @@ export function operatorRow(row: OperatorDb): OperatorRow {
     ...publicOperator(row),
     email: row.email ?? "",
     description: row.description ?? "",
+    timezone: row.timezone ?? "",
+    location: row.location ?? "",
     channels: parseOperatorChannels(row.channels),
     createdAt: row.created_at,
   };

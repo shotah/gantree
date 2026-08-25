@@ -14,6 +14,8 @@ const ada: PersonaOperator = {
   displayName: "Ada",
   email: "ada@example.com",
   description: "likes rye jokes",
+  timezone: "America/New_York",
+  location: "Brooklyn, New York",
   channels: { telegram: ["99"], slack: ["U012ABCDEF"], discord: [] },
 };
 
@@ -23,11 +25,16 @@ describe("injectOperatorIntoPersona", () => {
     expect(seeded).toContain("- **Name:** Kit");
     expect(seeded).toContain("- **Name:** Your Name");
 
-    const next = injectOperatorIntoPersona(seeded, ada, ["displayName", "email", "telegram"]);
+    expect(seeded).toContain("- **Timezone:** America/Los_Angeles");
+
+    const next = injectOperatorIntoPersona(seeded, ada, ["displayName", "email", "telegram", "timezone", "location"]);
     expect(next).toContain("- **Name:** Kit");
     expect(next).toContain("- **Name:** Ada");
     expect(next).not.toContain("- **Name:** Your Name");
     expect(next).toContain("- **Google / Workspace email (canonical):** ada@example.com");
+    expect(next).toContain("- **Timezone:** America/New_York");
+    expect(next).not.toContain("- **Timezone:** America/Los_Angeles");
+    expect(next).toContain("- **Location:** Brooklyn, New York");
     expect(next).toContain("- **Telegram id:** 99");
     expect(next).toContain("- **Telegram pin:");
     expect(next).toMatch(/## Identity[\s\S]*- \*\*Name:\*\* Kit[\s\S]*## About you[\s\S]*- \*\*Name:\*\* Ada/);
@@ -54,7 +61,15 @@ describe("injectOperatorIntoPersona", () => {
   });
 
   it("default selection is non-empty fields minus preferred address", () => {
-    expect(defaultFieldSelection(ada)).toEqual(["displayName", "email", "description", "telegram", "slack"]);
+    expect(defaultFieldSelection(ada)).toEqual([
+      "displayName",
+      "email",
+      "location",
+      "timezone",
+      "description",
+      "telegram",
+      "slack",
+    ]);
     expect(operatorFieldValue(ada, "preferredAddress")).toBe("Ada");
   });
 

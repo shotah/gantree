@@ -35,6 +35,8 @@ describe("InjectUserModal", () => {
             displayName: "Ada",
             email: "ada@example.com",
             description: "likes rye",
+            timezone: "America/New_York",
+            location: "Brooklyn, New York",
             channels: { telegram: ["99"], slack: [], discord: [] },
           },
         ],
@@ -55,6 +57,9 @@ describe("InjectUserModal", () => {
     expect(next).toContain("- **Name:** Kit");
     expect(next).toContain("- **Name:** Ada");
     expect(next).toContain("- **Google / Workspace email (canonical):** ada@example.com");
+    expect(next).toContain("- **Timezone:** America/New_York");
+    expect(next).not.toContain("- **Timezone:** America/Los_Angeles");
+    expect(next).toContain("- **Location:** Brooklyn, New York");
     expect(next).toContain("- **Telegram id:** 99");
     expect(next).not.toContain("- **Notes:** likes rye");
   });

@@ -6,6 +6,7 @@ import {
   MAX_DESCRIPTION,
   MAX_DISPLAY_NAME,
   MAX_EMAIL,
+  MAX_LOCATION,
   OPERATOR_CHANNEL_KINDS,
   emptyChannels,
   parseChannelIds,
@@ -25,6 +26,8 @@ type OperatorRow = {
   displayName: string;
   email: string;
   description: string;
+  timezone: string;
+  location: string;
   role: OperatorRole;
   cranes: string[];
   channels: OperatorChannels;
@@ -42,12 +45,16 @@ function pingDoor() {
   window.dispatchEvent(new Event("gantree-door"));
 }
 
-function fillRow(row: OperatorRow): Pick<OperatorRow, "displayName" | "name" | "email" | "description" | "channels"> {
+function fillRow(
+  row: OperatorRow,
+): Pick<OperatorRow, "displayName" | "name" | "email" | "description" | "timezone" | "location" | "channels"> {
   return {
     displayName: row.displayName,
     name: row.name,
     email: row.email ?? "",
     description: row.description ?? "",
+    timezone: row.timezone ?? "",
+    location: row.location ?? "",
     channels: { ...emptyChannels(), ...row.channels },
   };
 }
@@ -65,6 +72,8 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
   const [displayName, setDisplayName] = useState("");
   const [loginName, setLoginName] = useState("");
   const [email, setEmail] = useState("");
+  const [location, setLocation] = useState("");
+  const [timezone, setTimezone] = useState("");
   const [description, setDescription] = useState("");
   const [channels, setChannels] = useState<OperatorChannels>(emptyChannels());
 
@@ -96,6 +105,8 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
         setDisplayName(filled.displayName);
         setLoginName(filled.name);
         setEmail(filled.email);
+        setLocation(filled.location);
+        setTimezone(filled.timezone);
         setDescription(filled.description);
         setChannels(filled.channels);
       })
@@ -167,8 +178,8 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
         <h1 className={`text-2xl font-semibold tracking-tight text-fg ${operatorId ? "mt-1" : ""}`}>Profile</h1>
         <p className="mt-1 text-sm text-dim">
           {mine || !operatorId
-            ? "Your face, login name, and passphrase. Roles live under settings"
-            : `${who}'s face, login name, email, chat ids, and passphrase. Roles live under settings`}
+            ? "Your face, who you are for the agent, and passphrase. Roles live under settings"
+            : `${who}'s face, who they are for the agent, and passphrase. Roles live under settings`}
           {subject
             ? (
                 <>
@@ -203,6 +214,8 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                       name: loginName,
                       displayName,
                       email,
+                      location,
+                      timezone,
                       description,
                       channels,
                     })
@@ -221,7 +234,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                   {" "}
                   <code className="text-dim">{subject.id}</code>
                   {" "}
-                  — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram. Email is a label, not a reset path.
+                  — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram. Email, timezone, location, and the description can be injected into a crane's PERSONA.md — they are not auto-copied. Email is not a reset path.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <OperatorAvatar id={subject.id} rev={subject.avatarRev} name={displayName || subject.displayName} size="xl" />
@@ -276,12 +289,31 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                     autoComplete="email"
                   />
                 </HintField>
+                <HintField label="location" {...HINTS.profileLocation}>
+                  <input
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    maxLength={MAX_LOCATION}
+                    placeholder="City, Region"
+                  />
+                </HintField>
+                <HintField label="timezone" {...HINTS.profileTimezone}>
+                  <input
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    placeholder="America/Los_Angeles"
+                    autoComplete="off"
+                  />
+                </HintField>
                 <HintField label="description" {...HINTS.profileBlurb}>
                   <textarea
-                    className="min-h-16 rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
+                    className="min-h-24 rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     maxLength={MAX_DESCRIPTION}
+                    placeholder="Gym, languages, how you like help — written for the agent"
                   />
                 </HintField>
                 <div className="flex flex-col gap-4 border-t border-line pt-3">

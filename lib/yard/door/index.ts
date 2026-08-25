@@ -46,6 +46,7 @@ export {
   MAX_DESCRIPTION,
   MAX_DISPLAY_NAME,
   MAX_EMAIL,
+  MAX_LOCATION,
   OPERATOR_CHANNEL_KINDS,
   emptyChannels,
   parseChannelIds,

@@ -20,6 +20,8 @@ type OperatorOption = {
   displayName: string;
   email?: string;
   description?: string;
+  timezone?: string;
+  location?: string;
   channels?: OperatorChannels;
 };
 
@@ -180,6 +182,8 @@ function asPersonaOperator(o: OperatorOption): PersonaOperator {
     displayName: (o.displayName || o.name).trim(),
     email: o.email ?? "",
     description: o.description ?? "",
+    timezone: o.timezone ?? "",
+    location: o.location ?? "",
     channels: { ...emptyChannels(), ...o.channels },
   };
 }

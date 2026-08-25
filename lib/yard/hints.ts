@@ -81,11 +81,19 @@ export const HINTS = {
     example: "ada",
   },
   email: {
-    hint: "A label on this operator — not a mailbox, not a reset path.",
+    hint: "Canonical Google / Workspace email. Inject user can copy this into PERSONA.md. Not a mailbox, not a reset path.",
     example: "ada@example.com",
   },
+  profileLocation: {
+    hint: "City, Region as the agent should know it. Inject user writes Location in PERSONA.md. A Telegram pin is still live location.",
+    example: "Seattle, Washington",
+  },
+  profileTimezone: {
+    hint: "Your IANA zone — Inject user writes Timezone in PERSONA.md so cron and tools don't default to Z. Not the yard chart timezone under Settings.",
+    example: "America/Los_Angeles",
+  },
   profileBlurb: {
-    hint: "Free text about you. Not sent to the crane. Max 280 characters.",
+    hint: "Who you are for the agent: gym, languages, how you like help, house notes. Inject user copies this into PERSONA.md as Notes. Write it for her, not as a door label. Max 280 characters.",
   },
   chatTelegram: {
     hint: "Your numeric Telegram user id, stored on you. Not wired into a crane allowlist until you add it there. Not @username.",
@@ -131,7 +139,7 @@ export const HINTS = {
     hint: "Who she should be and who you are. New cranes get the ai-gantry template. Replace from template only fills the box — Save writes the file.",
   },
   injectUser: {
-    hint: "Admin only. Copies selected operator profile fields into About you in the editor. Identity (the agent's name) stays put. Save still writes the file.",
+    hint: "Admin only. Copies selected profile fields into About you (name, email, timezone, location, notes, chat ids). Identity (the agent's name) stays put. Save still writes the file.",
   },
   self: {
     hint: "The agent's voice, rituals, and north-star aims. /new distills the thread here. Prune it — don't treat it as config.",

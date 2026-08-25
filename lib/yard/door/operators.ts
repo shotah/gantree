@@ -6,6 +6,8 @@ import {
   validateDescription,
   validateDisplayName,
   validateEmail,
+  validateLocation,
+  validateTimezone,
   type OperatorRole,
 } from "./channels";
 import { dummyHash, hashPassphrase, NAME_RE, validateCredentials, validatePassphrase, verifyPassphrase } from "./pass";
@@ -13,6 +15,8 @@ import { removeOperatorAvatar } from "./profile";
 import { createSession, tokenHash } from "./session";
 import { operatorRow, type DoorFail, type Operator, type OperatorDb, type OperatorProfilePatch, type OperatorRow } from "./shape";
 import { yardDb } from "./store";
+
+const OPERATOR_COLS = "id, name, display_name, email, description, timezone, location, role, crane_slug, channels, created_at";
 
 export function operatorCount(): number {
   const row = yardDb().prepare("SELECT COUNT(*) AS n FROM operator").get() as { n: number } | undefined;
@@ -69,7 +73,7 @@ export function setupOperator(name: string, passphrase: string): { ok: true; ope
 export function listOperators(): OperatorRow[] {
   const rows = yardDb()
     .prepare(
-      "SELECT id, name, display_name, email, description, role, crane_slug, channels, created_at FROM operator ORDER BY created_at, name",
+      `SELECT ${OPERATOR_COLS} FROM operator ORDER BY created_at, name`,
     )
     .all() as OperatorDb[];
   return rows.map(operatorRow);
@@ -78,7 +82,7 @@ export function listOperators(): OperatorRow[] {
 export function getOperator(id: string): OperatorRow | null {
   const row = yardDb()
     .prepare(
-      "SELECT id, name, display_name, email, description, role, crane_slug, channels, created_at FROM operator WHERE id = ?",
+      `SELECT ${OPERATOR_COLS} FROM operator WHERE id = ?`,
     )
     .get(id) as OperatorDb | undefined;
   return row ? operatorRow(row) : null;
@@ -252,7 +256,7 @@ export function updateOwnProfile(
   const db = yardDb();
   const row = db
     .prepare(
-      "SELECT id, name, display_name, email, description, role, crane_slug, channels, created_at FROM operator WHERE id = ?",
+      `SELECT ${OPERATOR_COLS} FROM operator WHERE id = ?`,
     )
     .get(operatorId) as OperatorDb | undefined;
   if (!row) {
@@ -304,6 +308,24 @@ export function updateOwnProfile(
     description = patch.description.trim();
   }
 
+  let timezone = row.timezone ?? "";
+  if (patch.timezone !== undefined) {
+    const err = validateTimezone(patch.timezone);
+    if (err) {
+      return { ok: false, error: err, status: 400 };
+    }
+    timezone = patch.timezone.trim();
+  }
+
+  let location = row.location ?? "";
+  if (patch.location !== undefined) {
+    const err = validateLocation(patch.location);
+    if (err) {
+      return { ok: false, error: err, status: 400 };
+    }
+    location = patch.location.trim();
+  }
+
   let channelsJson = row.channels ?? "{}";
   if (patch.channels !== undefined) {
     const parsed = parseChannelsPatch(patch.channels);
@@ -314,8 +336,8 @@ export function updateOwnProfile(
   }
 
   db.prepare(
-    "UPDATE operator SET name = ?, display_name = ?, email = ?, description = ?, channels = ? WHERE id = ?",
-  ).run(name, displayName, email, description, channelsJson, operatorId);
+    "UPDATE operator SET name = ?, display_name = ?, email = ?, description = ?, timezone = ?, location = ?, channels = ? WHERE id = ?",
+  ).run(name, displayName, email, description, timezone, location, channelsJson, operatorId);
   const next = getOperator(operatorId);
   if (!next) {
     return { ok: false, error: "operator write vanished", status: 500 };

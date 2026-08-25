@@ -6,6 +6,8 @@ import {
   validateDescription,
   validateDisplayName,
   validateEmail,
+  validateLocation,
+  validateTimezone,
 } from "@/lib/yard/door/channels";
 
 describe("operator channel ids", () => {
@@ -39,5 +41,29 @@ describe("operator channel ids", () => {
     expect(validateDescription("ok\nwrap")).toBeNull();
     expect(validateDescription("ok\tcol")).toBeNull();
     expect(validateDescription("bell\u0007")).toBe("description cannot contain control characters");
+    expect(validateLocation("Seattle, Washington")).toBeNull();
+    expect(validateLocation("x".repeat(81))).toMatch(/at most/);
   });
 });
+
+describe("operator timezone", () => {
+  it("accepts IANA names and they split a UTC instant, not a PT-only string check", () => {
+    expect(validateTimezone("")).toBeNull();
+    expect(validateTimezone("America/New_York")).toBeNull();
+    expect(validateTimezone("America/Los_Angeles")).toBeNull();
+    expect(validateTimezone("Los_Angeles")).toBe("timezone must be an IANA name (or blank)");
+    expect(validateTimezone("America/Not_A_City")).toBe("timezone must be an IANA name (or blank)");
+
+    // 17:00 UTC on a winter day: EST is UTC-5, PST is UTC-8.
+    const utc = Date.UTC(2026, 0, 15, 17, 0, 0);
+    expect(hourIn("America/New_York", utc)).toBe(12);
+    expect(hourIn("America/Los_Angeles", utc)).toBe(9);
+  });
+});
+
+function hourIn(timeZone: string, at: number): number {
+  const hour = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hourCycle: "h23" })
+    .formatToParts(new Date(at))
+    .find((p) => p.type === "hour")?.value;
+  return Number(hour);
+}

@@ -13,6 +13,7 @@ export const MAX_CHANNEL_IDS = 16;
 export const MAX_DISPLAY_NAME = 64;
 export const MAX_EMAIL = 254;
 export const MAX_DESCRIPTION = 280;
+export const MAX_LOCATION = 80;
 
 const TELEGRAM_ID = /^-?\d+$/;
 const DISCORD_ID = /^\d{5,20}$/;
@@ -81,6 +82,36 @@ export function validateDescription(raw: string): string | null {
   }
   if (hasForbiddenControls(raw, true)) {
     return "description cannot contain control characters";
+  }
+  return null;
+}
+
+export function validateTimezone(raw: string): string | null {
+  if (typeof raw !== "string") {
+    return "timezone required";
+  }
+  const s = raw.trim();
+  if (!s) {
+    return null;
+  }
+  try {
+    Intl.DateTimeFormat("en-US", { timeZone: s }).format(0);
+    return null;
+  } catch {
+    return "timezone must be an IANA name (or blank)";
+  }
+}
+
+export function validateLocation(raw: string): string | null {
+  if (typeof raw !== "string") {
+    return "location required";
+  }
+  const s = raw.trim();
+  if (s.length > MAX_LOCATION) {
+    return `location must be at most ${MAX_LOCATION} characters`;
+  }
+  if (hasForbiddenControls(s)) {
+    return "location cannot contain control characters";
   }
   return null;
 }

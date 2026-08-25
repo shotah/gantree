@@ -39,6 +39,9 @@ describe("OperatorProfile", () => {
     expect(screen.getByRole("button", { name: "Update passphrase" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Add operator" })).toBeNull();
     expect(screen.queryByText("Settings")).toBeNull();
+    expect(screen.getByLabelText("timezone")).toBeTruthy();
+    expect(screen.getByLabelText("location")).toBeTruthy();
+    expect(screen.getByText(/Inject user copies this into PERSONA.md as Notes/)).toBeTruthy();
     const you = screen.getByRole("button", { name: "Save profile" }).closest("form");
     const pass = screen.getByRole("button", { name: "Update passphrase" }).closest("form");
     expect(you?.parentElement).toBe(pass?.parentElement);

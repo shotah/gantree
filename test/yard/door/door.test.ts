@@ -725,6 +725,8 @@ describe("operator profile", () => {
       displayName: "Robert",
       email: "bob@example.com",
       description: "owns the mini",
+      timezone: "America/New_York",
+      location: "Brooklyn, New York",
       channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"] },
     });
     expect(updated.ok).toBe(true);
@@ -737,6 +739,8 @@ describe("operator profile", () => {
       displayName: "Robert",
       email: "bob@example.com",
       description: "owns the mini",
+      timezone: "America/New_York",
+      location: "Brooklyn, New York",
       channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"] },
     });
 
@@ -763,6 +767,7 @@ describe("operator profile", () => {
       status: 400,
     });
     expect(updateOwnProfile(first.operator.id, { email: "not-an-email" })).toMatchObject({ ok: false, status: 400 });
+    expect(updateOwnProfile(first.operator.id, { timezone: "Los_Angeles" })).toMatchObject({ ok: false, status: 400 });
 
     const jpeg = new Uint8Array(128);
     jpeg[0] = 0xff;
@@ -793,7 +798,7 @@ describe("operator profile", () => {
       .prepare("PRAGMA table_info(operator)")
       .all() as { name: string }[];
     expect(cols.map((c) => c.name)).toEqual(
-      expect.arrayContaining(["display_name", "email", "description", "role", "crane_slug", "channels"]),
+      expect.arrayContaining(["display_name", "email", "description", "timezone", "location", "role", "crane_slug", "channels"]),
     );
     expect(setupOperator("kit", pass).ok).toBe(true);
   });

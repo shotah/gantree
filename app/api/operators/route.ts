@@ -47,6 +47,8 @@ export const POST = withDoor(async (req: Request) => {
     displayName?: string;
     email?: string;
     description?: string;
+    timezone?: string;
+    location?: string;
     role?: OperatorRole;
     crane?: string | null;
     cranes?: unknown;
@@ -62,6 +64,8 @@ export const POST = withDoor(async (req: Request) => {
       displayName: body.displayName,
       email: body.email,
       description: body.description,
+      timezone: body.timezone,
+      location: body.location,
       channels: body.channels,
     });
     if (!result.ok) {
