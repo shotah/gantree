@@ -23,6 +23,9 @@ describe("persona seed", () => {
     expect(text).toContain("Prefer parallel tool calls");
     expect(text).toContain("Independent lookups");
     expect(text).toContain("pref/hours");
+    expect(text).toContain("pref/calendar");
+    expect(text).toContain("yes boss");
+    expect(text).toContain("empty calendar");
     expect(text).toContain("self_note");
     expect(text).toContain("memory_store");
     expect(text).toContain("mcp_enable");

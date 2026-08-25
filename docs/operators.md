@@ -69,6 +69,12 @@ Here you can change:
   you; not wired into crane allowlists yet
 - passphrase (current + new + confirm, plus the confirm-scary checkbox)
 
+Those fields are what **Inject user** on a crane copies into `PERSONA.md`
+**About you** (name, email, timezone, location, notes, chat ids). The file
+starts from the ai-gantry seed
+(`lib/yard/crane/templates/PERSONA.example.md`). Identity — the agent’s
+name — is not overwritten. Save on the crane still writes the file.
+
 The row is a **UUID**. Renaming bob does not mint a new person. You cannot
 promote yourself from this page — **role lives under Settings**.
 

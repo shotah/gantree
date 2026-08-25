@@ -55,6 +55,7 @@ export function defaultFieldSelection(op: PersonaOperator): PersonaOperatorField
 /**
  * Patch **About you** only. Identity (the agent's name) is left alone.
  * Missing About you: append a section. Empty selected values: no-op.
+ * Labels must match `templates/PERSONA.example.md` (lockstep with ai-gantry).
  */
 export function injectOperatorIntoPersona(
   markdown: string,

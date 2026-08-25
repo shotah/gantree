@@ -106,6 +106,13 @@ Gantree edits those files (and `.env`, and `mcp.toml`). It does not merge
 memories across cranes. Isolation is the feature: one human, one bot, one
 directory, one `data/`. Delete a tryout = delete that directory.
 
+The seed on disk is `lib/yard/crane/templates/PERSONA.example.md` — keep it
+identical to ai-gantry `examples/persona/PERSONA.example.md`. **Replace from
+template** loads that file (agent **Identity** name from the slug). **Inject
+user** (admin) copies selected profile fields into **About you** only; Save
+still writes `PERSONA.md`. Recreate / rebuild never replace an existing
+persona file.
+
 ---
 
 ## Pull, don’t punch

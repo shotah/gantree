@@ -3,7 +3,12 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readText, writeText } from "../host/files";
 
-/** Canonical seed from ai-gantry `examples/persona`. Keep the files in lockstep; strip operator notes on handoff. */
+/** Canonical seed from ai-gantry `examples/persona/PERSONA.example.md`.
+ * Keep `templates/PERSONA.example.md` in lockstep with that file.
+ * Dashboard: new crane + Replace from template → personaMarkdown();
+ * Inject user → injectPersona.ts patches About you from the operator profile.
+ * Strip operator notes on handoff (`forAgent`). Do not rename About you labels
+ * without updating injectPersona.ts. */
 const here = dirname(fileURLToPath(import.meta.url));
 const PERSONA_EXAMPLE = readFileSync(join(here, "templates", "PERSONA.example.md"), "utf8");
 const SELF_EXAMPLE = readFileSync(join(here, "templates", "SELF.example.md"), "utf8");
