@@ -212,29 +212,25 @@ const ENV_HINTS: Record<string, HintCopy> = {
     hint: "Slack app-level token (xapp-) for socket mode. From Basic Information → App-Level Tokens.",
     example: "xapp-…",
   },
-  GEMINI_API_KEY: {
-    hint: "Google AI Studio key for google-search (Gemini grounding). Not LLM_API_KEY, not the Workspace OAuth secret.",
+  GEMINI_SEARCH_API_KEY: {
+    hint: "Google AI Studio key for google-search. Wins over the crane LLM_API_KEY. Set this when the mouth is a local model.",
     example: "AIzaSy…",
   },
-  GOOGLE_API_KEY: {
-    hint: "Alternate Google AI Studio key name. google-search accepts this instead of GEMINI_API_KEY.",
-    example: "AIzaSy…",
+  GEMINI_SEARCH_MODEL: {
+    hint: "Gemini model for google-search grounding. Wins over LLM_MODEL. Blank uses the crane mouth, then gemini-3.6-flash.",
+    example: "gemini-3.6-flash",
   },
   USER_GOOGLE_EMAIL: {
     hint: "Default Google account for workspace tools (Gmail, Calendar, Drive). Not required for google-search. Not a password, not the AI Studio key.",
     example: "you@gmail.com",
   },
   GOOGLE_PSE_API_KEY: {
-    hint: "Programmable Search Engine key for google__search_query. Not GEMINI_API_KEY. General web search uses google-search instead.",
+    hint: "Programmable Search Engine key for google__search_query. Not GEMINI_SEARCH_API_KEY. General web search uses google-search instead.",
     example: "AIzaSy…",
   },
   GOOGLE_PSE_ENGINE_ID: {
     hint: "Programmable Search Engine cx id that pairs with GOOGLE_PSE_API_KEY.",
     example: "012345678901234567890:abcdefghijk",
-  },
-  GEMINI_MODEL: {
-    hint: "Optional Gemini model id for google-search. Blank uses the MCP default.",
-    example: "gemini-3.1-pro-preview",
   },
   GOOGLE_GENAI_USE_VERTEXAI: {
     hint: "Set true to send google-search through Vertex AI instead of AI Studio. Then GOOGLE_CLOUD_PROJECT is required.",

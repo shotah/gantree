@@ -13,15 +13,15 @@ export type HostShape = Pick<CatalogEntry, "envKeys" | "blurb">
 export const HOST_SHAPE: Record<string, HostShape> = {
   math: { envKeys: [], blurb: "No secrets. Slim default." },
   "google-search": {
-    envKeys: ["GEMINI_API_KEY"],
+    envKeys: [],
     optionalEnvKeys: [
-      "GOOGLE_API_KEY",
-      "GEMINI_MODEL",
+      "GEMINI_SEARCH_API_KEY",
+      "GEMINI_SEARCH_MODEL",
       "GOOGLE_GENAI_USE_VERTEXAI",
       "GOOGLE_CLOUD_PROJECT",
       "GOOGLE_CLOUD_LOCATION",
     ],
-    blurb: "Gemini grounding search. AI Studio: GEMINI_API_KEY or GOOGLE_API_KEY. Vertex: GOOGLE_GENAI_USE_VERTEXAI + GOOGLE_CLOUD_PROJECT. Optional: GEMINI_MODEL, GOOGLE_CLOUD_LOCATION.",
+    blurb: "Gemini grounding search. Optional GEMINI_SEARCH_API_KEY + GEMINI_SEARCH_MODEL win (local mouth). Else crane LLM_API_KEY / LLM_MODEL, else gemini-3.6-flash. Vertex: GOOGLE_GENAI_USE_VERTEXAI + GOOGLE_CLOUD_PROJECT.",
   },
   google: {
     envKeys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],

@@ -367,18 +367,24 @@ describe("AgentDashboard secrets", () => {
     expect(screen.getByRole("button", { name: /3 need a key/ })).toBeTruthy();
   });
 
-  it("lists USER_GOOGLE_EMAIL for granted google-search so .env can set it", async () => {
+  it("lists optional GEMINI_SEARCH_* for google-search, not leftover GEMINI_*", async () => {
     mockCrane({
       persona: "# you\n",
       self: "# me\n",
       writable: true,
-      servers: [{ name: "google-search", command: "mcp-gemini-google-search", env_keys: ["GEMINI_API_KEY"] }],
+      servers: [{ name: "google-search", command: "mcp-gemini-google-search" }],
       catalog: [
         {
           name: "google-search",
           command: "mcp-gemini-google-search",
-          envKeys: ["GEMINI_API_KEY", "USER_GOOGLE_EMAIL"],
-          optionalEnvKeys: ["GOOGLE_API_KEY"],
+          envKeys: [],
+          optionalEnvKeys: [
+            "GEMINI_SEARCH_API_KEY",
+            "GEMINI_SEARCH_MODEL",
+            "GOOGLE_GENAI_USE_VERTEXAI",
+            "GOOGLE_CLOUD_PROJECT",
+            "GOOGLE_CLOUD_LOCATION",
+          ],
           blurb: "Search.",
         },
       ],
@@ -386,10 +392,13 @@ describe("AgentDashboard secrets", () => {
     render(<AgentDashboard slug="noodles" />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
-    await waitFor(() => expect(screen.getByLabelText("USER_GOOGLE_EMAIL")).toBeTruthy());
-    expect(screen.getByLabelText("GEMINI_API_KEY")).toBeTruthy();
-    expect(screen.getByLabelText("GOOGLE_API_KEY")).toBeTruthy();
-    expect((screen.getByLabelText("USER_GOOGLE_EMAIL") as HTMLInputElement).placeholder).toBe("");
+    await waitFor(() => expect(screen.getByLabelText("LLM_API_KEY")).toBeTruthy());
+    expect(screen.getByLabelText("GEMINI_SEARCH_API_KEY")).toBeTruthy();
+    expect(screen.getByLabelText("GEMINI_SEARCH_MODEL")).toBeTruthy();
+    expect(screen.queryByLabelText("GEMINI_API_KEY")).toBeNull();
+    expect(screen.queryByLabelText("GOOGLE_API_KEY")).toBeNull();
+    expect(screen.queryByLabelText("GEMINI_MODEL")).toBeNull();
+    expect(screen.getByLabelText("GOOGLE_CLOUD_PROJECT")).toBeTruthy();
   });
 
   it("lists optional catalog keys without nagging for them", async () => {

@@ -3,7 +3,7 @@ import { writeText } from "./files";
 
 const SECRET_KEYS = new Set([
   "LLM_API_KEY",
-  "GEMINI_API_KEY",
+  "GEMINI_SEARCH_API_KEY",
   "TELEGRAM_BOT_TOKEN",
   "DISCORD_BOT_TOKEN",
   "SLACK_BOT_TOKEN",

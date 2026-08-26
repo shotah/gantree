@@ -27,9 +27,9 @@ describe("envHint", () => {
   });
 
   it("names google-search Vertex and model params", () => {
-    expect(envHint("GEMINI_API_KEY").hint).toMatch(/google-search/);
-    expect(envHint("GOOGLE_API_KEY").hint).toMatch(/GEMINI_API_KEY/);
-    expect(envHint("GEMINI_MODEL").hint).toMatch(/model/);
+    expect(envHint("GEMINI_SEARCH_API_KEY").hint).toMatch(/LLM_API_KEY/);
+    expect(envHint("GEMINI_SEARCH_MODEL").hint).toMatch(/LLM_MODEL/);
+    expect(envHint("GEMINI_SEARCH_MODEL").example).toBe("gemini-3.6-flash");
     expect(envHint("GOOGLE_GENAI_USE_VERTEXAI").hint).toMatch(/Vertex/);
     expect(envHint("GOOGLE_CLOUD_PROJECT").hint).toMatch(/GOOGLE_GENAI_USE_VERTEXAI/);
     expect(envHint("GOOGLE_CLOUD_LOCATION").hint).toMatch(/global/i);

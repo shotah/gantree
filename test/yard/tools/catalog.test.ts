@@ -82,11 +82,11 @@ describe("loadCatalog", () => {
     expect(byName.garmin?.envKeys).toEqual(["GARMIN_EMAIL", "GARMIN_PASSWORD"]);
     expect(byName.flights?.envKeys).toEqual(["SERPAPI_API_KEY"]);
     expect(byName.math?.envKeys).toEqual([]);
-    expect(byName["google-search"]?.envKeys).toEqual(["GEMINI_API_KEY"]);
+    expect(byName["google-search"]?.envKeys).toEqual([]);
     expect(byName["google-search"]?.envKeys).not.toContain("USER_GOOGLE_EMAIL");
     expect(byName["google-search"]?.optionalEnvKeys).toEqual([
-      "GOOGLE_API_KEY",
-      "GEMINI_MODEL",
+      "GEMINI_SEARCH_API_KEY",
+      "GEMINI_SEARCH_MODEL",
       "GOOGLE_GENAI_USE_VERTEXAI",
       "GOOGLE_CLOUD_PROJECT",
       "GOOGLE_CLOUD_LOCATION",
@@ -116,7 +116,7 @@ describe("secretKeysForGrant", () => {
     const search = catalog.filter((c) => c.name === "google-search");
     const google = catalog.filter((c) => c.name === "google");
     expect(secretKeysForGrant(["google-search"], search)).not.toContain("USER_GOOGLE_EMAIL");
-    expect(envKeysForServer({ name: "google-search" }, search)).toEqual(["GEMINI_API_KEY"]);
+    expect(envKeysForServer({ name: "google-search" }, search)).toEqual([]);
     expect(secretKeysForGrant(["google"], google)).toEqual(expect.arrayContaining(["USER_GOOGLE_EMAIL"]));
     expect(optionalKeysForGrant(["google"], google)).toEqual(
       expect.arrayContaining(["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]),
