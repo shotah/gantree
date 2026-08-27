@@ -20,6 +20,7 @@
     "docker:build": "docker build -t gantree:local .",
     "release": "node scripts/release.mjs",
     "release:dry": "node scripts/release.mjs --dry-run",
+    "pages": "node scripts/pages.mjs",
     "seed": "vite-node --config vitest.config.ts scripts/seed.ts"
   },
   "dependencies": {
