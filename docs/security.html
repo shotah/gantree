@@ -297,6 +297,10 @@ a real session <strong>only when <code>HOST</code> is loopback</strong>. Compose
 paste it into the container env. Do not set these in <code>compose.yml</code>.</p>
 <p>The passphrase still has to pass the same rules (<code>bob-dev-ok</code> does).
 Unset the flag to photograph <code>/login</code>.</p>
+<p><code>GANTREE_SHOT=1</code> is the same bind gate. It paints <code>gantree.toml</code> cranes as
+running without a Docker daemon so the board, host card, and charts can be
+photographed (<code>npm run seed</code>). Never set it in compose. Unset it to talk to
+a real socket.</p>
 <hr>
 <h2 id="disk">Disk</h2>
 <table>

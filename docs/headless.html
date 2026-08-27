@@ -57,9 +57,15 @@ Login, profile, settings: <a href="operators.html">operators.md</a>.</p>
 <li>Copy a laptop <code>data/</code> over the host. Live OAuth is on the host.</li>
 <li><strong>Build a crane</strong> for a slug that already has a <code>data/</code> — that writes a <strong>new</strong> empty dir.</li>
 <li>Run Gantree as <strong>root</strong> (<code>sudo npm start</code>) — recreate would then skip a host uid.</li>
-<li>Set <code>GANTREE_DEV</code> in compose. <code>HOST=0.0.0.0</code> ignores it; do not get in
-the habit. Loopback auto-login is for <code>npm run dev</code> screenshots only
+<li>Set <code>GANTREE_DEV</code> or <code>GANTREE_SHOT</code> in compose. <code>HOST=0.0.0.0</code> ignores
+both; do not get in the habit. Loopback auto-login and the screenshot
+Docker paint are for <code>npm run dev</code> only
 (<a href="security.html#dev-auto-login">security.md</a>).</li>
+<li>Forget the rootless socket on Arch / SteamOS. System
+<code>/var/run/docker.sock</code> is often missing; try
+<code>DOCKER_SOCKET=$XDG_RUNTIME_DIR/docker.sock</code> (or the podman sock). For
+photographs with no daemon: <code>npm run seed</code> + <code>GANTREE_SHOT=1</code>
+(<a href="console.html#screenshot-yard-no-daemon">console.md</a>).</li>
 <li>Point <code>gantree.toml</code> at absolute host dirs and run compose without the
 same-path volume — the board still sees Docker; persona and <code>mcp.toml</code>
 look empty.</li>

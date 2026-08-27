@@ -70,8 +70,10 @@ not blank, not your name, not a common password. Failed logins back off
 <p>Local screenshots / <code>npm run dev</code>: <code>GANTREE_DEV=1</code> plus operator +
 passphrase in <code>.env</code> (<a href="https://github.com/shotah/gantree/blob/main/.env.example">.env.example</a>). Loopback only —
 compose <code>HOST=0.0.0.0</code> ignores the flag. Unset it to photograph <code>/login</code>.
-On a wide screen, the phone mark in the header is a 390px preview
-(<code>?phone=1</code>) — no DevTools. Recapture: <code>node scripts/shot.mjs</code>.</p>
+Empty board / no host graphs: <code>npm run seed</code> then <code>GANTREE_SHOT=1</code>
+(<a href="console.html#screenshot-yard-no-daemon">console.md</a>). On a wide screen,
+the phone mark in the header is a 390px preview (<code>?phone=1</code>) — no
+DevTools. Recapture: <code>node scripts/shot.mjs</code>.</p>
 <p align="center">
   <img src="../assets/docs/phone-preview.png" alt="Phone preview — 390px frame in a desktop tab" width="560">
 </p><hr>

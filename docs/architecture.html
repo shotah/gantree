@@ -188,12 +188,14 @@ image <code>65532</code>), <code>network_mode</code>, and extra binds. Dropping 
 ├── assets/docs/            console screenshots (shot.mjs) + pitch stills
 ├── scripts/shot.mjs        headless Chrome recapture
 ├── scripts/pages.mjs       github.io tree from site/ + docs/*.md
+├── scripts/seed.ts         screenshot operators, cranes, observe series
 ├── lib/yard/               host I/O (not RSC)
 │   ├── door/               operators, session, audit events
 │   ├── host/               dockerode, identity, stats, files, .env, avatar, telegram, logs
 │   ├── crane/              inventory, build, run, doctor
 │   ├── tools/              catalog, grant, mcp, auth
-│   └── observe/            stats samples, sqlite memory, spend rollup
+│   ├── observe/            stats samples, sqlite memory, spend rollup
+│   └── shot/               screenshot yard (`npm run seed` + GANTREE_SHOT)
 ├── test/                   all tests — mirrors source, never next to it
 │   ├── yard/               mirrors lib/yard
 │   ├── app/                mirrors app/ (components by screen, lib helpers)
