@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Custom MCP servers — gantree</title>
+  <meta name="description" content="Custom MCP servers">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/custom-mcp.html">
+  <meta name="theme-color" content="#09090b">
+  <meta property="og:title" content="Custom MCP servers — gantree">
+  <meta property="og:description" content="Custom MCP servers">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/custom-mcp.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html">Install</a>
+        <a href="../docs/console.html">Console</a>
+        <a href="../docs/operators.html">Operators</a>
+        <a href="../docs/headless.html">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html">Security</a>
+        <a href="../docs/custom-mcp.html" aria-current="page">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="custom-mcp-servers">Custom MCP servers</h1>
+<p>The Tools grid is the <strong>yard catalog</strong> (search, math, maps, …). A custom
+server is still a first-class grant: it is a <code>[[server]]</code> in that crane’s
+<code>mcp.toml</code>. There is no <code>/mcp/add?url=</code> route.</p>
+<p>Chat stays Telegram. Gantree only writes files and runs <code>gantry tools-fetch</code>.</p>
+<hr>
+<h2 id="a-build-one-clone-an-existing-mcp">A. Build one — clone an existing MCP</h2>
+<p>Do not start from a blank Go module. Fork or copy a sibling that already
+speaks stdio, ships a static binary, and prints <strong>shape</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>You need</th>
+<th>Clone this</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>No secrets</td>
+<td><a href="https://github.com/shotah/mcp-go-math">mcp-go-math</a></td>
+<td>Smallest: evaluate + convert, empty <code>env_keys</code></td>
+</tr>
+<tr>
+<td>One API key</td>
+<td><a href="https://github.com/shotah/google-maps-mcp">google-maps-mcp</a></td>
+<td><code>host-manifest</code> + <code>GOOGLE_MAPS_API_KEY</code></td>
+</tr>
+<tr>
+<td>OAuth hop</td>
+<td><a href="https://github.com/shotah/go-strava-mcp">go-strava-mcp</a></td>
+<td><code>auth_args</code> + PKCE paste (<code>url</code> / <code>exchange</code>)</td>
+</tr>
+</tbody></table>
+<p>Keep:</p>
+<ul>
+<li><code>CGO_ENABLED=0</code> static binary, stdio MCP only</li>
+<li>Root <code>package main</code> so <code>go run . host-manifest</code> works</li>
+<li>Tool names <code>{service}_{verb}_{object}</code> with <strong>no</strong> server id in the tool
+(<a href="https://github.com/shotah/ai-gantry/blob/main/docs/mcp-naming.md">ai-gantry naming</a>)</li>
+<li>GoReleaser archive: <code>{command}_{version}_{os}_{arch}.tar.gz</code></li>
+</ul>
+<p>Rename <code>name</code> / <code>command</code> / tool prefixes. Do not reuse <code>maps</code> or <code>math</code>.</p>
+<h3 id="host-manifest-required"><code>host-manifest</code> (required)</h3>
+<p>The binary must exit 0 and print one JSON object on stdout:</p>
+<pre><code class="language-bash">CGO_ENABLED=0 go run . host-manifest
+</code></pre>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;rentals&quot;,
+  &quot;command&quot;: &quot;rentals-search-mcp&quot;,
+  &quot;env_keys&quot;: [&quot;RENTCAST_API_KEY&quot;],
+  &quot;blurb&quot;: &quot;US listings. One RentCast key.&quot;
+}
+</code></pre>
+<p>Optional fields: <code>args</code>, <code>auth_args</code>, <code>auth_flow</code> (<code>pkce</code> | <code>device</code> | <code>mfa</code>),
+<code>home_only</code>, <code>download_url</code>, <code>download_tag</code>. First arg <code>host-manifest</code> must
+not start the stdio server.</p>
+<p>If the tool needs a browser hop, implement the same auth argv as
+<a href="https://github.com/shotah/ai-gantry/blob/main/docs/auth.md">ai-gantry auth.md</a>
+and set <code>auth_args</code> (e.g. <code>[&quot;auth&quot;]</code>). Static keys stay in <code>.env</code> — never
+<code>/auth rentals &lt;apikey&gt;</code>.</p>
+<p>Publish a GitHub release so <code>tools-fetch</code> can GET the tarball.</p>
+<hr>
+<h2 id="b-define-it-for-gantree">B. Define it for gantree</h2>
+<p>Hand-edit <strong>that crane’s</strong> <code>gantries/&lt;slug&gt;/mcp.toml</code>. Listed = granted.</p>
+<pre><code class="language-toml">[[server]]
+name = &quot;rentals&quot;
+command = &quot;rentals-search-mcp&quot;
+env_keys = [&quot;RENTCAST_API_KEY&quot;]
+download_tag = &quot;latest&quot;
+download_url = &quot;https://github.com/you/rentals-search-mcp/releases/download/{tag}/rentals-search-mcp_{version}_{os}_{arch}.tar.gz&quot;
+# auth_args = [&quot;auth&quot;]   # only if the binary has an OAuth/login hop
+</code></pre>
+<p>Placeholders in <code>download_url</code>: <code>{tag}</code> <code>{version}</code> <code>{os}</code> <code>{arch}</code>.
+<code>download_tag = &quot;latest&quot;</code> only works when the URL is
+<code>https://github.com/&lt;owner&gt;/&lt;repo&gt;/…</code>.</p>
+<p>Then on the crane dashboard:</p>
+<ol>
+<li>Put required keys in the crane <code>.env</code> (Secrets lists catalog
+<code>env_keys</code>, plus any <code>env_keys</code> you wrote on that <code>[[server]]</code>)</li>
+<li><strong>recreate</strong> — fetches bins into <code>/data/bin</code>, prunes leftovers not in
+<code>mcp.toml</code>, reloads MCP (<code>PATH</code> includes <code>/data/bin</code>). The tools-fetch
+button is the same install, without reload.</li>
+</ol>
+<p>Doctor / skip hints follow missing env and <code>auth_args</code>.</p>
+<p>On a compose console the MCP binary is not on PATH, so gantree uses the
+last-known <code>host-manifest</code> shape until tools-fetch lands a bin. Live
+<code>&lt;binary&gt; host-manifest</code> still wins when it can run.</p>
+<h3 id="yard-catalog-optional">Yard catalog (optional)</h3>
+<p>The toggle grid reads <code>lib/yard/tools/packages.ts</code>. Add a row there if this yard
+should offer the server to every crane (name, <code>command</code>, GitHub
+<code>downloadUrl</code>, clone <code>repo</code> for <code>go run . host-manifest</code>). Shape still
+comes from the binary; last-known JSON is only a fallback when the console
+cannot run it. Do not invent keys in <code>packages.ts</code>.</p>
+<p>Until that row exists, User B’s MCP will not appear as a checkbox — only
+as a <code>[[server]]</code> you wrote. Set <code>env_keys</code> on that server so Secrets
+grows the fields.</p>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>

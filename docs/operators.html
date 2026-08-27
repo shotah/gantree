@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Operators — login, profile, settings — gantree</title>
+  <meta name="description" content="Operators — login, profile, settings">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/operators.html">
+  <meta name="theme-color" content="#09090b">
+  <meta property="og:title" content="Operators — login, profile, settings — gantree">
+  <meta property="og:description" content="Operators — login, profile, settings">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/operators.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html">Install</a>
+        <a href="../docs/console.html">Console</a>
+        <a href="../docs/operators.html" aria-current="page">Operators</a>
+        <a href="../docs/headless.html">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html">Security</a>
+        <a href="../docs/custom-mcp.html">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="operators-login-profile-settings">Operators — login, profile, settings</h1>
+<p>The board walk is <a href="console.html">console.md</a>. This page is the <strong>people</strong>
+on the yard: first boot, your face, and who else can touch a crane.
+What the door actually checks: <a href="security.html">security.md</a>.</p>
+<p>Chat stays Telegram. Nothing here sits in a chat turn.</p>
+<hr>
+<h2 id="first-boot">First boot</h2>
+<p>Need <strong>Node 22</strong>. <code>npm start</code> (or compose) on the Docker host.</p>
+<ol>
+<li>Open <code>http://127.0.0.1:3000</code> — empty yard is <strong><code>/setup</code></strong> (one operator,
+always <strong>admin</strong>).</li>
+<li>After that, <strong><code>/login</code></strong>. Name + passphrase.</li>
+<li>Sessions live in yard <code>gantree.db</code> — not a crane’s <code>data/gantry.db</code>.
+Compose: <code>var/gantree.db</code>.</li>
+</ol>
+<p>There is no setup token. On an open bind, <strong>whoever POSTs <code>/setup</code> first
+owns the box.</strong> Create that person before you leave LAN <code>:80</code> sitting
+there. A second setup is <code>409 already set up</code>.</p>
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First-boot setup: create the operator who owns the box" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in with name and passphrase" width="280">
+  &nbsp;
+  <img src="../assets/docs/setup-phone.png" alt="First operator on a phone" width="220">
+  &nbsp;
+  <img src="../assets/docs/login-phone.png" alt="Log in on a phone" width="220">
+</p><p>Name is <code>2–32</code> letters, digits, <code>.</code> <code>_</code> <code>-</code>. Passphrase ≥10 characters,
+not blank, not your name, not a common password. Failed logins back off
+(8 per name / 15 minutes). Full rules:
+<a href="security.html#passphrases">security.md</a>.</p>
+<p>Local screenshots / <code>npm run dev</code>: <code>GANTREE_DEV=1</code> plus operator +
+passphrase in <code>.env</code> (<a href="https://github.com/shotah/gantree/blob/main/.env.example">.env.example</a>). Loopback only —
+compose <code>HOST=0.0.0.0</code> ignores the flag. Unset it to photograph <code>/login</code>.
+On a wide screen, the phone mark in the header is a 390px preview
+(<code>?phone=1</code>) — no DevTools. Recapture: <code>node scripts/shot.mjs</code>.</p>
+<p align="center">
+  <img src="../assets/docs/phone-preview.png" alt="Phone preview — 390px frame in a desktop tab" width="560">
+</p><hr>
+<h2 id="profile">Profile</h2>
+<p>Click <strong>your name</strong> (or photo) in the header. That is <code>/profile</code>. It is
+not the cog, and it is not the operator list.</p>
+<p align="center">
+  <img src="../assets/docs/profile.png" alt="Profile — your face, login name, and passphrase" width="480">
+</p><p>Here you can change:</p>
+<ul>
+<li>photo (JPEG / PNG / WebP / GIF; PNG and WebP convert on upload)</li>
+<li>display name (what the header shows)</li>
+<li>login name (what <code>/login</code> asks for)</li>
+<li>email (a <strong>label</strong> — not a reset path, not a mailbox)</li>
+<li>description</li>
+<li>chat ids (Telegram numeric, Slack <code>U…</code>, Discord snowflake) — stored on
+you; not wired into crane allowlists yet</li>
+<li>passphrase (current + new + confirm, plus the confirm-scary checkbox)</li>
+</ul>
+<p>Those fields are what <strong>Inject user</strong> on a crane copies into <code>PERSONA.md</code>
+<strong>About you</strong> (name, email, timezone, location, notes, chat ids). The file
+starts from the ai-gantry seed
+(<code>lib/yard/crane/templates/PERSONA.example.md</code>). Identity — the agent’s
+name — is not overwritten. Save on the crane still writes the file.</p>
+<p>The row is a <strong>UUID</strong>. Renaming bob does not mint a new person. You cannot
+promote yourself from this page — <strong>role lives under Settings</strong>.</p>
+<hr>
+<h2 id="settings">Settings</h2>
+<p>The <strong>cog</strong> in the header is <code>/settings</code>. (<code>/operators</code> redirects here.)
+Everyone can read the three roles. Only <strong>admin</strong> can add, change access,
+or remove.</p>
+<p align="center">
+  <img src="../assets/docs/settings.png" alt="Settings — roles, operators, add. The cog in the header" width="560">
+</p><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Access</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>admin</strong></td>
+<td>Every crane. Operators. Build.</td>
+</tr>
+<tr>
+<td><strong>user</strong></td>
+<td>Assigned cranes (card, details, grant, recreate, env). Not operators, not other cranes.</td>
+</tr>
+<tr>
+<td><strong>readonly</strong></td>
+<td>Assigned cranes — look (card, logs, doctor). Not touch. Not other cranes.</td>
+</tr>
+</tbody></table>
+<p>Setup always creates an admin. <strong>user</strong> and <strong>readonly</strong> need at least
+one crane — without any they see an empty board. Tick more than one
+when a person covers two bots. Only <strong>admin</strong> sees every crane.
+Admin sees logins and logouts on the yard events strip; other roles
+do not.
+Do not share an admin login the way you would share a read-only
+dashboard. A partner who only pastes keys is <strong>user</strong> on their crane(s).
+Compose: they hit LAN <code>:80</code> or the hostname file you chose, not a published
+gantree <code>:3000</code>.</p>
+<p>Add / remove / change access are <strong>confirm-scary</strong> (checkbox), like a
+token push. You cannot delete the last operator, or the last admin, or
+demote the last admin.</p>
+<hr>
+<h2 id="stuck">Stuck?</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Forgot the passphrase</td>
+<td>Stop, delete yard sqlite (<code>gantree.db</code>, compose: <code>var/gantree.db</code>), start, run <code>/setup</code> again. No email reset.</td>
+</tr>
+<tr>
+<td><code>too many attempts, try later</code></td>
+<td>Wait out the 15-minute window. 8 fails on one name, or 40 across all names, lock that window.</td>
+</tr>
+<tr>
+<td><code>opening the door…</code> and it never opens</td>
+<td>Cookie missing or dead. Hard-refresh <code>/login</code>. If the process bounced mid-login, sign in again.</td>
+</tr>
+<tr>
+<td>Cog does nothing useful / no add form</td>
+<td>You are <code>user</code> or <code>readonly</code>. An admin assigns roles. Photo and passphrase are still on Profile.</td>
+</tr>
+<tr>
+<td>Logged in as <strong>user</strong> or <strong>readonly</strong>, board is empty</td>
+<td>No crane on that row. Admin: Settings → <strong>role</strong> → tick the crane(s).</td>
+</tr>
+<tr>
+<td>Cannot remove kit / cannot demote bob</td>
+<td>Last operator, or last admin. Add another admin first.</td>
+</tr>
+<tr>
+<td><code>/login</code> never appears in <code>npm run dev</code></td>
+<td><code>GANTREE_DEV</code> is on and loopback. Unset it to photograph or test the door.</td>
+</tr>
+<tr>
+<td>Name exists, passphrase rejected at auto-login</td>
+<td><code>GANTREE_DEV_PASSPHRASE</code> must match the hash already in sqlite — or pick a new operator name.</td>
+</tr>
+</tbody></table>
+<p>Bind (loopback vs LAN vs tunnel): <a href="install.html">install.md</a> ·
+<a href="headless.html">headless.md</a>. Hardening: <a href="security.html">security.md</a>.</p>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security — the door — gantree</title>
+  <meta name="description" content="Security — the door">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/security.html">
+  <meta name="theme-color" content="#09090b">
+  <meta property="og:title" content="Security — the door — gantree">
+  <meta property="og:description" content="Security — the door">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/security.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html">Install</a>
+        <a href="../docs/console.html">Console</a>
+        <a href="../docs/operators.html">Operators</a>
+        <a href="../docs/headless.html">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html" aria-current="page">Security</a>
+        <a href="../docs/custom-mcp.html">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="security-the-door">Security — the door</h1>
+<p>The product is a yard you can put on a <strong>LAN</strong> without trusting everyone
+on it. This page is what the door actually does — and what it does not.</p>
+<p>Login is <strong>defense in depth</strong>, not a reason to open a WAN port. Cloud VM
+still pins loopback + Tailscale / tunnel. Home compose may publish <code>:80</code>
+on the LAN <em>behind</em> this door. Agents still open <strong>zero</strong> inbound ports.</p>
+<p>Walk: <a href="console.html">console.md</a>. Login, profile, settings:
+<a href="operators.html">operators.md</a>. Bind stories: <a href="install.html">install.md</a>.
+Stack: <a href="architecture.html">architecture.md</a>. Code: <code>lib/yard/door/</code>.</p>
+<hr>
+<h2 id="what-this-is-for">What this is for</h2>
+<p>Stop a <strong>stupid slip</strong> that lets a stranger walk in: empty passphrase,
+<code>null</code> coerced to <code>&quot;null&quot;</code>, <code>password123</code>, unlimited guesses, a session
+that outlives a password change.</p>
+<p>A volumetric flood can still knock the process over. That is not the bar.
+The bar is: they do not get logs, <code>.env</code>, or recreate without a real
+passphrase.</p>
+<p>Whoever <em>can</em> log in is not automatically an owner. Three roles, one field
+each — not a permission matrix:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Access</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>admin</strong></td>
+<td>Every crane. Operators. Build.</td>
+</tr>
+<tr>
+<td><strong>user</strong></td>
+<td>Assigned cranes (card, details, grant, recreate, env). Not operators, not other cranes.</td>
+</tr>
+<tr>
+<td><strong>readonly</strong></td>
+<td>Assigned cranes — look (card, logs, doctor). Not touch. Not other cranes.</td>
+</tr>
+</tbody></table>
+<p>Setup always creates an <strong>admin</strong>. Assign the rest from <strong>Settings</strong> (the
+cog). Profile (name, photo, passphrase) is a different page — click your
+name. A user or readonly without a crane is a misconfig — the add form
+requires at least one. Tick several when one person covers more than one
+bot. Only admin sees every crane. Do not share an admin login
+the way you would share a read-only dashboard.</p>
+<hr>
+<h2 id="bind">Bind</h2>
+<table>
+<thead>
+<tr>
+<th>How you run it</th>
+<th>Who can reach the UI</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>npm start</code> (default)</td>
+<td><code>127.0.0.1:3000</code> only</td>
+</tr>
+<tr>
+<td><code>HOST=0.0.0.0 npm start</code></td>
+<td>that host’s interfaces, <code>:3000</code></td>
+</tr>
+<tr>
+<td>compose (default)</td>
+<td>host <code>:80</code> on <code>0.0.0.0</code> → container <code>:3000</code></td>
+</tr>
+<tr>
+<td>compose + <code>GANTREE_LISTEN=127.0.0.1</code></td>
+<td>host loopback <code>:80</code> only</td>
+</tr>
+<tr>
+<td><code>compose.cloudflare.yml</code></td>
+<td>LAN <code>:80</code> + Cloudflare Tunnel (no WAN ports)</td>
+</tr>
+<tr>
+<td><code>compose.nginx.yml</code></td>
+<td>host <code>:80</code>/<code>:443</code> (nginx-proxy) → gantree unpublished</td>
+</tr>
+</tbody></table>
+<p><code>npm start</code> already sets loopback. Compose sets <code>HOST=0.0.0.0</code> <em>inside</em>
+the container so the port map works; that is not “open the cloud
+firewall.” On a VM use <code>GANTREE_LISTEN=127.0.0.1</code> and Tailscale or a
+tunnel. A partner who only needs keys is a <strong>user</strong> on their crane.
+Do not WAN-forward <code>:3000</code> / <code>:80</code> and hope login is enough.</p>
+<p>Public hostname: <strong>Cloudflare Tunnel</strong> (<code>compose.cloudflare.yml</code>) if the
+zone is on Cloudflare — no router ports. Origin TLS on this box is
+<code>compose.nginx.yml</code> (grey cloud, WAN 80+443). Login is still the door.</p>
+<p>If <code>HOST</code> is <code>0.0.0.0</code> / <code>::</code> and there are <strong>no</strong> operators yet, the
+process warns once: only <code>/setup</code> is live. Create the first operator
+before you leave the box on a LAN.</p>
+<hr>
+<h2 id="first-boot">First boot</h2>
+<p>Empty yard → <strong><code>/setup</code></strong> is the only mutating door. Everything else
+401s with <code>{ setup: true }</code>. Setup creates <strong>one</strong> operator and a
+session. A second setup is <code>409 already set up</code>.</p>
+<p>There is no setup token. On an open bind, <strong>whoever POSTs <code>/api/setup</code>
+first owns the box.</strong> That is the product (you are standing at the Mini)
+and also the window: do not publish LAN <code>:80</code> and walk away before
+setup. After the first operator exists, setup is closed.</p>
+<p>Forgot the passphrase: stop, delete yard sqlite (<code>gantree.db</code>, compose:
+<code>var/gantree.db</code>), start, run setup again. No email, no reset link.</p>
+<hr>
+<h2 id="the-door">The door</h2>
+<p>Every <code>/api/*</code> that can read or mutate the yard goes through <code>withDoor</code>
+(<code>lib/yard/door</code>). Exceptions: <code>/api/setup</code>, <code>/api/login</code>, <code>/api/logout</code>,
+<code>/api/door</code> (status only — ready / you / bind-open, not the operator
+list).</p>
+<p>The browser shell (<code>DoorShell</code>) sends you to <code>/setup</code> or <code>/login</code>. That
+is UX. <strong>The APIs are the lock.</strong> Pages do not load <code>.env</code> or logs in
+the HTML; they fetch after a session exists.</p>
+<p>Mutations that already existed (grant, recreate, env, operators) also
+write a small audit row (who, what). Login and logout do too; only
+admin can read those. Not a SIEM.</p>
+<hr>
+<h2 id="passphrases">Passphrases</h2>
+<p>Same rules for <code>/setup</code>, <strong>Add a partner</strong>, <strong>Change your passphrase</strong>,
+and <code>GANTREE_DEV_PASSPHRASE</code>. Login still accepts whatever hash is
+already stored (so an old passphrase is not locked out by a later
+policy bump). New ones must pass.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Must be a JSON <strong>string</strong></td>
+<td><code>null</code>, <code>1234567890</code>, <code>[&quot;pw&quot;]</code> are 400, not coerced</td>
+</tr>
+<tr>
+<td>10–128 characters</td>
+<td>short is guessable; huge is a scrypt stall</td>
+</tr>
+<tr>
+<td>Not blank / not whitespace-only</td>
+<td>HTML <code>required</code> is not the check</td>
+</tr>
+<tr>
+<td>Not your operator name, and not that name repeated</td>
+<td><code>kitkitkitkit</code></td>
+</tr>
+<tr>
+<td>Not all digits, not fewer than 4 distinct characters</td>
+<td><code>1234567890</code>, <code>aaaaaaaaaa</code></td>
+</tr>
+<tr>
+<td>Not a common / padded-stupid value</td>
+<td><code>password123</code>, <code>null      </code>, <code>none</code>, keyboard runs, <code>Summer2024</code></td>
+</tr>
+<tr>
+<td>Not the current passphrase on change</td>
+<td>pick a different one</td>
+</tr>
+</tbody></table>
+<p>Names are <code>2–32</code> letters, digits, <code>.</code> <code>_</code> <code>-</code>. Case-insensitive unique.
+The forms also set <code>minLength</code> / <code>maxLength</code> / a name <code>pattern</code> so the
+browser does not invite a slip. The server is the source of truth.</p>
+<p>Hashes: <code>node:crypto</code> <strong>scrypt</strong> (N=16384, r=8, p=1, 32-byte hash, 16-byte
+random salt). Never stored plaintext. Never logged. Never sent back to
+the browser. The sqlite file on disk should not contain the passphrase
+or the raw session token.</p>
+<hr>
+<h2 id="login">Login</h2>
+<p><code>POST /api/login</code> with <code>{ name, passphrase }</code> strings. Wrong or unknown:</p>
+<ul>
+<li>Same error: <code>invalid name or passphrase</code> (no user enumeration).</li>
+<li>Unknown name still runs a dummy scrypt so timing is not a tell.</li>
+<li>Oversized body is not fed to scrypt.</li>
+</ul>
+<p>Backoff (in memory, per process — a bounce clears it):</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th>Trip</th>
+<th>Then</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Per name (case-insensitive)</td>
+<td>8 failures in 15 minutes</td>
+<td><code>429 too many attempts, try later</code> for 15 minutes, <strong>including the right passphrase</strong></td>
+</tr>
+<tr>
+<td>Global</td>
+<td>40 failures in 15 minutes</td>
+<td>same 429 for everyone</td>
+</tr>
+</tbody></table>
+<p>That can lock <em>you</em> out if someone sprays. Accepted: better than
+unlimited guesses. Wait, or bounce the process if you are sure it is
+you and the box is not under attack.</p>
+<p>Empty yard: login returns <code>setup: true</code> and does not count toward
+lockout.</p>
+<hr>
+<h2 id="sessions">Sessions</h2>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cookie</td>
+<td><code>gantree_session</code></td>
+</tr>
+<tr>
+<td>Flags</td>
+<td><code>HttpOnly</code>, <code>SameSite=Lax</code>, <code>Path=/</code>, <code>Secure</code> when the request is HTTPS (<code>x-forwarded-proto</code> or <code>https:</code> URL)</td>
+</tr>
+<tr>
+<td>Token</td>
+<td>32 random bytes, hex. Sqlite stores <strong>SHA-256</strong> of it, not the token</td>
+</tr>
+<tr>
+<td>Idle</td>
+<td>7 days (bump <code>last_seen</code> at most once a minute)</td>
+</tr>
+<tr>
+<td>Absolute</td>
+<td>30 days from login (cookie <code>Max-Age</code> matches)</td>
+</tr>
+<tr>
+<td>Logout</td>
+<td>deletes that row + <code>Max-Age=0</code> cookie</td>
+</tr>
+</tbody></table>
+<p>Phone + laptop can both be logged in. Changing your passphrase <strong>drops
+every other session</strong> and keeps the one you used to change it. Removing
+an operator cascades their sessions (<code>ON DELETE CASCADE</code>).</p>
+<p>SameSite=Lax + <code>credentials: &quot;same-origin&quot;</code> on fetches. This is not a
+JWT in <code>localStorage</code>.</p>
+<hr>
+<h2 id="operators">Operators</h2>
+<p>A handful of people in yard sqlite. Confirm-scary on add / remove /
+access change / passphrase change (checkbox must be JSON <code>true</code>, not
+<code>&quot;true&quot;</code>).</p>
+<ul>
+<li>Each row is a UUID. <code>bob</code> is the login name. Display name, email, description, photo, and Telegram/Slack/Discord ids live on that row. Email is a label — still no reset link. Photos: <code>operators/&lt;uuid&gt;/avatar.jpg</code> next to yard sqlite.</li>
+<li>Cannot delete the last operator. Cannot demote or delete the last admin.</li>
+<li>Add uses the same passphrase rules as setup.</li>
+<li>Names are unique ignoring case.</li>
+<li>Hashes never round-trip on <code>GET /api/operators</code>.</li>
+<li>Role lives on the operator row (<code>admin</code> / <code>user</code> / <code>readonly</code>). User and
+readonly also have <code>crane_slug</code> (JSON list of slugs; a leftover single
+slug still reads). Profile edits (name, email) cannot
+change role — that is Settings. Only admin lists every crane.</li>
+<li>Non-admins <code>GET /api/operators</code> see only themselves. Mutations other
+than own passphrase / profile are 403.</li>
+</ul>
+<hr>
+<h2 id="dev-auto-login">Dev auto-login</h2>
+<p><code>GANTREE_DEV=1</code> + <code>GANTREE_DEV_OPERATOR</code> + <code>GANTREE_DEV_PASSPHRASE</code> mints
+a real session <strong>only when <code>HOST</code> is loopback</strong>. Compose sets
+<code>HOST=0.0.0.0</code>, so the flag is ignored on a LAN publish even if you
+paste it into the container env. Do not set these in <code>compose.yml</code>.</p>
+<p>The passphrase still has to pass the same rules (<code>bob-dev-ok</code> does).
+Unset the flag to photograph <code>/login</code>.</p>
+<hr>
+<h2 id="disk">Disk</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Secrets?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>gantree.toml</code></td>
+<td>No. Inventory only.</td>
+</tr>
+<tr>
+<td>yard <code>gantree.db</code> / <code>var/gantree.db</code></td>
+<td>Yes. Operator hashes, session hashes, samples, audit. Gitignored. Not a crane’s <code>data/gantry.db</code>.</td>
+</tr>
+<tr>
+<td>each crane <code>.env</code>, <code>data/</code>, OAuth files</td>
+<td>Yes. On disk next to that crane. Login gates the <em>UI</em> that edits them; Unix file mode still matters.</td>
+</tr>
+<tr>
+<td><code>mcp.toml</code></td>
+<td>Grant list. Tokens live in <code>.env</code> / <code>data/</code>, not in the manifest if you kept the usual layout.</td>
+</tr>
+</tbody></table>
+<p>WAL sqlite, foreign keys on. Treat <code>gantree.db</code> like a password file:
+backups are backups of hashes, not of a backdoor, but they are still
+the operator table.</p>
+<hr>
+<h2 id="cranes">Cranes</h2>
+<p>The door is the <strong>console</strong>. Each crane is still outbound-only: no
+<code>ports:</code> on the agent compose, no <code>/metrics</code> scrape, no inbound chat
+webhook you did not choose. Gantree <strong>pulls</strong> Docker and files.</p>
+<p>Isolation: one human, one bot, one directory, one <code>data/</code>. The yard does
+not merge memories or OAuth across cranes. Telegram allowlists stay on
+the crane.</p>
+<p>OAuth for tools is a laptop hop (or paste from <code>/auth</code> in chat). The
+console does not become the IdP.</p>
+<hr>
+<h2 id="not-this">Not this</h2>
+<ul>
+<li>DDoS / slowloris / filling the disk. Login backoff is anti-guess, not
+anti-flood. In-memory; restart resets the counters.</li>
+<li>A WAN-open console. Login does not make that a good idea.</li>
+<li>SSO, OIDC, email, invite links, “forgot password.”</li>
+<li>HaveIBeenPwned / zxcvbn. Offline denylist + structure checks.</li>
+<li>CSRF tokens. Cookie is <code>SameSite=Lax</code>, APIs are same-origin.</li>
+<li>Hiding <code>/login</code> and <code>/setup</code> HTML. Those pages are public; the data is
+not.</li>
+<li>A twelve-role RBAC product. Three named roles is the door.</li>
+</ul>
+<hr>
+<h2 id="operator-checklist">Operator checklist</h2>
+<ol>
+<li>First boot: <code>/setup</code> with a real passphrase before the LAN URL is a
+habit for anyone else on the network.</li>
+<li>Home LAN: compose <code>:80</code> is OK <em>behind</em> login. Cloud:
+<code>GANTREE_LISTEN=127.0.0.1</code> + Tailscale or tunnel. No cloud firewall
+hole. Partner keys: <strong>user</strong> on that crane, not a shared admin login.
+Public hostname: <code>compose.cloudflare.yml</code> (recommended) or
+<code>compose.nginx.yml</code>.</li>
+<li>Never set <code>GANTREE_DEV</code> in compose.</li>
+<li>Forgot passphrase → delete yard sqlite → setup. There is no other
+recovery.</li>
+<li>Partner leaves → <strong>Settings</strong> (cog) → remove them. Their sessions dies.</li>
+<li>Agents: still no inbound ports. Do not add any.</li>
+</ol>
+<p>Tests for the door live in <code>test/yard/door/door.test.ts</code> (setup, login
+errors, backoff, passphrase rejects, session drop on change).</p>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>

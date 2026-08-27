@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install — home Mini or cloud VM — gantree</title>
+  <meta name="description" content="Install — home Mini or cloud VM">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/install.html">
+  <meta name="theme-color" content="#09090b">
+  <meta property="og:title" content="Install — home Mini or cloud VM — gantree">
+  <meta property="og:description" content="Install — home Mini or cloud VM">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/install.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html" aria-current="page">Install</a>
+        <a href="../docs/console.html">Console</a>
+        <a href="../docs/operators.html">Operators</a>
+        <a href="../docs/headless.html">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html">Security</a>
+        <a href="../docs/custom-mcp.html">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="install-home-mini-or-cloud-vm">Install — home Mini or cloud VM</h1>
+<p>Same console. Same files. Agents still open <strong>zero</strong> inbound ports.
+Only this UI is reachable, and only through a path you chose.</p>
+<p>Harness image pin: <code>shotah/ai-gantry:latest</code> (Hub). Nested <code>repos/ai-gantry</code> is
+dev only — do not copy <code>.env</code> or <code>data/</code> from a private checkout.</p>
+<h2 id="home-mini-nuc">Home (Mini / NUC)</h2>
+<p>Docker on the box. Cast / <code>life-cast</code> is allowed (mDNS, TV on the LAN).
+Need <strong>Node 22</strong> (<code>node -v</code>). Distro <code>apt install npm</code> is often Node 20 and
+will fail. Headless host, attach existing agents, tunnel, gotchas:
+<strong><a href="headless.html">headless.md</a></strong>. What the board is for:
+<strong><a href="console.html">console.md</a></strong>. Login, profile, settings:
+<strong><a href="operators.html">operators.md</a></strong>.</p>
+<pre><code class="language-bash">git clone https://github.com/shotah/gantree.git
+cd gantree
+cp gantree.toml.example gantree.toml
+npm install
+npm run build
+npm start          # http://127.0.0.1:3000 — first boot is /setup
+# or Hub / compose (LAN :80 → container :3000):
+docker compose up -d
+</code></pre>
+<p>Open the board at <code>http://&lt;pc-lan-ip&gt;/</code> or
+<code>http://&lt;headless-lan-ip&gt;/</code> (compose). Create the first operator, then
+build a crane (yard = home). <code>npm start</code> stays <code>:3000</code>. Grant search.
+Chat is Telegram — not this UI.</p>
+<p>Local screenshots / <code>npm run dev</code>: <code>GANTREE_DEV=1</code> plus operator + passphrase
+in <code>.env</code> (<a href="https://github.com/shotah/gantree/blob/main/.env.example">.env.example</a>). Loopback only — compose
+<code>HOST=0.0.0.0</code> ignores the flag. Unset it to photograph <code>/login</code>. Details:
+<a href="security.html#dev-auto-login">security.md</a> · <a href="operators.html">operators.md</a>.</p>
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First operator — create the person who owns the box" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in" width="280">
+  &nbsp;
+  <img src="../assets/docs/login-phone.png" alt="Log in on a phone" width="220">
+</p><p>Sessions live in <code>gantree.db</code> next to the checkout (compose: <code>var/gantree.db</code>).
+That file is the yard’s sqlite — not a crane’s <code>data/gantry.db</code>. Forgot the
+passphrase: delete it and run <code>/setup</code> again. Add a partner from <strong>Settings</strong>
+(the cog) after login (admin / user or readonly on assigned cranes). Your photo and
+passphrase are <strong>Profile</strong>. People walk: <a href="operators.html">operators.md</a>. What
+the door checks: <a href="security.html">security.md</a>. A partner who only updates
+keys is <strong>user</strong> on their crane; they hit compose <code>:80</code>, not
+gantree <code>:3000</code> on the host.</p>
+<p>A public hostname is a different file. <strong>Prefer Cloudflare Tunnel</strong> if the
+zone is already on Cloudflare (no WAN ports, orange cloud is fine):</p>
+<pre><code class="language-bash"># .env: CLOUDFLARE_TUNNEL_TOKEN=...
+docker compose -f compose.cloudflare.yml up -d
+</code></pre>
+<p>Dashboard public hostname origin: <code>http://gantree:3000</code>. Login is still
+gantree’s door.</p>
+<p>Origin TLS on this box (grey-cloud DNS, router <strong>80 and 443</strong>):
+<code>compose.nginx.yml</code> + <code>GANTREE_DOMAIN</code> / <code>LETSENCRYPT_EMAIL</code>. Do not mix
+the two hostname files.</p>
+<h2 id="cloud-your-gce-ec2">Cloud (your GCE / EC2)</h2>
+<p>Still your machine. Layout in the spirit of
+<a href="https://github.com/shotah/ai-gantry/tree/main/examples/hosting">ai-gantry examples/hosting</a>
+(<code>/opt/gantree</code>, compose, Hub pull). <code>life-cast</code> is hidden.</p>
+<pre><code class="language-bash">sudo mkdir -p /opt/gantree
+sudo git clone https://github.com/shotah/gantree.git /opt/gantree
+cd /opt/gantree
+cp gantree.toml.example gantree.toml
+# gantree.toml: yard = &quot;cloud&quot;
+GANTREE_LISTEN=127.0.0.1 docker compose up -d
+</code></pre>
+<p>On a cloud VM pin the publish to loopback (<code>GANTREE_LISTEN=127.0.0.1</code>).
+The process inside still listens on <code>0.0.0.0</code> so the port map works; that
+is not a public load balancer. Do not open a cloud firewall port to the
+world. A public hostname on Cloudflare: <code>compose.cloudflare.yml</code> (no WAN
+ports). Origin TLS on the VM: <code>compose.nginx.yml</code>.</p>
+<p>Reach it from a laptop:</p>
+<p><strong>Tailscale</strong> (preferred): install Tailscale on the VM, then Serve or an
+SSH tunnel to <code>127.0.0.1:80</code> (compose). Do not open a cloud firewall port
+to the world.</p>
+<pre><code class="language-bash">ssh -N -L 3000:127.0.0.1:80 user@host
+</code></pre>
+<p><strong>Cloudflare Tunnel</strong> (console only — never the agents):
+<code>compose.cloudflare.yml</code> + <code>CLOUDFLARE_TUNNEL_TOKEN</code> in <code>.env</code>, origin
+<code>http://gantree:3000</code>. Quick tunnel without compose:</p>
+<pre><code class="language-bash">cloudflared tunnel --url http://127.0.0.1:80
+</code></pre>
+<p>OAuth is always the laptop hop: <strong>needs auth</strong> → start hop or <code>/auth</code> in
+Telegram → paste the code on the Tools screen.</p>
+<p>Agents have no <code>ports:</code> in their compose. Do not add any.</p>
+<p>A server that is not on the Tools grid: hand-edit that crane’s <code>mcp.toml</code>
+(<a href="custom-mcp.html">custom MCP</a>).</p>
+<h2 id="image-pin">Image pin</h2>
+<p>New cranes use <code>shotah/ai-gantry:latest</code> (<code>DEFAULT_IMAGE</code> in <code>lib/yard/types.ts</code>
+— that is the only place the tag lives). <strong>pull + recreate</strong> refreshes the
+floating tag. Override a crane with a <code>0.x.y</code> tag only if you need to freeze.</p>
+<p><strong>pull + recreate</strong> runs <code>docker pull</code> then replaces the container as the
+<strong>host user that owns <code>data/</code></strong> (file owner, then the compose shell <code>UID</code>).
+Distroless default uid <code>65532</code> cannot open a <code>gantry.db</code> written by your
+login — that is <code>session store open failed</code>. Recreate without pull keeps that
+uid too; it does not fetch a new image. Do not delete <code>data/</code> or re-import.</p>
+<p>Console-in-Docker (sock + same-path binds for attached agents):
+<a href="headless.html#8-console-in-docker">headless.md</a>. Uncomment the volume in
+<code>compose.yml</code> when <code>gantree.toml</code> uses absolute host paths.</p>
+<p>Hub image: <code>shotah/gantree</code> (<code>latest</code> / <code>edge</code> / <code>0.x.y</code>). Same secrets as
+ai-gantry on this GitHub repo: <code>DOCKER_HUB_USERNAME</code>, <code>DOCKER_HUB_ACCESS_TOKEN</code>.</p>
+<h2 id="release">Release</h2>
+<p>No Makefile. This repo is npm.</p>
+<pre><code class="language-bash">npm test
+npm run release:dry          # show next tag
+npm run release              # patch bump, tag v*, push → Hub + GH Release
+npm run release -- --bump=minor
+</code></pre>
+<p>Requires a clean tree. Updates <code>package.json</code> / lockfile, annotated <code>vX.Y.Z</code>,
+moves floating git tag <code>latest</code>, pushes. CI builds <code>linux/amd64</code> only.</p>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>

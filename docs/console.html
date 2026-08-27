@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Console — the yard board — gantree</title>
+  <meta name="description" content="Console — the yard board">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/console.html">
+  <meta name="theme-color" content="#09090b">
+  <meta property="og:title" content="Console — the yard board — gantree">
+  <meta property="og:description" content="Console — the yard board">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/console.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html">Install</a>
+        <a href="../docs/console.html" aria-current="page">Console</a>
+        <a href="../docs/operators.html">Operators</a>
+        <a href="../docs/headless.html">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html">Security</a>
+        <a href="../docs/custom-mcp.html">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="console-the-yard-board">Console — the yard board</h1>
+<p>The product is the crane:
+<strong><a href="https://github.com/shotah/ai-gantry">ai-gantry</a></strong>. This page is the
+operator walk for <strong>this</strong> repo — the board that appears when you run more
+than one. Pitch and why the harness is worth operating live in the
+<a href="../index.html">root readme</a>. Install: <a href="install.html">install.md</a>. Headless
+host + attach: <a href="headless.html">headless.md</a>. Login, profile, settings:
+<a href="operators.html">operators.md</a>. Door: <a href="security.html">security.md</a>.</p>
+<p>Chat stays Telegram (or Discord / Slack). Nothing here sits in a chat turn.
+Gantree reads Docker and files after the fact. It writes the same files the
+harness already understands.</p>
+<pre><code class="language-text">browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
+                                                         gantry  gantry  gantry
+</code></pre>
+<p>Agents open <strong>zero</strong> inbound ports. Bind <code>127.0.0.1</code> by default. If you
+expose the console, you expose it to yourself.</p>
+<hr>
+<h2 id="first-boot">First boot</h2>
+<p>Need <strong>Node 22</strong>. <code>npm start</code> (or compose) on the Docker host.</p>
+<ol>
+<li>Open <code>http://127.0.0.1:3000</code> — first boot is <strong><code>/setup</code></strong> (one operator).</li>
+<li>After that, <strong><code>/login</code></strong>.</li>
+<li>Sessions live in yard <code>gantree.db</code> — not a crane’s <code>data/gantry.db</code>.</li>
+</ol>
+<p>Forgot the passphrase: stop, delete that sqlite file, start, run setup
+again. No email reset. Click your name for <strong>Profile</strong>; the cog is
+<strong>Settings</strong>. Roles, add/remove, and the stuck table:
+<a href="operators.html">operators.md</a>. What the door checks:
+<a href="security.html">security.md</a>.</p>
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First-boot setup: create the operator who owns the box" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in with name and passphrase" width="280">
+  &nbsp;
+  <img src="../assets/docs/login-phone.png" alt="Log in on a phone" width="220">
+</p><hr>
+<h2 id="board">Board</h2>
+<p>A handful of named pets, not a Kubernetes dashboard. Each card: name, alive
+or not, model, channel, published vs skipped MCP. <strong>Nags</strong> (dead process,
+skipped grant, needs-auth) sit on the card — you do not have to open Tools.
+Click through. Kit’s page is <strong>Kit</strong> — graphs and log, not a mixed fleet dump.
+The host card (CPU bubble) is the Mini itself: CPU, RAM, and Docker network
+(rx/tx), <code>gantree.toml</code>, yard sqlite, and how this process was started. People
+(roles) stay on the cog.</p>
+<p>Build a crane from the board (yard type first: home Mini or cloud VM).
+Telegram: <strong>Create with BotFather</strong> copies <code>/newbot</code>, opens the chat, and
+suggests <code>{slug}_bot</code> — paste the token it replies with. <strong>Upload a photo</strong> on the crane — it lands in <code>persona/avatar.jpg</code>, shows on
+the board, and if the channel is Telegram the bot’s face updates too. On a
+Telegram crane, <strong>Telegram</strong> (below the photo) can <code>getMe</code> the token, push
+name / about / the <code>/</code> command menu (including <code>/new</code>), ask an allowlisted
+chatter to tap <code>/new</code> (distill, then drop that thread — the yard cannot send
+as her), and edit <code>TELEGRAM_ALLOWED_USERS</code> from numeric ids (slog <code>user_id</code>
+after someone talks — not <code>@username</code>). Grant
+a tool, recreate, watch <em>that</em> crane’s doctor. Message it on Telegram.
+<code>/tools</code> is the crane’s mouth; this page is the operator’s.</p>
+<p align="center">
+  <img src="../assets/docs/yard-phone.png" alt="The yard on a phone" width="220">
+  &nbsp;
+  <img src="../assets/docs/crane-phone.png" alt="Jules on a phone — start/stop and boxed folds" width="220">
+</p><p>Pin: <code>shotah/ai-gantry:latest</code> (Hub). Nested <code>repos/ai-gantry</code> is <strong>dev
+only</strong> — do not copy <code>.env</code> or <code>data/</code> from a private checkout.</p>
+<hr>
+<h2 id="grant-is-how-it-stays-personal">Grant is how it stays personal</h2>
+<p>Long-horizon is useless if the container is “healthy” with zero tools and a
+dead token. MCP <strong>is</strong> the grant. The UI is a structured editor of that
+crane’s <code>mcp.toml</code>, not a second inventory.</p>
+<ul>
+<li>Toggle on → write <code>[[server]]</code>. Recreate fetches bins into <code>/data/bin</code> and
+reloads until <code>/tools</code> shows the prefix.</li>
+<li>Toggle off → omit from the manifest.</li>
+<li>“Needs auth” is a button (laptop hop or paste a code from <code>/auth</code> in
+chat).</li>
+</ul>
+<p>Hand-editing <code>mcp.toml</code> still works. Your own binary:
+<a href="custom-mcp.html">custom-mcp.md</a>.</p>
+<h3 id="two-files-not-a-catalog">Two files, not a catalog</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Who writes it</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PERSONA.md</code></td>
+<td>You — who it should be, who you are</td>
+</tr>
+<tr>
+<td><code>persona/avatar.jpg</code></td>
+<td>You — face on the board; Telegram bots get the same picture</td>
+</tr>
+<tr>
+<td><code>SELF.md</code></td>
+<td>The agent — voice, rituals, north-star aims that survive <code>/new</code></td>
+</tr>
+</tbody></table>
+<p>Gantree edits those files (and <code>.env</code>, and <code>mcp.toml</code>). It does not merge
+memories across cranes. Isolation is the feature: one human, one bot, one
+directory, one <code>data/</code>. Delete a tryout = delete that directory.</p>
+<p>The seed on disk is <code>lib/yard/crane/templates/PERSONA.example.md</code> — keep it
+identical to ai-gantry <code>examples/persona/PERSONA.example.md</code>. <strong>Replace from
+template</strong> loads that file (agent <strong>Identity</strong> name from the slug). <strong>Inject
+user</strong> (admin) copies selected profile fields into <strong>About you</strong> only; Save
+still writes <code>PERSONA.md</code>. Recreate / rebuild never replace an existing
+persona file.</p>
+<hr>
+<h2 id="pull-dont-punch">Pull, don’t punch</h2>
+<p>The crane does not grow a <code>/metrics</code> port. The yard <strong>pulls</strong> (<code>docker inspect</code>, <code>docker logs</code>, sampled stats, JSON slog). Parse what the harness
+already emits. Do not tax parallel tool calls so a chart looks nicer.
+Samples and turns land in yard sqlite (7-day cap) so bouncing <code>npm start</code>
+does not wipe Kit’s graphs. Mutations (grant, recreate, env, operators)
+show <em>who</em> on a small events strip — not a SIEM. Admin also sees logins
+and logouts there; other operators do not.</p>
+<p>Doctor says why a tool is skipped (no binary / no key / no OAuth). Recreate
+keeps the host <code>user</code> that owns <code>data/</code> (never Distroless <code>65532</code>),
+<code>network_mode</code>, and extra binds.</p>
+<hr>
+<h2 id="operator-loop">Operator loop</h2>
+<ol>
+<li><code>npm start</code> (or compose) on the Docker host</li>
+<li>Board shows every gantry in <code>gantree.toml</code> — alive or not</li>
+<li>Click a card: per-instance graphs + visual logs. Host card: Mini CPU/RAM/net + <code>gantree.toml</code></li>
+<li>Build a crane (yard type → slug → model → channel → profile)</li>
+<li>Grant / revoke MCP; files update; container recreates</li>
+<li>Watch <em>that</em> agent’s log and metrics until the grant is real</li>
+<li>Doctor says why something is skipped</li>
+</ol>
+<p>The board has to work. The speed the human feels is still the crane.</p>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>

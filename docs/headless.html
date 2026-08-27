@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Headless host — first boot + attach existing agents — gantree</title>
+  <meta name="description" content="Headless host — first boot + attach existing agents">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/headless.html">
+  <meta name="theme-color" content="#09090b">
+  <meta property="og:title" content="Headless host — first boot + attach existing agents — gantree">
+  <meta property="og:description" content="Headless host — first boot + attach existing agents">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/headless.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html">Install</a>
+        <a href="../docs/console.html">Console</a>
+        <a href="../docs/operators.html">Operators</a>
+        <a href="../docs/headless.html" aria-current="page">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html">Security</a>
+        <a href="../docs/custom-mcp.html">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="headless-host-first-boot-attach-existing-agents">Headless host — first boot + attach existing agents</h1>
+<p>Gantree is <strong>not</strong> a downloadable bin. Clone it onto the <strong>Docker host</strong>,
+<code>npm run build</code>, <code>npm start</code>. Default bind is <strong>127.0.0.1:3000</strong>. Chat stays
+Telegram.</p>
+<p>This page is the operator walk (Node 22, attach existing dirs, SSH tunnel).
+Stranger hello: <a href="install.html">install.md</a>. Board walk: <a href="console.html">console.md</a>.
+Login, profile, settings: <a href="operators.html">operators.md</a>.</p>
+<hr>
+<h2 id="do-not">Do not</h2>
+<ul>
+<li><code>sudo apt install npm</code> — distro Node is often <strong>20</strong>. Vinext needs <strong>22</strong>.</li>
+<li>Bind <code>0.0.0.0</code> on a <strong>cloud</strong> VM or open the port on a <strong>WAN</strong> firewall.</li>
+<li>Run the process as root to grab port 80.</li>
+<li>Run <code>npm audit fix --force</code>.</li>
+<li><code>npm install-scripts approve *</code> — bash expands <code>*</code> to files in cwd.</li>
+<li>Type <code>vinext</code> on the shell — it is not on <code>PATH</code>. Use <code>npm run …</code>.</li>
+<li>Start the same Telegram bot on two machines (one <code>getUpdates</code> per bot).</li>
+<li>Copy a laptop <code>data/</code> over the host. Live OAuth is on the host.</li>
+<li><strong>Build a crane</strong> for a slug that already has a <code>data/</code> — that writes a <strong>new</strong> empty dir.</li>
+<li>Run Gantree as <strong>root</strong> (<code>sudo npm start</code>) — recreate would then skip a host uid.</li>
+<li>Set <code>GANTREE_DEV</code> in compose. <code>HOST=0.0.0.0</code> ignores it; do not get in
+the habit. Loopback auto-login is for <code>npm run dev</code> screenshots only
+(<a href="security.html#dev-auto-login">security.md</a>).</li>
+<li>Point <code>gantree.toml</code> at absolute host dirs and run compose without the
+same-path volume — the board still sees Docker; persona and <code>mcp.toml</code>
+look empty.</li>
+</ul>
+<hr>
+<h2 id="1-node-22-on-the-host">1. Node 22 (on the host)</h2>
+<pre><code class="language-bash">sudo apt remove -y nodejs npm
+sudo apt autoremove -y
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node -v    # must be v22.x
+npm -v
+</code></pre>
+<p>Do not <code>apt install npm</code> after this.</p>
+<hr>
+<h2 id="2-clone">2. Clone</h2>
+<pre><code class="language-bash">sudo mkdir -p /opt/gantree
+sudo chown &quot;$USER:$USER&quot; /opt/gantree
+git clone https://github.com/shotah/gantree.git /opt/gantree
+cd /opt/gantree
+cp gantree.toml.example gantree.toml
+</code></pre>
+<hr>
+<h2 id="3-attach-agents-that-already-exist">3. Attach agents that already exist</h2>
+<p>Leave each crane’s directory where it is. Point inventory at it.
+Check names with <code>docker ps</code> (<code>container</code> must match).</p>
+<pre><code class="language-toml">yard = &quot;home&quot;
+
+[[gantry]]
+slug = &quot;kit&quot;
+container = &quot;kit&quot;
+data_dir = &quot;/opt/agents/kit/data&quot;
+persona_dir = &quot;/opt/agents/kit/persona&quot;
+mcp_manifest = &quot;/opt/agents/kit/mcp.toml&quot;
+env_file = &quot;/opt/agents/kit/.env&quot;
+</code></pre>
+<p>Repeat one <code>[[gantry]]</code> block per agent.</p>
+<p>Catalog is a <strong>menu</strong>. Enabled = that crane’s <code>mcp.toml</code>. <code>.env</code> stays theirs.
+Do not use the Build wizard for these slugs.</p>
+<p><code>npm start</code> on the <strong>host</strong> can read those paths as-is. Compose only mounts
+<code>./gantries</code> by default — uncomment the same-path volume in <code>compose.yml</code>
+so <code>/opt/agents</code> exists inside the console (<a href="#8-console-in-docker">§8</a>).</p>
+<hr>
+<h2 id="4-install-js-deps">4. Install JS deps</h2>
+<pre><code class="language-bash">cd /opt/gantree
+npm install
+</code></pre>
+<p>If npm 11+ warns <code>install-scripts</code> / <code>allowScripts</code>, approve <strong>by name</strong>
+(not <code>*</code>):</p>
+<pre><code class="language-bash">npm install-scripts approve cpu-features
+npm install-scripts approve esbuild
+npm install-scripts approve protobufjs
+npm install-scripts approve ssh2
+npm rebuild
+</code></pre>
+<p>Those four are dockerode / vite native bits. Without them, Docker or the
+build will fail later.</p>
+<hr>
+<h2 id="5-build-then-start">5. Build, then start</h2>
+<p>Production start needs <code>dist/</code>. Background with <code>nohup</code> (already on the box):</p>
+<pre><code class="language-bash">cd /opt/gantree
+npm run build
+HOST=0.0.0.0 nohup npm start &gt; gantree.log 2&gt;&amp;1 &amp;
+disown
+</code></pre>
+<p>Logs: <code>tail -f gantree.log</code>. Stop: <code>pkill -f &quot;vinext start&quot;</code>.</p>
+<p>You want in the log: <code>Production server running at http://0.0.0.0:3000</code></p>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>does not provide an export named &#39;glob&#39;</code></td>
+<td>Node 20. Redo step 1.</td>
+</tr>
+<tr>
+<td><code>No build output found in …/dist</code></td>
+<td><code>npm run build</code> then <code>npm start</code>.</td>
+</tr>
+<tr>
+<td><code>vinext: command not found</code></td>
+<td><code>npm run build</code> / <code>npm start</code>.</td>
+</tr>
+<tr>
+<td><code>EACCES</code> / Docker socket</td>
+<td>add user to <code>docker</code> group, log out/in.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-open-it-from-another-machine">6. Open it from another machine</h2>
+<p>The UI has a <strong>login</strong>. First boot is <code>/setup</code> (one operator). Sessions
+live in yard <code>gantree.db</code> (compose: <code>var/gantree.db</code>) — not a crane’s
+<code>data/gantry.db</code>. Whoever logs in has a <strong>role</strong> — admin is full access,
+user or readonly is assigned cranes (only admin sees every crane). Forgot the passphrase: stop, delete
+that sqlite file, start, run setup again. No email reset. People walk:
+<a href="operators.html">operators.md</a>. What the door checks:
+<a href="security.html">security.md</a>.</p>
+<p align="center">
+  <img src="../assets/docs/setup.png" alt="First operator" width="280">
+  &nbsp;
+  <img src="../assets/docs/login.png" alt="Log in" width="280">
+</p><p><strong>Home LAN only</strong> (no WAN port forward): listen on all interfaces.
+Compose publishes host <code>:80</code>. <code>npm start</code> stays <code>:3000</code>.</p>
+<pre><code class="language-bash"># stop the old foreground npm start first (Ctrl-C), then:
+HOST=0.0.0.0 nohup npm start &gt; gantree.log 2&gt;&amp;1 &amp;
+disown
+</code></pre>
+<p>Browser: <code>http://&lt;host-lan-ip&gt;:3000</code> (<code>npm start</code>) or
+<code>http://&lt;host-lan-ip&gt;/</code> (compose). Create the operator, then use the board.</p>
+<p>Skip binding port 80 as root. Do not run this app as root (<code>docker.sock</code>).</p>
+<p><strong>Not on the LAN / cloud VM:</strong> leave the default <code>127.0.0.1</code> bind
+(<code>GANTREE_LISTEN=127.0.0.1</code> for compose). Login is defense in depth,
+not a reason to open a WAN firewall port.</p>
+<pre><code class="language-bash">ssh -N -L 3000:127.0.0.1:3000 user@host   # npm start
+# compose publishes :80, not gantree :3000 on the host:
+ssh -N -L 3000:127.0.0.1:80 user@host
+</code></pre>
+<p>Browser: <strong><a href="http://127.0.0.1:3000">http://127.0.0.1:3000</a></strong>. Tailscale Serve to that same loopback
+is the other path. Never open 3000 (or 80) on a cloud firewall.</p>
+<hr>
+<h2 id="7-day-one-look-only-then-pin">7. Day one — look only, then pin</h2>
+<p>You should see one card per <code>[[gantry]]</code>. Click → logs / doctor.</p>
+<p>Start / stop still talks to the existing container. <strong>Recreate</strong> / <strong>pull +
+recreate</strong> now keep:</p>
+<ul>
+<li><code>user</code> — owner of <code>data/</code> / <code>gantry.db</code>, then the compose shell <code>UID</code>, never
+Distroless <code>65532</code></li>
+<li><code>network_mode</code> (host for Cast)</li>
+<li>extra binds (sound, extra mounts)</li>
+</ul>
+<p>Do <strong>not</strong> uncheck Tools on day one. Do <strong>not</strong> use <strong>Build</strong> for a slug that
+already has <code>data/</code>.</p>
+<h3 id="session-store-open-failed-after-an-old-recreate"><code>session store open failed</code> after an old recreate</h3>
+<p>Older Gantree dropped <code>user:</code>. The image default is uid <code>65532</code>; <code>gantry.db</code>
+is owned by your login (e.g. <code>1000</code>). Persona mounts read-only-enough to load;
+SQLite cannot create WAL files. Docker restarts the crash.</p>
+<ol>
+<li>Rebuild this console (<code>npm run build</code>, restart <code>npm start</code> — or
+<code>docker compose up -d --build</code>).</li>
+<li>On that crane: <strong>recreate</strong> (or <strong>pull + recreate</strong>). Notice should say
+<code>as 1000:1000</code> (the owner of <code>gantry.db</code>, not Distroless).</li>
+<li>Logs should show <code>session store ready</code>, not <code>session store open failed</code>.</li>
+</ol>
+<p>Still looping: <code>docker inspect &lt;name&gt; --format &#39;{{.Config.User}}&#39;</code> must match
+<code>ls -ln data/gantry.db</code>. Do not <code>chown</code> <code>data/</code> to <code>65532</code> — that strands
+<code>.config/</code> OAuth too.</p>
+<hr>
+<h2 id="8-console-in-docker">8. Console in Docker</h2>
+<p>Yes. Compose already mounts <code>docker.sock</code>, so Gantree can inspect / start /
+recreate <strong>sibling</strong> agent containers. Chat still stays Telegram. Agents still
+open zero ports.</p>
+<p>The console container is usually <strong>root</strong> (needs the socket). Crane uid is
+inferred from <code>data/</code> / <code>gantry.db</code>, then from the user who ran compose
+(shell <code>UID</code>, or <code>SUDO_UID</code> if you sudo). You do not pass <code>id -u</code>. Do not
+tear down agents — <strong>recreate</strong> keeps <code>data/</code>, persona, and <code>mcp.toml</code>.</p>
+<pre><code class="language-bash">docker compose pull
+docker compose up -d
+# or build this checkout:
+docker compose up -d --build
+</code></pre>
+<p><code>gantree.toml</code> paths are resolved <strong>inside</strong> the console container. Relative
+<code>./gantries/&lt;slug&gt;</code> works (that dir is mounted at <code>/app/gantries</code>). Recreate
+rewrites those to <strong>host</strong> paths via <code>GANTREE_HOST_ROOT</code> (compose sets it to
+<code>PWD</code> — run <code>docker compose</code> from this checkout).</p>
+<p>Absolute attach paths must exist at the <strong>same path</strong> in the console.
+<code>compose.yml</code> has a commented volume next to the others — uncomment it and
+match the inventory prefix:</p>
+<pre><code class="language-yaml"># compose.yml
+# - /opt/agents:/opt/agents
+</code></pre>
+<pre><code class="language-toml">data_dir = &quot;/opt/agents/kit/data&quot;
+persona_dir = &quot;/opt/agents/kit/persona&quot;
+mcp_manifest = &quot;/opt/agents/kit/mcp.toml&quot;
+env_file = &quot;/opt/agents/kit/.env&quot;
+</code></pre>
+<p>Without that mount the board can still <em>see</em> Docker: CPU/RAM, uptime, and
+model/channel from container env. Persona and <code>mcp.toml</code> stay empty — those
+are file reads, not inspect. The crane <code>.env</code> form can look populated for
+the same reason. Recreate cannot bind <code>/opt/agents/kit/data</code> either.</p>
+<p>Start / stop does not add missing binds. After the volume is up, <strong>recreate</strong>
+each attached crane so persona and <code>mcp.toml</code> land in the agent.</p>
+<p>Missing <code>GANTREE_HOST_ROOT</code> bind-mounts <code>/app/gantries/…</code> on the host — the
+crane then has no <code>mcp.toml</code> and no <code>data/.config</code>.</p>
+<p>Home LAN: compose publishes host <code>:80</code> → container <code>:3000</code>
+(<code>http://&lt;headless-lan-ip&gt;/</code>). Cloud VM: <code>GANTREE_LISTEN=127.0.0.1</code> — do
+not open a WAN firewall port.</p>
+<hr>
+<h2 id="backup-vs-tokens">Backup vs tokens</h2>
+<p>A DB snapshot (<code>gantry.db</code> + <code>SELF.md</code>) is <strong>not</strong> OAuth. Tokens live under
+<code>data/.config/</code> on the host. A laptop copy without that tree cannot stand
+the bots up. Do not rsync laptop <code>data/</code> over the host.</p>
+<p>Telegram: <strong>one</strong> <code>getUpdates</code> per bot. Do not start the same bot in two places.</p>
+<hr>
+<h2 id="keep-it-running">Keep it running</h2>
+<p>Stop: <code>pkill -f &quot;vinext start&quot;</code>. After <code>git pull</code>: <code>npm install</code> → <code>npm run build</code> → the <code>nohup npm start</code> line in step 5.</p>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>
