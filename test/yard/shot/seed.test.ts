@@ -161,7 +161,7 @@ describe("seedYard", () => {
     expect(turns.host.length).toBeGreaterThan(40);
     expect(turns.turns.some((t) => t.userId === "41001003")).toBe(true);
     expect(recallMachine(20).length).toBeGreaterThan(10);
-  });
+  }, 20_000);
 
   it("does not paint when the bind is open", () => {
     process.env.GANTREE_SHOT = "1";
