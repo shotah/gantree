@@ -1,0 +1,130 @@
+<div class="hero">
+  <img class="banner" src="assets/banner.svg" width="1280" height="420" alt="Shipping yard for personal agents — operator plane, not the chat">
+  <div class="lede">
+    <p class="kicker">The product is the crane</p>
+    <h1>A long-horizon harness you run. Not a plugin pack inside someone else’s.</h1>
+    <p>
+      Most things branded “harness engineering” are skills, agents, and slash
+      commands that sit inside Claude Code or Copilot. That is a wrapper around
+      a host you do not own. The host still holds context, tools, and whether
+      the trajectory finishes.
+    </p>
+    <p>
+      <a href="https://github.com/shotah/ai-gantry">ai-gantry</a> is the
+      runtime: one Distroless Go process, one persona, one OpenAI-compat model,
+      memory you can <code>sqlite3</code>, chat that dials out. Gantree is the
+      shipping yard those cranes live in — a board for an operator, never a hop
+      in a chat turn.
+    </p>
+    <dl class="defs">
+      <div>
+        <dt>gantry</dt>
+        <dd>The rigid frame that holds and positions tools. The frame does nothing by itself; the tools and the memory do the work.</dd>
+      </div>
+      <div>
+        <dt>gantree</dt>
+        <dd>The shipping yard those cranes live in. Files and Docker. Pull, don’t punch.</dd>
+      </div>
+    </dl>
+    <div class="cta">
+      <a class="btn primary" href="docs/install.html">Stand up the yard</a>
+      <a class="btn" href="https://github.com/shotah/ai-gantry">The harness</a>
+      <a class="btn" href="https://github.com/shotah/gantree">GitHub</a>
+    </div>
+  </div>
+</div>
+
+<section>
+  <p class="kicker">The difference</p>
+  <h2>A harness is a process. A marketplace is a costume.</h2>
+  <div class="split">
+    <article class="card is">
+      <h3>What this stack is</h3>
+      <ul>
+        <li>A binary you run. Aims, personality, and work still exist on Thursday.</li>
+        <li>The model is a socket — Ollama, Gemini, ChatGPT, Grok. Swap it. The loop stays.</li>
+        <li>MCP listed in <code>mcp.toml</code> is the grant. Omit it and it does not exist.</li>
+        <li>Outbound chat (Telegram, Discord, Slack). <strong>No open ports. Ever.</strong></li>
+        <li>Independent lookups fan out in one round; the next round uses the results. Garmin → sheet → Strava is one thread.</li>
+      </ul>
+    </article>
+    <article class="card is-not">
+      <h3>What it is not</h3>
+      <ul>
+        <li>A Claude Code or Copilot plugin marketplace with “harness” in the README.</li>
+        <li>Prompts, skills, and sub-agents that still live in someone else’s context window.</li>
+        <li>A chatbot that dies when the window gets expensive, then <code>/new</code> lobotomizes it.</li>
+        <li>A dashboard or gateway in the token path so every message pays a platform tax.</li>
+        <li>MkDocs around a wrapper. Documentation is not a runtime.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">The crane</p>
+  <h2>ai-gantry holds the person. The yard does not talk.</h2>
+  <p>
+    One process. One persona. Chat stays Telegram. Health is an exit code, not a
+    port. Mid-chain does not die on a typo — the loop was hardened on the 7–12B
+    class, then pointed at Flash when you want the trajectory now.
+  </p>
+  <pre class="diagram">static binary + persona + mcp.toml + any OpenAI-compat LLM  →  outbound chat</pre>
+  <p>
+    Want a bot tonight? Stay here. Open the board, build a crane — this yard
+    pulls <code>shotah/ai-gantry</code>, writes the files, recreates. You do not
+    need the other checkout to stand one up.
+  </p>
+</section>
+
+<section>
+  <p class="kicker">The yard</p>
+  <h2>Operate named pets. Never sit in the turn.</h2>
+  <p>
+    Gantree is the operator plane: board, doctor, grants, logs, spend. It reads
+    Docker and files after the fact. If a chart would make the harness slower,
+    the chart is wrong. Agents open zero inbound ports. Only this UI is
+    reachable, and only through a path you chose.
+  </p>
+  <pre class="diagram">browser  →  gantree (localhost | Tailscale | tunnel)
+                                                 gantry  gantry  gantry</pre>
+  <div class="phones">
+    <img src="assets/docs/login-phone.png" width="220" alt="Log in — the door to the yard, not the chat">
+    <img src="assets/docs/yard-phone.png" width="220" alt="The yard on a phone — named cranes, not a fleet dump">
+    <img src="assets/docs/crane-phone.png" width="220" alt="A crane on a phone — start/stop and boxed folds">
+  </div>
+  <p>
+    <img class="wide" src="assets/docs/yard.png" width="960" alt="Yard board with live cranes">
+  </p>
+</section>
+
+<section>
+  <p class="kicker">Hello</p>
+  <h2>Docker on the same Linux host. Node 22. First boot is /setup.</h2>
+  <pre class="diagram">git clone https://github.com/shotah/gantree.git
+cd gantree
+cp gantree.toml.example gantree.toml
+npm install
+npm run build
+npm start                 # http://127.0.0.1:3000</pre>
+  <p>
+    Open the board. Build a crane. Grant a tool. Message it on your phone.
+    The UI never sits in a chat turn. Home Mini vs cloud VM:
+    <a href="docs/install.html">install</a>.
+  </p>
+</section>
+
+<section>
+  <p class="kicker">Operator docs</p>
+  <h2>The board, the door, the files.</h2>
+  <div class="docs">
+    <a href="docs/install.html"><strong>Install</strong><span>Home Mini or cloud VM. Same console. Zero inbound agent ports.</span></a>
+    <a href="docs/console.html"><strong>Console</strong><span>Board, grants, doctor, avatars. Chat stays Telegram.</span></a>
+    <a href="docs/operators.html"><strong>Operators</strong><span>Setup, login, profile, roles on a handful of people.</span></a>
+    <a href="docs/headless.html"><strong>Headless</strong><span>Attach existing dirs, tunnels, the gotchas.</span></a>
+    <a href="docs/architecture.html"><strong>Architecture</strong><span>Why Vinext on the Docker host, and why the yard pulls.</span></a>
+    <a href="docs/security.html"><strong>Security</strong><span>The door: bind, passphrases, sessions. Not a reason to open WAN 3000.</span></a>
+    <a href="docs/custom-mcp.html"><strong>Custom MCP</strong><span>Your binary, still a [[server]] in that crane’s mcp.toml.</span></a>
+    <a href="https://github.com/shotah/ai-gantry"><strong>ai-gantry</strong><span>Design, features, MCP — the harness repo.</span></a>
+  </div>
+</section>

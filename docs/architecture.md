@@ -126,6 +126,7 @@ gantree/                    this repo — shipping yard
 │       ├── crane/          AgentDashboard + folds, Telegram, logs, charts
 │       ├── host/           HostDashboard, HostCharts
 │       └── operators/      AuthForms, OperatorProfile, YardSettings panes
+├── site/                   GitHub Pages source (`npm run pages` → dist/pages)
 ├── assets/banner.svg       GitHub README banner
 ├── assets/banner.png       Hub overview (Hub does not render SVG)
 ├── assets/logo.svg         app icon mark (portal crane)
@@ -133,6 +134,7 @@ gantree/                    this repo — shipping yard
 ├── app/favicon.ico         tab icon (browsers that still ask for .ico)
 ├── assets/docs/            console screenshots (shot.mjs) + pitch stills
 ├── scripts/shot.mjs        headless Chrome recapture
+├── scripts/pages.mjs       github.io tree from site/ + docs/*.md
 ├── lib/yard/               host I/O (not RSC)
 │   ├── door/               operators, session, audit events
 │   ├── host/               dockerode, identity, stats, files, .env, avatar, telegram, logs

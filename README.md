@@ -9,6 +9,7 @@
   <a href="https://github.com/shotah/gantree/actions/workflows/ci.yml"><img src="https://github.com/shotah/gantree/raw/gh-pages/badges/coverage.svg" alt="Coverage"></a>
   <a href="https://github.com/shotah/gantree"><img src="https://img.shields.io/github/package-json/v/shotah/gantree?label=version" alt="Version"></a>
   <a href="https://hub.docker.com/r/shotah/gantree"><img src="https://img.shields.io/docker/v/shotah/gantree?logo=docker&label=docker" alt="Docker Hub"></a>
+  <a href="https://shotah.github.io/gantree/"><img src="https://img.shields.io/badge/docs-github.io-f59e0b" alt="Docs"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/shotah/gantree" alt="License"></a>
 </p>
 
@@ -18,6 +19,7 @@
 > **gantree** *(n.)* — the shipping yard those cranes live in.
 
 You opened the yard repo. **The product is a long-horizon AI harness.**
+Site: **[shotah.github.io/gantree](https://shotah.github.io/gantree/)**.
 
 <p align="center">
   <img src="assets/docs/login-phone.png" alt="Log in — the door to the yard, not the chat" width="220">
@@ -156,6 +158,7 @@ day one, this is the wrong stack — and that’s fine.
 
 | If you want… | Go here |
 | --- | --- |
+| The site | **[shotah.github.io/gantree](https://shotah.github.io/gantree/)** |
 | The harness | **[ai-gantry](https://github.com/shotah/ai-gantry)** |
 | Harness without this UI | **[deploy-docker](https://github.com/shotah/ai-gantry/blob/main/docs/deploy-docker.md)** |
 | The board, grants, avatars | **[docs/console.md](docs/console.md)** |
