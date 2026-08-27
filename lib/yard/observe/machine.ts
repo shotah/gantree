@@ -6,6 +6,7 @@ import {
   listRunningWorkloads,
   workloadRole,
 } from "../host/docker";
+import { shotDockerEnabled } from "../host/shotMode";
 import { persistMachine, recallMachine } from "./memory";
 
 const SPARK_MAX = 720;
@@ -109,9 +110,11 @@ export async function sampleMachine(craneNames: string[]): Promise<HostSnapshot 
       otherTx: sum("other", "netTxBytes"),
     };
     live = snap;
-    const row = toSample(snap);
-    pushSpark(row);
-    persistMachine(row);
+    if (!shotDockerEnabled()) {
+      const row = toSample(snap);
+      pushSpark(row);
+      persistMachine(row);
+    }
     return snap;
   } catch {
     return live;

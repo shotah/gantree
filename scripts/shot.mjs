@@ -3,9 +3,11 @@
  * Headless Chrome shots via CDP (no puppeteer).
  *
  *   node scripts/shot.mjs http://127.0.0.1:3070 login-phone setup-phone
+ *   node scripts/shot.mjs http://127.0.0.1:3070 yard host crane crane-metrics metrics profile settings
  *   node scripts/shot.mjs http://127.0.0.1:3070 yard-phone crane-phone phone-preview
  *
  * Unset GANTREE_DEV to photograph /login and /setup.
+ * Seed a photographable yard first: `npm run seed` then GANTREE_SHOT=1.
  */
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -41,6 +43,13 @@ const SHOTS = {
     waitIframe: "[data-shot=yard]",
     waitMs: 2500,
   },
+  yard: { path: "/", sel: "[data-shot=yard]", text: "Shipping yard", waitMs: 2500 },
+  host: { path: "/host", sel: "[data-shot=host-metrics]", text: "cores", waitMs: 2200 },
+  crane: { path: "/gantries/ada", sel: "h1", text: "ada", waitMs: 2500, collapse: "keep-metrics" },
+  "crane-metrics": { path: "/gantries/ada", sel: "[data-shot=metrics]", text: "CPU", waitMs: 2500, collapse: "keep-metrics" },
+  metrics: { path: "/gantries/ada", sel: "[data-shot=metrics]", text: "CPU", crop: true, waitMs: 2200 },
+  profile: { path: "/profile", sel: "[data-shot=profile]", text: "Bob Kit", waitMs: 800 },
+  settings: { path: "/settings", sel: "[data-shot=settings]", text: "Who is on this yard", waitMs: 1200 },
 };
 
 const wanted = names.length ? names : Object.keys(SHOTS);
@@ -252,18 +261,45 @@ try {
     if (spec.waitIframe) {
       await waitIframe(spec.waitIframe);
     }
-    if (spec.collapse) {
+    if (spec.crop) {
       await evalJson(
         cdp,
-        `document.querySelectorAll('button[aria-expanded="true"]').forEach((b) => b.click())`,
+        `document.querySelector(${JSON.stringify(spec.sel)})?.scrollIntoView({ block: "start" })`,
+      );
+      await sleep(400);
+    }
+    if (spec.collapse) {
+      const keepMetrics = spec.collapse === "keep-metrics";
+      await evalJson(
+        cdp,
+        `document.querySelectorAll('button[aria-expanded="true"]').forEach((b) => {
+          if (${keepMetrics ? "true" : "false"} && b.closest("section")?.querySelector("[data-shot=metrics]")) return;
+          b.click();
+        })`,
       );
       await sleep(300);
     }
     if (spec.waitMs) {
       await sleep(spec.waitMs);
     }
-    await evalJson(cdp, "window.scrollTo(0,0)");
-    await sleep(200);
+    if (spec.crop) {
+      await evalJson(
+        cdp,
+        `(async () => {
+          const root = document.querySelector(${JSON.stringify(spec.sel)});
+          root?.scrollIntoView({ block: "start" });
+          for (const n of root?.querySelectorAll("[data-chart]") ?? []) {
+            n.scrollIntoView({ block: "center" });
+            await new Promise((r) => setTimeout(r, 90));
+          }
+          return document.querySelectorAll("[data-chart=on]").length;
+        })()`,
+      );
+      await sleep(700);
+    } else {
+      await evalJson(cdp, "window.scrollTo(0,0)");
+      await sleep(200);
+    }
     const file = `${name}.png`;
     if (spec.crop) {
       await shotCrop(spec.sel, file);

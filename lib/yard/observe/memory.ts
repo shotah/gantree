@@ -363,6 +363,14 @@ export function pruneByObservePrefs(): void {
   }
 }
 
+export function dropMachineSamples(): void {
+  try {
+    yardDb().prepare("DELETE FROM sample_machine").run();
+  } catch {
+    /* gone is gone */
+  }
+}
+
 export function dropCraneSamples(slug: string): void {
   try {
     const db = yardDb();

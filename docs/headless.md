@@ -22,9 +22,15 @@ Login, profile, settings: [operators.md](operators.md).
 - Copy a laptop `data/` over the host. Live OAuth is on the host.
 - **Build a crane** for a slug that already has a `data/` — that writes a **new** empty dir.
 - Run Gantree as **root** (`sudo npm start`) — recreate would then skip a host uid.
-- Set `GANTREE_DEV` in compose. `HOST=0.0.0.0` ignores it; do not get in
-  the habit. Loopback auto-login is for `npm run dev` screenshots only
+- Set `GANTREE_DEV` or `GANTREE_SHOT` in compose. `HOST=0.0.0.0` ignores
+  both; do not get in the habit. Loopback auto-login and the screenshot
+  Docker paint are for `npm run dev` only
   ([security.md](security.md#dev-auto-login)).
+- Forget the rootless socket on Arch / SteamOS. System
+  `/var/run/docker.sock` is often missing; try
+  `DOCKER_SOCKET=$XDG_RUNTIME_DIR/docker.sock` (or the podman sock). For
+  photographs with no daemon: `npm run seed` + `GANTREE_SHOT=1`
+  ([console.md](console.md#screenshot-yard-no-daemon)).
 - Point `gantree.toml` at absolute host dirs and run compose without the
   same-path volume — the board still sees Docker; persona and `mcp.toml`
   look empty.

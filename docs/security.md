@@ -203,6 +203,11 @@ paste it into the container env. Do not set these in `compose.yml`.
 The passphrase still has to pass the same rules (`bob-dev-ok` does).
 Unset the flag to photograph `/login`.
 
+`GANTREE_SHOT=1` is the same bind gate. It paints `gantree.toml` cranes as
+running without a Docker daemon so the board, host card, and charts can be
+photographed (`npm run seed`). Never set it in compose. Unset it to talk to
+a real socket.
+
 ---
 
 ## Disk

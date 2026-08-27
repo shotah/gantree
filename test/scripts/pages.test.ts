@@ -72,6 +72,7 @@ describe("rewriteHref", () => {
 describe("githubSlug", () => {
   it("matches the in-doc anchors", () => {
     expect(githubSlug("Dev auto-login")).toBe("dev-auto-login");
+    expect(githubSlug("Screenshot yard (no daemon)")).toBe("screenshot-yard-no-daemon");
     expect(githubSlug("8. Console in Docker")).toBe("8-console-in-docker");
   });
 });
@@ -111,15 +112,18 @@ describe("buildPages", () => {
     const install = readFileSync(join(out, "docs", "install.html"), "utf8");
     const security = readFileSync(join(out, "docs", "security.html"), "utf8");
     const architecture = readFileSync(join(out, "docs", "architecture.html"), "utf8");
+    const consoleDoc = readFileSync(join(out, "docs", "console.html"), "utf8");
 
     expect(readFileSync(join(out, ".nojekyll"), "utf8")).toBe("");
     expect(index).toContain("A harness is a process");
+    expect(index).toContain("assets/docs/crane-metrics.png");
     expect(index).toContain("assets/banner.svg");
     expect(index).toContain("docs/install.html");
     expect(index).not.toContain("href=\"/gantree/");
     expect(install).toContain("../assets/docs/login.png");
     expect(install).toContain("../style.css");
     expect(security).toContain('id="dev-auto-login"');
+    expect(consoleDoc).toContain('id="screenshot-yard-no-daemon"');
     expect(architecture).toContain("https://github.com/shotah/gantree/blob/main/todo.md");
     expect(architecture).toContain("https://github.com/shotah/ai-gantry/blob/main/docs/gantree.md");
     expect(readdirSync(join(out, "docs"))).not.toContain("dockerhub.html");

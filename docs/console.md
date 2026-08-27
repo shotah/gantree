@@ -36,6 +36,29 @@ again. No email reset. Click your name for **Profile**; the cog is
 [operators.md](operators.md). What the door checks:
 [security.md](security.md).
 
+### Screenshot yard (no daemon)
+
+The board looks empty or `unknown` when Docker is missing — common on
+SteamOS / a laptop without the socket. Seed a photographable house, then
+paint it:
+
+```bash
+npm run seed
+# .env (loopback only — never compose):
+# GANTREE_DEV=1
+# GANTREE_DEV_OPERATOR=bob
+# GANTREE_DEV_PASSPHRASE=bob-dev-ok
+# GANTREE_SHOT=1
+npm run dev
+node scripts/shot.mjs http://127.0.0.1:3000 yard host crane crane-metrics metrics profile settings
+```
+
+That writes five named cranes (kit, ada, jules, moss, piper), five operators
+with photos and Telegram ids, and host/token series in `gantree.db`.
+`GANTREE_SHOT` does not start containers. A real daemon on Arch/SteamOS is
+often `$XDG_RUNTIME_DIR/docker.sock` — set `DOCKER_SOCKET` and unset
+`GANTREE_SHOT`.
+
 <p align="center">
   <img src="../assets/docs/setup.png" alt="First-boot setup: create the operator who owns the box" width="280">
   &nbsp;

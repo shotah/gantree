@@ -17,6 +17,7 @@ const WATCH = [
   "GANTREE_TOOLS",
   "GANTREE_MCP_ROOT",
   "GANTREE_DEV",
+  "GANTREE_SHOT",
 ] as const;
 
 /** Process env the console is running with — no passphrases. */

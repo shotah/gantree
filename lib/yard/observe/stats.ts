@@ -1,7 +1,8 @@
 import { getGantry } from "../crane/inventory";
-import { containerLogsBuffer, containerStatsOnce, cpuMemFromStats } from "../host/docker";
 import { dirBytes } from "../host/disk";
+import { containerLogsBuffer, containerStatsOnce, cpuMemFromStats } from "../host/docker";
 import { decodeDockerLogs, parseLogText, turnFromLog } from "../host/logs";
+import { shotDockerEnabled } from "../host/shotMode";
 import { mcpSnapshot } from "../tools/mcp";
 import type { McpSample, StatSample, TurnSample, UptimeSample, YardSpend } from "../types";
 import { dropCraneSamples, persistHost, persistMcp, persistTurn, persistUptime, recallSamples } from "./memory";
@@ -112,6 +113,9 @@ export function forgetCrane(slug: string): void {
 
 export async function sampleHost(slug: string): Promise<StatSample[]> {
   ensureHydrated(slug);
+  if (shotDockerEnabled()) {
+    return hostRing.get(slug) ?? [];
+  }
   const g = await getGantry(slug);
   if (!g?.containerId || g.state !== "running") {
     return hostRing.get(slug) ?? [];
@@ -181,6 +185,9 @@ export async function sampleTurns(slug: string): Promise<TurnSample[]> {
 
 export async function sampleMcp(slug: string): Promise<McpSample[]> {
   ensureHydrated(slug);
+  if (shotDockerEnabled()) {
+    return mcpRing.get(slug) ?? [];
+  }
   const g = await getGantry(slug);
   if (!g) {
     return mcpRing.get(slug) ?? [];
@@ -194,6 +201,9 @@ export async function sampleMcp(slug: string): Promise<McpSample[]> {
 
 export async function sampleUptime(slug: string): Promise<UptimeSample[]> {
   ensureHydrated(slug);
+  if (shotDockerEnabled()) {
+    return uptimeRing.get(slug) ?? [];
+  }
   const g = await getGantry(slug);
   if (!g) {
     return uptimeRing.get(slug) ?? [];

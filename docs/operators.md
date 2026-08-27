@@ -40,8 +40,10 @@ not blank, not your name, not a common password. Failed logins back off
 Local screenshots / `npm run dev`: `GANTREE_DEV=1` plus operator +
 passphrase in `.env` ([.env.example](../.env.example)). Loopback only —
 compose `HOST=0.0.0.0` ignores the flag. Unset it to photograph `/login`.
-On a wide screen, the phone mark in the header is a 390px preview
-(`?phone=1`) — no DevTools. Recapture: `node scripts/shot.mjs`.
+Empty board / no host graphs: `npm run seed` then `GANTREE_SHOT=1`
+([console.md](console.md#screenshot-yard-no-daemon)). On a wide screen,
+the phone mark in the header is a 390px preview (`?phone=1`) — no
+DevTools. Recapture: `node scripts/shot.mjs`.
 
 <p align="center">
   <img src="../assets/docs/phone-preview.png" alt="Phone preview — 390px frame in a desktop tab" width="560">
