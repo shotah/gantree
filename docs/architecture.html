@@ -175,7 +175,7 @@ image <code>65532</code>), <code>network_mode</code>, and extra binds. Dropping 
 │   ├── lib/                browser helpers (yardFetch, jpeg, phone frame)
 │   └── components/         nested by screen, not by widget type
 │       ├── shared/         DoorShell, DashFold, HintField, avatars, EventStrip
-│       ├── yard/           YardBoard, BuildCrane, HostCard, SpendBoard
+│       ├── yard/           YardBoard, BuildCrane, HostCard, BoardsCard, SpendBoard
 │       ├── crane/          AgentDashboard + folds, Telegram, logs, charts
 │       ├── host/           HostDashboard, HostCharts
 │       └── operators/      AuthForms, OperatorProfile, YardSettings panes
@@ -225,7 +225,10 @@ atoms/molecules or a <code>src/</code> wrap.</p>
 <h2 id="isolation">Isolation</h2>
 <p>One human, one bot, one directory, one <code>data/</code>. Gantree does not merge
 memories or OAuth across gantries. Delete a tryout = delete that
-directory.</p>
+directory. The one shared bind is the yard corkboard (<code>./boards</code> →
+<code>/boards</code>). Grant <code>boards</code> per crane; the yard Boards card reads that
+directory. Messages stay private. Empty dir → empty card. Latest pins
+show on the card.</p>
 <p>Profiles (<code>slim</code> / <code>life</code> / <code>life-cast</code>) are build-time menus, not a
 plugin system. Grant is still “listed in <code>mcp.toml</code>.” <code>life-cast</code> is
 home-only (mDNS / host network). Custom servers:

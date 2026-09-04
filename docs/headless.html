@@ -230,9 +230,10 @@ docker compose up -d
 docker compose up -d --build
 </code></pre>
 <p><code>gantree.toml</code> paths are resolved <strong>inside</strong> the console container. Relative
-<code>./gantries/&lt;slug&gt;</code> works (that dir is mounted at <code>/app/gantries</code>). Recreate
-rewrites those to <strong>host</strong> paths via <code>GANTREE_HOST_ROOT</code> (compose sets it to
-<code>PWD</code> — run <code>docker compose</code> from this checkout).</p>
+<code>./gantries/&lt;slug&gt;</code> works (that dir is mounted at <code>/app/gantries</code>). The
+yard corkboard is <code>./boards</code> → <code>/app/boards</code> so recreate can bind it into
+cranes. Recreate rewrites those to <strong>host</strong> paths via <code>GANTREE_HOST_ROOT</code>
+(compose sets it to <code>PWD</code> — run <code>docker compose</code> from this checkout).</p>
 <p>Absolute attach paths must exist at the <strong>same path</strong> in the console.
 <code>compose.yml</code> has a commented volume next to the others — uncomment it and
 match the inventory prefix:</p>
