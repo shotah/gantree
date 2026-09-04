@@ -78,10 +78,14 @@ describe("BoardsDashboard", () => {
     expect(screen.getByText("100k steps")).toBeTruthy();
     expect(screen.getByText("16,000")).toBeTruthy();
     expect(screen.getByText("Chris beat his 5k PR!")).toBeTruthy();
-    expect(screen.queryByText("sleep week")).toBeNull();
-    fireEvent.click(screen.getByText("Settled contests. Newest first."));
-    await waitFor(() => expect(screen.getByText("sleep week")).toBeTruthy());
+    expect(screen.getByText("sleep week")).toBeTruthy();
     expect(screen.getByText(/Chris won/)).toBeTruthy();
+    const openFold = screen.getByRole("button", { name: /^Open/ }).closest("section");
+    const closedFold = screen.getByRole("button", { name: /^Closed/ }).closest("section");
+    expect(openFold?.textContent).toMatch(/100k steps/);
+    expect(openFold?.textContent).not.toMatch(/sleep week/);
+    expect(closedFold?.textContent).toMatch(/sleep week/);
+    expect(closedFold?.textContent).toMatch(/Chris won/);
     fireEvent.click(screen.getByRole("button", { name: "close all" }));
     await waitFor(() => expect(screen.queryByText("100k steps")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "open all" }));
@@ -96,8 +100,8 @@ describe("BoardsDashboard", () => {
     render(<BoardsDashboard />);
     await waitFor(() => expect(screen.getByText(/No roster yet/)).toBeTruthy());
     expect(screen.getByText("No open challenges.")).toBeTruthy();
+    expect(screen.getByText("No closed challenges.")).toBeTruthy();
     expect(screen.getByText("No pins.")).toBeTruthy();
-    expect(screen.queryByText("Closed")).toBeNull();
   });
 
   it("surfaces a read error", async () => {

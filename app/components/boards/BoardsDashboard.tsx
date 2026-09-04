@@ -110,6 +110,24 @@ export function BoardsDashboard() {
               </DashFold>
 
               <DashFold
+                title="Closed"
+                persistKey={craneFoldKey("boards", "closed")}
+                defaultOpen
+                hint="Settled contests. Newest first."
+                summary={board.closed.length ? `${board.closed.length}` : "none"}
+              >
+                {board.closed.length
+                  ? (
+                      <ul className="space-y-3">
+                        {board.closed.map((c) => (
+                          <ChallengeBlock key={c.id} challenge={c} roster={board.roster} />
+                        ))}
+                      </ul>
+                    )
+                  : <p className="text-sm text-dim">No closed challenges.</p>}
+              </DashFold>
+
+              <DashFold
                 title="Pins"
                 persistKey={craneFoldKey("boards", "pins")}
                 defaultOpen
@@ -126,23 +144,6 @@ export function BoardsDashboard() {
                     )
                   : <p className="text-sm text-dim">No pins.</p>}
               </DashFold>
-
-              {board.closed.length
-                ? (
-                    <DashFold
-                      title="Closed"
-                      persistKey={craneFoldKey("boards", "closed")}
-                      hint="Settled contests. Newest first."
-                      summary={`${board.closed.length}`}
-                    >
-                      <ul className="space-y-3">
-                        {board.closed.map((c) => (
-                          <ChallengeBlock key={c.id} challenge={c} roster={board.roster} />
-                        ))}
-                      </ul>
-                    </DashFold>
-                  )
-                : null}
             </>
           )
         : null}
