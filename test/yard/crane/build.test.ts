@@ -56,6 +56,9 @@ describe("writeCraneFiles", () => {
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("github.com/shotah/mcp-gemini-search");
     expect(readFileSync(out.mcpManifest, "utf8")).not.toMatch(/zchee/);
     expect(readFileSync(out.envFile, "utf8")).toContain("CHANNEL=stdio");
+    expect(readFileSync(out.envFile, "utf8")).toContain("BOARDS_AUTHOR=kit");
+    expect(readFileSync(out.mcpManifest, "utf8")).not.toContain("boards");
+    expect(existsSync(join(root, "boards"))).toBe(true);
     expect(readFileSync(join(root, "gantree.toml"), "utf8")).toContain("slug = \"kit\"");
     const inventory = loadGantreeToml()?.gantry?.[0];
     expect(inventory).toMatchObject({
@@ -69,6 +72,7 @@ describe("writeCraneFiles", () => {
     expect(inventory?.data_dir).not.toMatch(/^\.\//);
     const compose = readFileSync(join(out.dir, "compose.yml"), "utf8");
     expect(compose).toContain("HOME: /data");
+    expect(compose).toContain("../../boards:/boards");
     expect(compose).toContain(`image: ${DEFAULT_IMAGE}`);
     expect(compose).not.toMatch(/^\s+ports:/m);
     expect(compose).toContain("# No ports — outbound chat only.");
@@ -115,6 +119,7 @@ describe("writeCraneFiles", () => {
     expect(readFileSync(join(jules.personaDir, "PERSONA.md"), "utf8")).toContain("**Name:** Jules");
     expect(existsSync(join(jules.personaDir, "SELF.md"))).toBe(true);
     expect(readFileSync(kit.mcpManifest, "utf8")).not.toContain("google-mcp");
+    expect(readFileSync(kit.mcpManifest, "utf8")).not.toContain("boards");
     expect(readFileSync(jules.mcpManifest, "utf8")).toContain("google-mcp");
     expect(readFileSync(jules.mcpManifest, "utf8")).toContain("maps");
 

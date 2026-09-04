@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { copyAvatarTo } from "../host/avatar";
 import { pullImage } from "../host/docker";
-import { loadEnvFile } from "../host/envfile";
+import { loadEnvFile, writeEnvFile } from "../host/envfile";
 import { readText, setTomlGantryTags } from "../host/files";
 import { loadObservePrefs } from "../observe/prefs";
 import { craneDir, createOrReplaceContainer, writeCraneFiles } from "./build";
@@ -134,6 +134,7 @@ export async function cloneCrane(
   if (opts.database && source.dataDir) {
     copyGantryDb(source.dataDir, files.dataDir);
   }
+  writeEnvFile(files.envFile, { ...loadEnvFile(files.envFile), BOARDS_AUTHOR: dest });
 
   const copied = partsList(opts).join(", ");
   try {

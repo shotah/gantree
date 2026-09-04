@@ -26,6 +26,7 @@ import { clearObserveRings } from "@/lib/yard/observe/stats";
 import { listOperators } from "@/lib/yard/door/operators";
 import { findAvatar } from "@/lib/yard/host/avatar";
 import { SHOT_CRANES, SHOT_OPERATORS } from "@/lib/yard/shot/catalog";
+import { loadBoardSnapshot } from "@/lib/yard/host/boards";
 import { parseSeedArgs, seedYard } from "@/lib/yard/shot/seed";
 import { tileJpeg } from "@/lib/yard/shot/tileJpeg";
 
@@ -114,7 +115,7 @@ describe("dockerErrorMessage", () => {
 
 describe("seedYard", () => {
   it("fills operators, named cranes, avatars, and observe series", async () => {
-    const report = seedYard(Date.parse("2026-08-27T15:00:00Z"));
+    const report = seedYard();
     expect(report.cranes).toEqual(SHOT_CRANES.map((c) => c.slug));
     expect(listOperators().map((o) => o.name)).toEqual(SHOT_OPERATORS.map((o) => o.name));
     const bob = listOperators().find((o) => o.name === "bob");
@@ -155,6 +156,17 @@ describe("seedYard", () => {
     expect((await findConsoleWorkload())?.id).toBe("shot-console");
     expect((await listRunningWorkloads()).some((w) => w.name === "gantree")).toBe(true);
     expect(await inspectByName("nope")).toBeNull();
+
+    const board = loadBoardSnapshot(join(report.root, "boards"));
+    expect(board.empty).toBe(false);
+    expect(board.roster.map((r) => r.author)).toEqual(["kit", "ada", "jules"]);
+    expect(board.open.map((c) => c.id)).toEqual(["c_shot_steps", "c_shot_sleep"]);
+    expect(board.open[0]?.title).toBe("100k steps");
+    expect(board.open[0]?.scores).toEqual([
+      { author: "kit", value: 32880 },
+      { author: "ada", value: 22830 },
+    ]);
+    expect(board.pins).toEqual([{ id: "n_shot_pr", author: "kit", body: "Bob beat his 5k PR!" }]);
 
     const turns = recallSamples("ada", { host: 50, turns: 200, mcp: 20, uptime: 20 });
     expect(turns.turns.length).toBeGreaterThan(40);

@@ -122,7 +122,7 @@ gantree/                    this repo — shipping yard
 │   ├── lib/                browser helpers (yardFetch, jpeg, phone frame)
 │   └── components/         nested by screen, not by widget type
 │       ├── shared/         DoorShell, DashFold, HintField, avatars, EventStrip
-│       ├── yard/           YardBoard, BuildCrane, HostCard, SpendBoard
+│       ├── yard/           YardBoard, BuildCrane, HostCard, BoardsCard, SpendBoard
 │       ├── crane/          AgentDashboard + folds, Telegram, logs, charts
 │       ├── host/           HostDashboard, HostCharts
 │       └── operators/      AuthForms, OperatorProfile, YardSettings panes
@@ -179,7 +179,10 @@ atoms/molecules or a `src/` wrap.
 
 One human, one bot, one directory, one `data/`. Gantree does not merge
 memories or OAuth across gantries. Delete a tryout = delete that
-directory.
+directory. The one shared bind is the yard corkboard (`./boards` →
+`/boards`). Grant `boards` per crane; the yard Boards card reads that
+directory. Messages stay private. Empty dir → empty card. Latest pins
+show on the card.
 
 Profiles (`slim` / `life` / `life-cast`) are build-time menus, not a
 plugin system. Grant is still “listed in `mcp.toml`.” `life-cast` is

@@ -51,6 +51,11 @@ export const HOST_SHAPE: Record<string, HostShape> = {
     blurb: "Login + MFA paste. Do this last.",
   },
   feeds: { envKeys: ["FEEDS_USER_AGENT"], blurb: "Optional contact UA." },
+  boards: {
+    envKeys: ["BOARDS_AUTHOR"],
+    optionalEnvKeys: ["BOARDS_ROLE", "BOARDS_PATH", "BOARDS_WRITES_PER_DAY"],
+    blurb: "Yard corkboard. Author is this crane slug. Recreate binds /boards.",
+  },
   twitter: { envKeys: ["X_BEARER_TOKEN"], blurb: "One bearer token." },
   maps: { envKeys: ["GOOGLE_MAPS_API_KEY"], blurb: "Places / ETA. One Maps key." },
   youtube: {

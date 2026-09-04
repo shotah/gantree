@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Screenshot yard: 5 operators, 5 named cranes, host + token series.
+ * Screenshot yard: 5 operators, 5 named cranes, host + token series, mock corkboard.
  *
  *   npm run seed
  *   GANTREE_SHOT=1 GANTREE_DEV=1 npm run dev
@@ -11,8 +11,8 @@ const args = parseSeedArgs(process.argv.slice(2));
 if (args.help) {
   console.log(`npm run seed
 
-Writes operators, gantries/<slug>/, gantree.toml, and observe samples into
-this checkout (gantree.db is gitignored). Then:
+Writes operators, gantries/<slug>/, gantree.toml, observe samples, and a
+mock ./boards corkboard into this checkout (gantree.db is gitignored). Then:
 
   GANTREE_SHOT=1 GANTREE_DEV=1 GANTREE_DEV_OPERATOR=bob GANTREE_DEV_PASSPHRASE=bob-dev-ok npm run dev
 

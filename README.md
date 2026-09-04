@@ -131,7 +131,7 @@ Home Mini vs cloud VM, tunnels, attach existing dirs:
 | --- | --- |
 | `npm start` | Console on this host (`127.0.0.1`) |
 | `npm run dev` | Same, with hot reload. Loopback auto-login: `GANTREE_DEV` in `.env` ([security](docs/security.md#dev-auto-login)) |
-| `npm run seed` | Screenshot yard: 5 operators, 5 named cranes, host + token series. Pair with `GANTREE_SHOT=1` ([console](docs/console.md#screenshot-yard-no-daemon)) |
+| `npm run seed` | Screenshot yard: 5 operators, 5 named cranes, host + token series, mock corkboard. Pair with `GANTREE_SHOT=1` ([console](docs/console.md#screenshot-yard-no-daemon)) |
 | `docker compose up -d` | Hub image `shotah/gantree` on `:80` — never set `GANTREE_DEV` here |
 | **[ai-gantry](https://github.com/shotah/ai-gantry)** | Harness only — no yard |
 

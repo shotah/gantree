@@ -52,6 +52,7 @@ export const PACKAGES: PackageRef[] = [
   { name: "strava", command: "strava-mcp", repo: "go-strava-mcp", downloadTag: "latest", downloadUrl: ghRelease("go-strava-mcp", "strava-mcp") },
   { name: "garmin", command: "garmin", repo: "go-garmin", downloadTag: "latest", downloadUrl: ghRelease("go-garmin", "garmin") },
   { name: "feeds", command: "feeds-mcp", repo: "feeds-mcp", downloadTag: "latest", downloadUrl: ghRelease("feeds-mcp", "feeds-mcp") },
+  { name: "boards", command: "boards-mcp", repo: "boards-mcp", downloadTag: "latest", downloadUrl: ghRelease("boards-mcp", "boards-mcp") },
   { name: "twitter", command: "twitter-mcp", repo: "twitter-mcp", downloadTag: "latest", downloadUrl: ghRelease("twitter-mcp", "twitter-mcp") },
   { name: "maps", command: "google-maps-mcp", repo: "google-maps-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-maps-mcp", "google-maps-mcp") },
   { name: "youtube", command: "youtube-go-mcp", repo: "youtube-go-mcp", downloadTag: "latest", downloadUrl: ghRelease("youtube-go-mcp", "youtube-go-mcp") },

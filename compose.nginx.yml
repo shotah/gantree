@@ -33,6 +33,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./gantree.toml:/app/gantree.toml
       - ./gantries:/app/gantries
+      - ./boards:/app/boards
       - ./backups:/app/backups
       - ./var:/app/var
       # - /opt/agents:/opt/agents

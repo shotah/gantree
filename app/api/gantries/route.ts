@@ -1,6 +1,7 @@
 import { canBuildCrane, denyUnlessAdmin, listOperators, operatorFromRequest, scopeYard, withDoor } from "@/lib/yard/door";
 import { listYard } from "@/lib/yard/crane/inventory";
 import { buildCrane, type BuildInput } from "@/lib/yard/crane/build";
+import { loadBoardSnapshot } from "@/lib/yard/host/boards";
 import { kickMachine } from "@/lib/yard/observe/machine";
 import { labelSpend, namesFromOperators, parseSpendWindow, windowStart } from "@/lib/yard/observe/spend";
 import { kickYardSamples, kickYardSpend } from "@/lib/yard/observe/stats";
@@ -21,6 +22,7 @@ export const GET = withDoor(async (req: Request) => {
       sparks: kickYardSamples(running),
       spend: labelSpend(kickYardSpend(slugs, windowStart(window)), userNames),
       host: kickMachine(craneNames),
+      board: loadBoardSnapshot(),
       userNames,
       canBuild: Boolean(you && canBuildCrane(you)),
       observe: loadObservePrefs(),

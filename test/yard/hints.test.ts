@@ -16,6 +16,8 @@ describe("envHint", () => {
 
   it("names a maps key and a RentCast key", () => {
     expect(envHint("GOOGLE_MAPS_API_KEY").hint).toMatch(/Maps/);
+    expect(envHint("BOARDS_AUTHOR").hint).toMatch(/corkboard/);
+    expect(envHint("BOARDS_AUTHOR").example).toBe("kit");
     expect(envHint("RENTCAST_API_KEY").hint).toMatch(/RentCast/);
   });
 

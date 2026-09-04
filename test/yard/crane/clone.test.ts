@@ -144,6 +144,7 @@ describe("cloneCrane", () => {
     const destDir = join(dirs[0]!, "gantries", "kit-copy");
     expect(loadEnvFile(join(destDir, ".env")).LLM_API_KEY).toBe("sk-jules");
     expect(loadEnvFile(join(destDir, ".env")).TELEGRAM_BOT_TOKEN).toBe("123:jules-bot");
+    expect(loadEnvFile(join(destDir, ".env")).BOARDS_AUTHOR).toBe("kit-copy");
     expect(readFileSync(join(destDir, "mcp.toml"), "utf8")).toContain("google-mcp");
     expect(readFileSync(join(destDir, "compose.yml"), "utf8")).toContain(`image:`);
     expect(readFileSync(join(destDir, "persona", "PERSONA.md"), "utf8")).toContain("**Name:** Kit-copy");
@@ -156,7 +157,7 @@ describe("cloneCrane", () => {
     expect(createOrReplaceContainer).toHaveBeenCalledWith(
       expect.objectContaining({
         slug: "kit-copy",
-        env: expect.objectContaining({ LLM_API_KEY: "sk-jules" }),
+        env: expect.objectContaining({ LLM_API_KEY: "sk-jules", BOARDS_AUTHOR: "kit-copy" }),
       }),
     );
   });
@@ -170,6 +171,7 @@ describe("cloneCrane", () => {
     expect(readFileSync(join(destDir, "persona", "SELF.md"), "utf8")).toBe("# distilled jules\n");
     expect(readFileSync(join(destDir, "persona", "avatar.jpg"), "utf8")).toBe("jpeg-bytes");
     expect(loadEnvFile(join(destDir, ".env")).LLM_API_KEY).toBeUndefined();
+    expect(loadEnvFile(join(destDir, ".env")).BOARDS_AUTHOR).toBe("tryout");
     expect(readFileSync(join(destDir, "mcp.toml"), "utf8")).not.toContain("google-mcp");
     expect(existsSync(join(destDir, "data", "gantry.db"))).toBe(false);
     expect(loadGantreeToml()?.gantry?.find((g) => g.slug === "tryout")?.tags).toBeUndefined();

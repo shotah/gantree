@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/yard/host/docker", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/yard/host/docker")>();
@@ -9,9 +11,22 @@ import { createOrReplaceContainer } from "@/lib/yard/crane/build";
 import { docker, inspectByName } from "@/lib/yard/host/docker";
 import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
+const dirs: string[] = [];
+
 beforeEach(() => {
   vi.mocked(docker).mockReset();
   vi.mocked(inspectByName).mockReset();
+  const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+  dirs.push(root);
+  process.env.GANTREE_ROOT = root;
+  delete process.env.GANTREE_HOST_ROOT;
+});
+
+afterEach(() => {
+  for (const d of dirs.splice(0)) {
+    rmSync(d, { recursive: true, force: true });
+  }
+  delete process.env.GANTREE_ROOT;
 });
 
 function dockerStub(opts: {
@@ -76,9 +91,11 @@ describe("createOrReplaceContainer", () => {
         "/opt/gantree/gantries/kit/persona:/persona",
         "/opt/gantree/gantries/kit/data:/data",
         "/opt/gantree/gantries/kit/mcp.toml:/etc/gantry/mcp.toml",
+        `${join(dirs[0]!, "boards")}:/boards`,
         "/dev/snd:/dev/snd",
       ]),
     );
+    expect(existsSync(join(dirs[0]!, "boards"))).toBe(true);
     expect(host.Binds).not.toContain("/opt/agents/kit/data:/data");
     const env = created?.Env as string[];
     expect(env).toContain("HOME=/data");

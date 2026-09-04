@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { emptyTrajectory } from "@/lib/yard/observe/spend";
 import type { SpendRollup, YardInventory, YardSpend } from "@/lib/yard/types";
 import { card } from "@/test/yard/card";
-import { BOARD_ORDER_KEY, HOST_CARD_ID } from "@/app/lib/boardOrder";
+import { BOARD_ORDER_KEY, BOARDS_CARD_ID, HOST_CARD_ID } from "@/app/lib/boardOrder";
 import { YardBoard } from "@/app/components/yard/YardBoard";
 
 vi.mock("@/app/lib/yardFetch", () => ({
@@ -136,8 +136,48 @@ describe("YardBoard", () => {
     render(<YardBoard />);
     expect(screen.getByText("Shipping yard")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Host/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Boards" })).toBeTruthy();
     expect(screen.getByText(/Sampling Docker/)).toBeTruthy();
+    expect(screen.getByText(/Reading the corkboard/)).toBeTruthy();
     expect(screen.queryByText("Talking to Docker…")).toBeNull();
+  });
+
+  it("paints roster and an open challenge on the boards card", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            board: {
+              empty: false,
+              roster: [{ author: "kit", agentName: "Kit", userName: "Chris" }],
+              open: [
+                {
+                  id: "c_steps",
+                  title: "100k steps",
+                  kind: "steps",
+                  mode: "sum",
+                  target: 100000,
+                  windowStart: "2026-09-01",
+                  windowEnd: "2026-09-14",
+                  status: "open",
+                  participants: ["kit"],
+                  scores: [{ author: "kit", value: 8000 }],
+                },
+              ],
+              pins: [],
+            },
+          }),
+      } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("100k steps")).toBeTruthy());
+    expect(screen.getByTitle("kit").textContent).toMatch(/Chris/);
+    expect(screen.getByText(/Chris 8,000/)).toBeTruthy();
   });
 
   it("shows toml cards while docker is still pending", async () => {
@@ -245,10 +285,14 @@ describe("YardBoard", () => {
     const kit = lane.querySelector("[data-board-id='kit']");
     const tryout = lane.querySelector("[data-board-id='tryout']");
     const host = lane.querySelector("[data-board-id='" + HOST_CARD_ID + "']");
+    const boards = lane.querySelector("[data-board-id='" + BOARDS_CARD_ID + "']");
     expect(kit).toBeTruthy();
     expect(tryout).toBeTruthy();
     expect(host).toBeTruthy();
+    expect(boards).toBeTruthy();
     expect(host?.getAttribute("draggable")).toBeNull();
+    expect(boards?.getAttribute("draggable")).toBeNull();
+    expect(screen.getByText("Empty corkboard.")).toBeTruthy();
     fireEvent.dragStart(kit!, { dataTransfer });
     fireEvent.dragOver(tryout!, { dataTransfer });
     fireEvent.drop(tryout!, { dataTransfer });

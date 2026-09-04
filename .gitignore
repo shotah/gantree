@@ -30,6 +30,7 @@ gantree.db-*
 /var/
 /operators/
 /gantries/
+/boards/
 backups/
 .tmp-*
 /logs/

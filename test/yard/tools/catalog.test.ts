@@ -52,6 +52,8 @@ describe("PACKAGES", () => {
   it("is the full yard menu (grant is still that crane’s mcp.toml)", () => {
     const byName = Object.fromEntries(PACKAGES.map((p) => [p.name, p]));
     expect(byName.ghealth?.command).toBe("google-health-mcp");
+    expect(byName.boards?.command).toBe("boards-mcp");
+    expect(byName.boards?.downloadUrl).toContain("github.com/shotah/boards-mcp");
     expect(byName.flights?.command).toBe("flights-search-mcp");
     expect(byName.rentals?.command).toBe("rentals-search-mcp");
     expect(byName.cars?.command).toBe("cars-search-mcp");
@@ -76,6 +78,10 @@ describe("loadCatalog", () => {
   it("fills env_keys and auth from last-known host-manifest when the binary cannot run", () => {
     const byName = Object.fromEntries(loadCatalog().map((c) => [c.name, c]));
     expect(byName.maps?.envKeys).toEqual(["GOOGLE_MAPS_API_KEY"]);
+    expect(byName.boards?.command).toBe("boards-mcp");
+    expect(byName.boards?.envKeys).toEqual(["BOARDS_AUTHOR"]);
+    expect(byName.boards?.optionalEnvKeys).toEqual(["BOARDS_ROLE", "BOARDS_PATH", "BOARDS_WRITES_PER_DAY"]);
+    expect(byName.boards?.download_url).toContain("boards-mcp");
     expect(byName.google?.envKeys).toEqual(["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"]);
     expect(byName.google?.optionalEnvKeys).toEqual(["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]);
     expect(byName.google?.auth_args).toEqual(["auth"]);

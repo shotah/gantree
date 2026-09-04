@@ -1,4 +1,5 @@
 import { getGantry } from "../crane/inventory";
+import { loadEnvFile, writeEnvFile } from "../host/envfile";
 import { parseMcpToml, readText, stringifyMcpToml, writeText } from "../host/files";
 import type { CatalogEntry, McpServer } from "../types";
 import { loadCatalog } from "./catalog";
@@ -35,6 +36,12 @@ export async function grant(slug: string, name: string): Promise<{ ok: boolean; 
   const cat = loadCatalog().find((c) => c.name === name);
   const next: McpServer[] = [...servers, cat ? serverFromCatalog(cat) : { name, command: name }];
   writeText(g.mcpManifest, stringifyMcpToml(next));
+  if (name === "boards" && g.envFile) {
+    const env = loadEnvFile(g.envFile);
+    if (!env.BOARDS_AUTHOR?.trim()) {
+      writeEnvFile(g.envFile, { ...env, BOARDS_AUTHOR: slug });
+    }
+  }
   const needs = cat?.envKeys?.length ? ` — add ${cat.envKeys.join(", ")} in Secrets` : "";
   return { ok: true, detail: `granted ${name} — recreate to fetch bins and load it${needs}`, servers: next };
 }

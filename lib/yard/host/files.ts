@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { parse, stringify } from "smol-toml";
 import type { McpServer } from "../types";
@@ -24,6 +24,18 @@ export type GantreeToml = {
 
 export function yardRoot(): string {
   return resolve(process.env.GANTREE_ROOT || process.cwd());
+}
+
+/** Yard-wide corkboard. Bound into every crane at /boards. */
+export function boardsDir(): string {
+  return resolve(yardRoot(), "boards");
+}
+
+export function ensureBoardsDir(): string {
+  const dir = boardsDir();
+  mkdirSync(dir, { recursive: true });
+  chmodSync(dir, 0o777);
+  return dir;
 }
 
 export function tomlPath(): string {

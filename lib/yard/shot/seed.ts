@@ -15,7 +15,7 @@ import { saveOperatorAvatar } from "@/lib/yard/door/profile";
 import { recordYardEvent } from "@/lib/yard/door/events";
 import { saveAvatar } from "@/lib/yard/host/avatar";
 import { writeEnvFile } from "@/lib/yard/host/envfile";
-import { mergeTomlTagColors, setTomlGantryTags, writeText, yardRoot } from "@/lib/yard/host/files";
+import { ensureBoardsDir, mergeTomlTagColors, setTomlGantryTags, writeText, yardRoot } from "@/lib/yard/host/files";
 import {
   dropCraneSamples,
   dropMachineSamples,
@@ -168,6 +168,77 @@ function hashSeed(s: string): number {
   return h >>> 0;
 }
 
+function isoDay(now: number, offsetDays: number): { day: string; at: string } {
+  const at = new Date(now + offsetDays * 86_400_000).toISOString();
+  return { day: at.slice(0, 10), at };
+}
+
+function writeJsonl(path: string, rows: unknown[]): void {
+  writeFileSync(path, `${rows.map((r) => JSON.stringify(r)).join("\n")}\n`);
+}
+
+/** Shot operators on the corkboard: kit/Bob, ada/Sam, jules/Nia. One steps contest on top. */
+function seedBoard(now: number): void {
+  const dir = ensureBoardsDir();
+  const created = isoDay(now, -3);
+  const stepsEnd = isoDay(now, 11);
+  const sleepStart = isoDay(now, -2);
+  const sleepEnd = isoDay(now, 5);
+  const d0 = isoDay(now, -2);
+  const d1 = isoDay(now, -1);
+  const d2 = isoDay(now, 0);
+  writeJsonl(resolve(dir, "roster.jsonl"), [
+    { author: "kit", agent_name: "Kit", user_name: "Bob", updated_at: created.at },
+    { author: "ada", agent_name: "Ada", user_name: "Sam", updated_at: created.at },
+    { author: "jules", agent_name: "Jules", user_name: "Nia", updated_at: created.at },
+  ]);
+  writeJsonl(resolve(dir, "challenges.jsonl"), [
+    {
+      id: "c_shot_sleep",
+      title: "sleep week",
+      kind: "sleep",
+      mode: "average",
+      target: 80,
+      window_start: sleepStart.day,
+      window_end: sleepEnd.day,
+      participants: ["ada", "jules"],
+      status: "open",
+      created_at: created.at,
+    },
+    {
+      id: "c_shot_steps",
+      title: "100k steps",
+      kind: "steps",
+      mode: "sum",
+      target: 100000,
+      window_start: created.day,
+      window_end: stepsEnd.day,
+      participants: ["kit", "ada"],
+      status: "open",
+      created_at: created.at,
+    },
+  ]);
+  writeJsonl(resolve(dir, "checkins.jsonl"), [
+    { challenge_id: "c_shot_steps", author: "kit", value: 12480, day: d0.day, at: d0.at },
+    { challenge_id: "c_shot_steps", author: "kit", value: 11020, day: d1.day, at: d1.at },
+    { challenge_id: "c_shot_steps", author: "kit", value: 9380, day: d2.day, at: d2.at },
+    { challenge_id: "c_shot_steps", author: "ada", value: 14110, day: d0.day, at: d0.at },
+    { challenge_id: "c_shot_steps", author: "ada", value: 8720, day: d1.day, at: d1.at },
+    { challenge_id: "c_shot_sleep", author: "ada", value: 84, day: d0.day, at: d0.at },
+    { challenge_id: "c_shot_sleep", author: "ada", value: 80, day: d1.day, at: d1.at },
+    { challenge_id: "c_shot_sleep", author: "jules", value: 76, day: d0.day, at: d0.at },
+    { challenge_id: "c_shot_sleep", author: "jules", value: 80, day: d1.day, at: d1.at },
+  ]);
+  writeJsonl(resolve(dir, "notices.jsonl"), [
+    {
+      id: "n_shot_pr",
+      author: "kit",
+      body: "Bob beat his 5k PR!",
+      created_at: d2.at,
+    },
+  ]);
+}
+
 function seedMetrics(now: number): void {
   dropMachineSamples();
   const hostRand = mulberry(hashSeed("machine"));
@@ -278,6 +349,7 @@ export function seedYard(now = Date.now()): SeedReport {
   }
   mergeTomlTagColors(SHOT_TAG_COLORS);
   seedMetrics(now);
+  seedBoard(now);
   const bob = ids.find((o) => o.name === "bob");
   recordYardEvent({ kind: "setup", operatorId: bob?.id, detail: "screenshot yard" });
   for (const crane of SHOT_CRANES) {

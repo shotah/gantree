@@ -4,7 +4,7 @@ import { LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog } from "../tools/c
 import { serverFromCatalog } from "../tools/packages";
 import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
 import { writeEnvFile } from "../host/envfile";
-import { stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
+import { ensureBoardsDir, stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
 import { seedPersonaFiles } from "./seed";
 import { DEFAULT_IMAGE, type McpServer } from "../types";
 import { loadObservePrefs } from "../observe/prefs";
@@ -58,6 +58,7 @@ export function writeCraneFiles(input: BuildInput): {
   mkdirSync(dataDir, { recursive: true });
   chmodSync(personaDir, 0o777);
   chmodSync(dataDir, 0o777);
+  ensureBoardsDir();
 
   const names = profileNames(input.profile ?? "slim", yard);
   const servers: McpServer[] = names.map((name) => {
@@ -69,6 +70,7 @@ export function writeCraneFiles(input: BuildInput): {
   writeEnvFile(envFile, {
     LLM_MODEL: input.model || "gemini-3.6-flash",
     CHANNEL: input.channel || "telegram",
+    BOARDS_AUTHOR: slug,
     ...(input.env ?? {}),
   });
   const user = hostUserSpec(dataDir, dir, tomlPath());
@@ -93,6 +95,7 @@ export function writeCraneFiles(input: BuildInput): {
       `      - ./persona:/persona`,
       `      - ./data:/data`,
       `      - ./mcp.toml:/etc/gantry/mcp.toml`,
+      `      - ../../boards:/boards`,
       `    # No ports — outbound chat only.`,
       ``,
     ].join("\n"),
@@ -141,6 +144,7 @@ export async function createOrReplaceContainer(opts: {
     `${hostBindPath(opts.personaDir)}:/persona`,
     `${hostBindPath(opts.dataDir)}:/data`,
     `${hostBindPath(opts.mcpManifest)}:/etc/gantry/mcp.toml`,
+    `${hostBindPath(ensureBoardsDir())}:/boards`,
   ];
   const binds = mergeBinds(requiredBinds, runtime.binds);
   const created = await docker().createContainer({
@@ -202,6 +206,7 @@ export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; deta
   const env = {
     LLM_MODEL: input.model || "gemini-3.6-flash",
     CHANNEL: input.channel || "telegram",
+    BOARDS_AUTHOR: slug,
     ...(input.env ?? {}),
   };
   try {

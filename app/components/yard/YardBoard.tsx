@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { fmtGantryBuild } from "@/lib/yard/crane/status";
 import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
 import { DEFAULT_SPEND_WINDOW, FAT_DATA_DIR_BYTES, fmtAgo, fmtBytes, fmtEstTokens, lastDiskBytes, type SpendWindow } from "@/lib/yard/observe/spend";
+import { BoardsCard } from "./BoardsCard";
 import { BuildCrane } from "./BuildCrane";
 import { CraneAvatar } from "../shared/CraneAvatar";
 import { useDoor } from "../shared/DoorShell";
@@ -14,6 +15,7 @@ import { HostCard } from "./HostCard";
 import { SpendBoard } from "./SpendBoard";
 import {
   applyBoardOrder,
+  BOARDS_CARD_ID,
   HOST_CARD_ID,
   moveVisibleBoardId,
   readBoardOrder,
@@ -363,6 +365,9 @@ export function YardBoard() {
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(18rem,1fr))]" role="list" aria-label="Yard cards">
         <div role="listitem" data-board-id={HOST_CARD_ID} className="h-full min-w-0">
           <HostCard host={yard?.host} dockerError={yard?.dockerError} />
+        </div>
+        <div role="listitem" data-board-id={BOARDS_CARD_ID} className="h-full min-w-0">
+          <BoardsCard board={yard?.board} ready={Boolean(yard)} />
         </div>
         {laidOut.map((id) => {
           const g = bySlug.get(id);

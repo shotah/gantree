@@ -1,5 +1,6 @@
 export const BOARD_ORDER_KEY = "gantree.board.v1";
 export const HOST_CARD_ID = "host";
+export const BOARDS_CARD_ID = "boards";
 
 export function parseBoardOrder(raw: string | null | undefined): string[] {
   if (!raw) {

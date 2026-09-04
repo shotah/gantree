@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   backupFiles,
+  boardsDir,
+  ensureBoardsDir,
   envKeyNames,
   loadGantreeToml,
   mergeTomlTagColors,
@@ -111,6 +113,18 @@ describe("envKeyNames and writeText", () => {
     expect(names.keys).toEqual(["CHANNEL", "EMPTY"]);
     expect(names.valuesPresent).toEqual({ CHANNEL: true, EMPTY: false });
     expect(envKeyNames(null).keys).toEqual([]);
+  });
+});
+
+describe("boards dir", () => {
+  it("is yardRoot/boards and world-writable after ensure", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    expect(boardsDir()).toBe(join(root, "boards"));
+    expect(existsSync(boardsDir())).toBe(false);
+    expect(ensureBoardsDir()).toBe(join(root, "boards"));
+    expect(existsSync(boardsDir())).toBe(true);
   });
 });
 

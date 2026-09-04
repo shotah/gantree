@@ -18,10 +18,12 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
       blurb: "Gmail.",
     },
     { name: "maps", command: "google-maps-mcp", envKeys: ["GOOGLE_MAPS_API_KEY"], blurb: "Places." },
+    { name: "boards", command: "boards-mcp", envKeys: ["BOARDS_AUTHOR"], blurb: "Corkboard." },
   ],
 }));
 
 import { getGantry } from "@/lib/yard/crane/inventory";
+import { loadEnvFile } from "@/lib/yard/host/envfile";
 import { stringifyMcpToml } from "@/lib/yard/host/files";
 import { grant, revoke, enrichDownloadUrls } from "@/lib/yard/tools/grant";
 
@@ -103,6 +105,33 @@ describe("grant", () => {
     expect(out.ok).toBe(true);
     expect(readFileSync(kit, "utf8")).toContain("google");
     expect(readFileSync(jules, "utf8")).not.toContain("google");
+  });
+
+  it("seeds BOARDS_AUTHOR from the slug when granting boards", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const envFile = join(root, ".env");
+    writeFileSync(mcp, stringifyMcpToml([]));
+    writeFileSync(envFile, "CHANNEL=telegram\n");
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, envFile }));
+    const out = await grant("kit", "boards");
+    expect(out.ok).toBe(true);
+    expect(out.servers[0]).toEqual(expect.objectContaining({ name: "boards", command: "boards-mcp" }));
+    expect(loadEnvFile(envFile).BOARDS_AUTHOR).toBe("kit");
+    expect(loadEnvFile(envFile).CHANNEL).toBe("telegram");
+  });
+
+  it("does not overwrite an existing BOARDS_AUTHOR on grant", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const envFile = join(root, ".env");
+    writeFileSync(mcp, stringifyMcpToml([]));
+    writeFileSync(envFile, "BOARDS_AUTHOR=jules\n");
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, envFile }));
+    await grant("kit", "boards");
+    expect(loadEnvFile(envFile).BOARDS_AUTHOR).toBe("jules");
   });
 });
 

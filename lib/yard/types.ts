@@ -322,6 +322,47 @@ export type ObservePrefs = {
   genUsdPerMillion: number | null;
 };
 
+/** One crane + human on the yard corkboard (boards-mcp roster.jsonl). */
+export type BoardRosterEntry = {
+  author: string;
+  agentName: string;
+  userName: string;
+};
+
+export type BoardScore = {
+  author: string;
+  value: number;
+};
+
+/** Open contest + live aggregates from checkins.jsonl. */
+export type BoardChallenge = {
+  id: string;
+  title: string;
+  kind: string;
+  mode: string;
+  target: number;
+  windowStart: string;
+  windowEnd: string;
+  status: string;
+  participants: string[];
+  scores: BoardScore[];
+  winner?: string;
+};
+
+/** Latest corkboard pin (notices.jsonl). A shout, a PR, a badge. */
+export type BoardNotice = {
+  id: string;
+  author: string;
+  body: string;
+};
+
+export type BoardSnapshot = {
+  roster: BoardRosterEntry[];
+  open: BoardChallenge[];
+  pins: BoardNotice[];
+  empty: boolean;
+};
+
 export type YardInventory = {
   source: "gantree.toml" | "docker-discover";
   yard: string;
@@ -335,6 +376,8 @@ export type YardInventory = {
   spend?: YardSpend;
   /** Host CPU/RAM vs the Mini — filled by the list API, not listYard. */
   host?: HostLive;
+  /** Yard corkboard — filled by the list API, not listYard. Empty dir → empty snapshot. */
+  board?: BoardSnapshot;
   /** True when this session may build a crane — filled by the list API. */
   canBuild?: boolean;
   /** Yard [observe] prefs — filled by the list API. */

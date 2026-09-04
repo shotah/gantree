@@ -3,7 +3,7 @@
  * Headless Chrome shots via CDP (no puppeteer).
  *
  *   node scripts/shot.mjs http://127.0.0.1:3070 login-phone setup-phone
- *   node scripts/shot.mjs http://127.0.0.1:3070 yard host crane crane-metrics metrics profile settings
+ *   node scripts/shot.mjs http://127.0.0.1:3070 yard boards host crane crane-metrics metrics profile settings
  *   node scripts/shot.mjs http://127.0.0.1:3070 yard-phone crane-phone phone-preview
  *
  * Unset GANTREE_DEV to photograph /login and /setup.
@@ -44,6 +44,7 @@ const SHOTS = {
     waitMs: 2500,
   },
   yard: { path: "/", sel: "[data-shot=yard]", text: "Shipping yard", waitMs: 2500 },
+  boards: { path: "/", sel: "[data-shot=boards]", text: "100k steps", crop: true, waitMs: 2500 },
   host: { path: "/host", sel: "[data-shot=host-metrics]", text: "cores", waitMs: 2200 },
   crane: { path: "/gantries/ada", sel: "h1", text: "ada", waitMs: 2500, collapse: "keep-metrics" },
   "crane-metrics": { path: "/gantries/ada", sel: "[data-shot=metrics]", text: "CPU", waitMs: 2500, collapse: "keep-metrics" },

@@ -124,6 +124,7 @@ describe("buildPages", () => {
     expect(install).toContain("../style.css");
     expect(security).toContain('id="dev-auto-login"');
     expect(consoleDoc).toContain('id="screenshot-yard-no-daemon"');
+    expect(consoleDoc).toContain("../assets/docs/boards.png");
     expect(architecture).toContain("https://github.com/shotah/gantree/blob/main/todo.md");
     expect(architecture).toContain("https://github.com/shotah/ai-gantry/blob/main/docs/gantree.md");
     expect(readdirSync(join(out, "docs"))).not.toContain("dockerhub.html");

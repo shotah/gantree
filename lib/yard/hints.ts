@@ -284,6 +284,22 @@ const ENV_HINTS: Record<string, HintCopy> = {
     hint: "Contact User-Agent some feeds require (email or URL). Blank may work; set it if a feed 403s.",
     example: "kit-feeds (you@example.com)",
   },
+  BOARDS_AUTHOR: {
+    hint: "This crane's name on the yard corkboard. Use the slug. Clone rewrites it so two cranes do not share an author.",
+    example: "kit",
+  },
+  BOARDS_ROLE: {
+    hint: "agent (12 writes / rolling 24h) or human (30). Blank is agent.",
+    example: "agent",
+  },
+  BOARDS_PATH: {
+    hint: "Corkboard directory inside the crane. Blank is /boards (the yard bind).",
+    example: "/boards",
+  },
+  BOARDS_WRITES_PER_DAY: {
+    hint: "Override the rolling 24h write cap. Failed mutations do not count. Blank uses the role default.",
+    example: "12",
+  },
   GOOGLE_HEALTH_CLIENT_ID: {
     hint: "OAuth client id for Google Health / Fitbit. Enable health.googleapis.com, Web application, loopback redirect.",
     example: "123456789-abc.apps.googleusercontent.com",
