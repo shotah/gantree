@@ -123,6 +123,7 @@ gantree/                    this repo — shipping yard
 │   └── components/         nested by screen, not by widget type
 │       ├── shared/         DoorShell, DashFold, HintField, avatars, EventStrip
 │       ├── yard/           YardBoard, BuildCrane, HostCard, BoardsCard, SpendBoard
+│       ├── boards/         BoardsDashboard (`/boards`)
 │       ├── crane/          AgentDashboard + folds, Telegram, logs, charts
 │       ├── host/           HostDashboard, HostCharts
 │       └── operators/      AuthForms, OperatorProfile, YardSettings panes
@@ -169,8 +170,8 @@ beside production files. `test/yard/` covers `lib/yard` (Node / Docker /
 files). `test/app/` covers the UI and `app/lib/` helpers. `test/scripts/`
 covers `scripts/`. Coverage thresholds apply to `lib/yard` only.
 
-**UI folders match screens** (`shared` / `yard` / `crane` / `host` /
-`operators`). Pages stay thin route shells. Do not invent
+**UI folders match screens** (`shared` / `yard` / `boards` / `crane` /
+`host` / `operators`). Pages stay thin route shells. Do not invent
 atoms/molecules or a `src/` wrap.
 
 ---
@@ -180,9 +181,10 @@ atoms/molecules or a `src/` wrap.
 One human, one bot, one directory, one `data/`. Gantree does not merge
 memories or OAuth across gantries. Delete a tryout = delete that
 directory. The one shared bind is the yard corkboard (`./boards` →
-`/boards`). Grant `boards` per crane; the yard Boards card reads that
-directory. Messages stay private. Empty dir → empty card. Latest pins
-show on the card.
+`/boards` in the crane). Grant `boards` per crane; the yard Boards card
+reads that directory and clicks through to the HTTP `/boards` page.
+Messages stay private. Empty dir → empty card. Latest pins show on the
+card; the page lists the rest.
 
 Profiles (`slim` / `life` / `life-cast`) are build-time menus, not a
 plugin system. Grant is still “listed in `mcp.toml`.” `life-cast` is

@@ -177,13 +177,15 @@ function writeJsonl(path: string, rows: unknown[]): void {
   writeFileSync(path, `${rows.map((r) => JSON.stringify(r)).join("\n")}\n`);
 }
 
-/** Shot operators on the corkboard: kit/Bob, ada/Sam, jules/Nia. One steps contest on top. */
+/** Shot operators on the corkboard: kit/Bob, ada/Sam, jules/Nia. Open steps on top; one settled. */
 function seedBoard(now: number): void {
   const dir = ensureBoardsDir();
   const created = isoDay(now, -3);
   const stepsEnd = isoDay(now, 11);
   const sleepStart = isoDay(now, -2);
   const sleepEnd = isoDay(now, 5);
+  const oldStart = isoDay(now, -21);
+  const oldEnd = isoDay(now, -14);
   const d0 = isoDay(now, -2);
   const d1 = isoDay(now, -1);
   const d2 = isoDay(now, 0);
@@ -193,6 +195,19 @@ function seedBoard(now: number): void {
     { author: "jules", agent_name: "Jules", user_name: "Nia", updated_at: created.at },
   ]);
   writeJsonl(resolve(dir, "challenges.jsonl"), [
+    {
+      id: "c_shot_old",
+      title: "10k steps",
+      kind: "steps",
+      mode: "sum",
+      target: 10000,
+      window_start: oldStart.day,
+      window_end: oldEnd.day,
+      participants: ["kit", "ada"],
+      status: "closed",
+      winner: "kit",
+      created_at: oldStart.at,
+    },
     {
       id: "c_shot_sleep",
       title: "sleep week",
@@ -219,6 +234,8 @@ function seedBoard(now: number): void {
     },
   ]);
   writeJsonl(resolve(dir, "checkins.jsonl"), [
+    { challenge_id: "c_shot_old", author: "kit", value: 11200, day: oldEnd.day, at: oldEnd.at },
+    { challenge_id: "c_shot_old", author: "ada", value: 9800, day: oldEnd.day, at: oldEnd.at },
     { challenge_id: "c_shot_steps", author: "kit", value: 12480, day: d0.day, at: d0.at },
     { challenge_id: "c_shot_steps", author: "kit", value: 11020, day: d1.day, at: d1.at },
     { challenge_id: "c_shot_steps", author: "kit", value: 9380, day: d2.day, at: d2.at },

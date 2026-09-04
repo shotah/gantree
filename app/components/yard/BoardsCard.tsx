@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   boardKindLabel,
   displayBoardName,
@@ -58,13 +59,13 @@ export function BoardsCard({ board, ready }: { board?: BoardSnapshot; ready: boo
     body = <BoardsBody board={board} />;
   }
   return (
-    <div className={CARD} data-shot="boards">
+    <Link href="/boards" className={CARD} data-shot="boards">
       <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
         <BoardsAvatar />
         Boards
       </h2>
       {body}
-    </div>
+    </Link>
   );
 }
 

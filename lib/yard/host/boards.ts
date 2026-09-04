@@ -8,9 +8,10 @@ const FILE_CHALLENGES = "challenges.jsonl";
 const FILE_CHECKINS = "checkins.jsonl";
 const FILE_NOTICES = "notices.jsonl";
 const MAX_OPEN = 8;
-const MAX_PINS = 8;
+const MAX_CLOSED = 16;
+const MAX_PINS = 50;
 
-export const EMPTY_BOARD: BoardSnapshot = { roster: [], open: [], pins: [], empty: true };
+export const EMPTY_BOARD: BoardSnapshot = { roster: [], open: [], closed: [], pins: [], empty: true };
 
 export { BOARD_KIND_CATALOG, boardKindLabel, displayBoardName, formatBoardScore } from "./boardFormat";
 
@@ -23,9 +24,11 @@ export function loadBoardSnapshot(dir = boardsDir()): BoardSnapshot {
     }
     const roster = lastByAuthor(readJsonl(resolve(dir, FILE_ROSTER)).map(asRoster).filter((r): r is BoardRosterEntry => r != null));
     const checkins = readJsonl(resolve(dir, FILE_CHECKINS)).map(asCheckIn).filter((r): r is CheckIn => r != null);
-    const open = newestOpen(readJsonl(resolve(dir, FILE_CHALLENGES)).map(asChallenge).filter((r): r is RawChallenge => r != null), checkins);
+    const challenges = readJsonl(resolve(dir, FILE_CHALLENGES)).map(asChallenge).filter((r): r is RawChallenge => r != null);
+    const open = newestByStatus(challenges, checkins, "open", MAX_OPEN);
+    const closed = newestByStatus(challenges, checkins, "closed", MAX_CLOSED);
     const pins = newestPins(readJsonl(resolve(dir, FILE_NOTICES)).map(asNotice).filter((r): r is BoardNotice => r != null));
-    return { roster, open, pins, empty: roster.length === 0 && open.length === 0 && pins.length === 0 };
+    return { roster, open, closed, pins, empty: roster.length === 0 && open.length === 0 && closed.length === 0 && pins.length === 0 };
   } catch {
     return EMPTY_BOARD;
   }
@@ -140,7 +143,8 @@ function asNotice(row: Raw): BoardNotice | null {
   if (!id || !body) {
     return null;
   }
-  return { id, author: str(row.author), body };
+  const createdAt = str(row.created_at);
+  return { id, author: str(row.author), body, ...(createdAt ? { createdAt } : {}) };
 }
 
 function lastByAuthor(rows: BoardRosterEntry[]): BoardRosterEntry[] {
@@ -151,12 +155,12 @@ function lastByAuthor(rows: BoardRosterEntry[]): BoardRosterEntry[] {
   return [...by.values()];
 }
 
-function newestOpen(rows: RawChallenge[], checkins: CheckIn[]): BoardChallenge[] {
+function newestByStatus(rows: RawChallenge[], checkins: CheckIn[], status: string, cap: number): BoardChallenge[] {
   const seen = new Set<string>();
   const out: BoardChallenge[] = [];
-  for (let i = rows.length - 1; i >= 0 && out.length < MAX_OPEN; i--) {
+  for (let i = rows.length - 1; i >= 0 && out.length < cap; i--) {
     const c = rows[i];
-    if (!c || c.status !== "open" || seen.has(c.id)) {
+    if (!c || c.status !== status || seen.has(c.id)) {
       continue;
     }
     seen.add(c.id);

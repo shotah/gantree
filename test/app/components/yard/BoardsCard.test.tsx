@@ -33,6 +33,7 @@ const filled: BoardSnapshot = {
     },
   ],
   pins: [{ id: "n_pr", author: "kit", body: "Chris beat his 5k PR!" }],
+  closed: [],
 };
 
 describe("BoardsCard", () => {
@@ -40,19 +41,21 @@ describe("BoardsCard", () => {
     render(<BoardsCard ready={false} />);
     expect(screen.getByRole("heading", { name: "Boards" })).toBeTruthy();
     expect(screen.getByText(/Reading the corkboard/)).toBeTruthy();
-    const card = screen.getByText("Boards").closest("[data-shot=boards]");
-    expect(card?.className).toMatch(/min-h-56/);
-    expect(card?.className).toMatch(/h-full/);
+    const card = screen.getByRole("link", { name: /Boards/ });
+    expect(card).toHaveProperty("href", expect.stringMatching(/\/boards$/));
+    expect(card.className).toMatch(/min-h-56/);
+    expect(card.className).toMatch(/h-full/);
   });
 
   it("is an empty card when the corkboard has no rows", () => {
-    render(<BoardsCard ready board={{ roster: [], open: [], pins: [], empty: true }} />);
+    render(<BoardsCard ready board={{ roster: [], open: [], closed: [], pins: [], empty: true }} />);
     expect(screen.getByText("Empty corkboard.")).toBeTruthy();
     expect(screen.queryByText(/100k/)).toBeNull();
   });
 
   it("lists roster names and open challenge scores", () => {
     render(<BoardsCard ready board={filled} />);
+    expect(screen.getByRole("link", { name: /Boards/ })).toHaveProperty("href", expect.stringMatching(/\/boards$/));
     expect(screen.getByTitle("maya").textContent).toMatch(/Sister/);
     expect(screen.getByTitle("kit").textContent).toMatch(/Chris/);
     expect(screen.getByText("100k steps")).toBeTruthy();

@@ -1096,8 +1096,8 @@ Only after M0–M2 have named tiles and one real watch.
   are a handful of hashed passphrases on disk
 - Workers portal — only if the mobile track still wants a remote
   `app/` (v2 M5)
-- A `/boards` page — the yard card already shows roster, open
-  challenges, scores, and latest pins
+- Operator writes on `/boards` (create / pin / check in) — agents stay
+  the mouth; the page is read-only
 
 ## Not the product
 

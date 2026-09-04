@@ -170,6 +170,7 @@ describe("YardBoard", () => {
                 },
               ],
               pins: [],
+              closed: [],
             },
           }),
       } as Response;
@@ -271,7 +272,7 @@ describe("YardBoard", () => {
     await waitFor(() => expect(screen.getByText("tryout")).toBeTruthy());
     const lane = screen.getByRole("list", { name: "Yard cards" });
     const hrefs = () => [...lane.querySelectorAll("a")].map((a) => a.getAttribute("href"));
-    expect(hrefs()).toEqual(["/host", "/gantries/tryout", "/gantries/kit"]);
+    expect(hrefs()).toEqual(["/host", "/boards", "/gantries/tryout", "/gantries/kit"]);
 
     const store: Record<string, string> = {};
     const dataTransfer = {
@@ -296,7 +297,7 @@ describe("YardBoard", () => {
     fireEvent.dragStart(kit!, { dataTransfer });
     fireEvent.dragOver(tryout!, { dataTransfer });
     fireEvent.drop(tryout!, { dataTransfer });
-    expect(hrefs()).toEqual(["/host", "/gantries/kit", "/gantries/tryout"]);
+    expect(hrefs()).toEqual(["/host", "/boards", "/gantries/kit", "/gantries/tryout"]);
     expect(JSON.parse(localStorage.getItem(BOARD_ORDER_KEY) ?? "[]")).toEqual(["kit", "tryout"]);
 
     unmount();
@@ -305,6 +306,7 @@ describe("YardBoard", () => {
     const again = screen.getByRole("list", { name: "Yard cards" });
     expect([...again.querySelectorAll("a")].map((a) => a.getAttribute("href"))).toEqual([
       "/host",
+      "/boards",
       "/gantries/kit",
       "/gantries/tryout",
     ]);

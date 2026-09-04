@@ -354,11 +354,13 @@ export type BoardNotice = {
   id: string;
   author: string;
   body: string;
+  createdAt?: string;
 };
 
 export type BoardSnapshot = {
   roster: BoardRosterEntry[];
   open: BoardChallenge[];
+  closed: BoardChallenge[];
   pins: BoardNotice[];
   empty: boolean;
 };

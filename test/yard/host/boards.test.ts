@@ -32,11 +32,11 @@ describe("loadBoardSnapshot", () => {
   it("is empty when the corkboard dir is missing", () => {
     const root = mkdtempSync(join(process.cwd(), ".tmp-"));
     dirs.push(root);
-    expect(loadBoardSnapshot(join(root, "boards"))).toEqual({ roster: [], open: [], pins: [], empty: true });
+    expect(loadBoardSnapshot(join(root, "boards"))).toEqual({ roster: [], open: [], closed: [], pins: [], empty: true });
   });
 
   it("is empty when the dir exists with no jsonl", () => {
-    expect(loadBoardSnapshot(boardDir())).toEqual({ roster: [], open: [], pins: [], empty: true });
+    expect(loadBoardSnapshot(boardDir())).toEqual({ roster: [], open: [], closed: [], pins: [], empty: true });
   });
 
   it("reads roster, skips junk lines, and last row wins per author", () => {
@@ -58,6 +58,7 @@ describe("loadBoardSnapshot", () => {
       { author: "maya", agentName: "Maya", userName: "Sister" },
     ]);
     expect(snap.open).toEqual([]);
+    expect(snap.closed).toEqual([]);
     expect(snap.pins).toEqual([]);
   });
 
@@ -78,6 +79,7 @@ describe("loadBoardSnapshot", () => {
         window_end: "2026-01-07",
         participants: ["kit"],
         status: "closed",
+        winner: "kit",
       },
       {
         id: "c_sleep",
@@ -135,6 +137,8 @@ describe("loadBoardSnapshot", () => {
       { author: "kit", value: 90 },
     ]);
     expect(snap.open.find((c) => c.id === "c_days")?.scores).toEqual([{ author: "kit", value: 2 }]);
+    expect(snap.closed.map((c) => c.id)).toEqual(["c_old"]);
+    expect(snap.closed[0]?.winner).toBe("kit");
     expect(snap.pins).toEqual([]);
   });
 
@@ -145,7 +149,7 @@ describe("loadBoardSnapshot", () => {
       [
         JSON.stringify({ id: "n_old", author: "kit", body: "first pin" }),
         "not-json",
-        JSON.stringify({ id: "n_pr", author: "ada", body: "Sam beat her 5k PR!" }),
+        JSON.stringify({ id: "n_pr", author: "ada", body: "Sam beat her 5k PR!", created_at: "2026-09-03T12:00:00.000Z" }),
         JSON.stringify({ body: "no id" }),
         "",
       ].join("\n"),
@@ -153,7 +157,7 @@ describe("loadBoardSnapshot", () => {
     const snap = loadBoardSnapshot(dir);
     expect(snap.empty).toBe(false);
     expect(snap.pins).toEqual([
-      { id: "n_pr", author: "ada", body: "Sam beat her 5k PR!" },
+      { id: "n_pr", author: "ada", body: "Sam beat her 5k PR!", createdAt: "2026-09-03T12:00:00.000Z" },
       { id: "n_old", author: "kit", body: "first pin" },
     ]);
   });

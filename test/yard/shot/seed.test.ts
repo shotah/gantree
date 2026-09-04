@@ -166,7 +166,20 @@ describe("seedYard", () => {
       { author: "kit", value: 32880 },
       { author: "ada", value: 22830 },
     ]);
-    expect(board.pins).toEqual([{ id: "n_shot_pr", author: "kit", body: "Bob beat his 5k PR!" }]);
+    expect(board.closed.map((c) => c.id)).toEqual(["c_shot_old"]);
+    expect(board.closed[0]?.winner).toBe("kit");
+    expect(board.closed[0]?.scores).toEqual([
+      { author: "kit", value: 11200 },
+      { author: "ada", value: 9800 },
+    ]);
+    expect(board.pins).toEqual([
+      {
+        id: "n_shot_pr",
+        author: "kit",
+        body: "Bob beat his 5k PR!",
+        createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      },
+    ]);
 
     const turns = recallSamples("ada", { host: 50, turns: 200, mcp: 20, uptime: 20 });
     expect(turns.turns.length).toBeGreaterThan(40);
