@@ -117,7 +117,10 @@ Do not watch <code>notices_list</code>.</p>
 </p><p>Build a crane from the board (yard type first: home Mini or cloud VM).
 Telegram: <strong>Create with BotFather</strong> copies <code>/newbot</code>, opens the chat, and
 suggests <code>{slug}_bot</code> — paste the token it replies with. <strong>Upload a photo</strong> on the crane — it lands in <code>persona/avatar.jpg</code>, shows on
-the board, and if the channel is Telegram the bot’s face updates too. On a
+the board, and if the channel is Telegram the bot’s face updates too
+(<code>setMyProfilePhoto</code>). If the channel is pendant, the yard POSTs that
+same JPEG to the Worker mailbox (same gate: JPEG, 5MB, <code>avatar.jpg</code>).
+The phone user can replace the face from the pendant header. On a
 Telegram crane, <strong>Telegram</strong> (below the photo) can <code>getMe</code> the token, push
 name / about / the <code>/</code> command menu (including <code>/new</code>), ask an allowlisted
 chatter to tap <code>/new</code> (distill, then drop that thread — the yard cannot send
@@ -159,7 +162,7 @@ chat).</li>
 </tr>
 <tr>
 <td><code>persona/avatar.jpg</code></td>
-<td>You — face on the board; Telegram bots get the same picture</td>
+<td>You — face on the board; Telegram bots and the pendant mouth get the same picture</td>
 </tr>
 <tr>
 <td><code>SELF.md</code></td>

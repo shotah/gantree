@@ -61,7 +61,14 @@ docker compose up -d
 <p>Open the board at <code>http://&lt;pc-lan-ip&gt;/</code> or
 <code>http://&lt;headless-lan-ip&gt;/</code> (compose). Create the first operator, then
 build a crane (yard = home). <code>npm start</code> stays <code>:3000</code>. Grant search.
-Chat is Telegram — not this UI.</p>
+Chat is Telegram (or pendant) — not this UI. Pendant: deploy gantry-pendant
+to Workers, pick channel <code>pendant</code> in the wizard, paste mailbox URL + bearer</p>
+<ul>
+<li>Google <code>sub</code> allowlist, recreate. The yard cookie never goes to that Worker.
+Profile email / chat ids do <strong>not</strong> open the mailbox. Worker <code>ALLOWED_SUBS</code>
+is a Cloudflare secret, not a Gantree save. Walk:
+<a href="https://github.com/shotah/gantree/blob/main/repos/gantry-pendant/docs/setup.md">gantry-pendant setup</a>.</li>
+</ul>
 <p>Local screenshots / <code>npm run dev</code>: <code>GANTREE_DEV=1</code> plus operator + passphrase
 in <code>.env</code> (<a href="https://github.com/shotah/gantree/blob/main/.env.example">.env.example</a>). Loopback only — compose
 <code>HOST=0.0.0.0</code> ignores the flag. Unset it to photograph <code>/login</code>. Details:
