@@ -101,7 +101,10 @@ Do not watch `notices_list`.
 Build a crane from the board (yard type first: home Mini or cloud VM).
 Telegram: **Create with BotFather** copies `/newbot`, opens the chat, and
 suggests `{slug}_bot` — paste the token it replies with. **Upload a photo** on the crane — it lands in `persona/avatar.jpg`, shows on
-the board, and if the channel is Telegram the bot’s face updates too. On a
+the board, and if the channel is Telegram the bot’s face updates too
+(`setMyProfilePhoto`). If the channel is pendant, the yard POSTs that
+same JPEG to the Worker mailbox (same gate: JPEG, 5MB, `avatar.jpg`).
+The phone user can replace the face from the pendant header. On a
 Telegram crane, **Telegram** (below the photo) can `getMe` the token, push
 name / about / the `/` command menu (including `/new`), ask an allowlisted
 chatter to tap `/new` (distill, then drop that thread — the yard cannot send
@@ -141,7 +144,7 @@ Hand-editing `mcp.toml` still works. Your own binary:
 | File | Who writes it |
 | --- | --- |
 | `PERSONA.md` | You — who it should be, who you are |
-| `persona/avatar.jpg` | You — face on the board; Telegram bots get the same picture |
+| `persona/avatar.jpg` | You — face on the board; Telegram bots and the pendant mouth get the same picture |
 | `SELF.md` | The agent — voice, rituals, north-star aims that survive `/new` |
 
 Gantree edits those files (and `.env`, and `mcp.toml`). It does not merge

@@ -18,8 +18,9 @@ describe("envfile", () => {
   });
 
   it("masks secrets and keeps empty patch from wiping them", () => {
-    const masked = maskEnv({ TELEGRAM_BOT_TOKEN: "abc", CHANNEL: "telegram" });
+    const masked = maskEnv({ TELEGRAM_BOT_TOKEN: "abc", CHANNEL: "telegram", PENDANT_BEARER: "tok" });
     expect(masked.TELEGRAM_BOT_TOKEN).toEqual({ set: true, secret: true, value: "" });
+    expect(masked.PENDANT_BEARER).toEqual({ set: true, secret: true, value: "" });
     expect(masked.CHANNEL?.value).toBe("telegram");
     expect(mergeEnv({ TELEGRAM_BOT_TOKEN: "abc" }, { TELEGRAM_BOT_TOKEN: "" })).toEqual({
       TELEGRAM_BOT_TOKEN: "abc",

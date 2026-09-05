@@ -18,7 +18,7 @@ export const HINTS = {
     example: "gemini-3.6-flash",
   },
   buildChannel: {
-    hint: "Mouth. Telegram is the usual walk. Discord and Slack tokens go in Secrets after build. stdio is a terminal, not chat.",
+    hint: "Mouth. Telegram is the usual walk. Pendant is the phone we own (Worker mailbox). Discord and Slack tokens go in Secrets after build. stdio is a terminal, not chat.",
     example: "telegram",
   },
   botToken: {
@@ -28,6 +28,18 @@ export const HINTS = {
   allowlist: {
     hint: "Numeric Telegram user ids who may talk to her — not @username. First id: Desktop → Settings → Advanced → Experimental → Show Peer IDs, or message @userinfobot.",
     example: "123456789",
+  },
+  pendantMailbox: {
+    hint: "gantry-pendant Worker room. The crane dials out — wss://…/ws/<this-slug>. Not a Gantree URL. The yard session cookie is never sent there.",
+    example: "wss://gantry-pendant.example.workers.dev/ws/kit",
+  },
+  pendantBearer: {
+    hint: "Mailbox bearer bound to this slug. Rotate in Worker secrets and here, then recreate. Not a Google token.",
+    example: "a long random string",
+  },
+  pendantAllowlist: {
+    hint: "Google sub ids who may talk on the pendant. Email after a colon is a label only. Empty fails boot.",
+    example: "1182…:ada@example.com",
   },
   hostRetain: {
     hint: "How long host CPU/RAM samples stay in yard sqlite. Shortening deletes older rows. Session idle is not this field.",
@@ -106,6 +118,10 @@ export const HINTS = {
   chatDiscord: {
     hint: "Discord snowflake id (Developer Mode → Copy User ID). Stored on you, not auto-copied onto a crane.",
     example: "123456789012345678",
+  },
+  chatGoogle: {
+    hint: "Google OpenID sub for the pendant mouth. Digits, not the email. The phone shows this after Sign in with Google. Paste the same id onto the crane PENDANT_ALLOWED_USERS and the Worker ALLOWED_SUBS. Not auto-copied.",
+    example: "118212345678901234567",
   },
   currentPass: {
     hint: "The passphrase you use at /login right now.",
@@ -192,7 +208,7 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "gemini-3.6-flash",
   },
   CHANNEL: {
-    hint: "Mouth: telegram, discord, slack, or stdio. Changing this does not mint a new bot — paste that channel's token too.",
+    hint: "Mouth: telegram, discord, slack, pendant, or stdio. Changing this does not mint a new bot — paste that channel's token too.",
     example: "telegram",
   },
   TELEGRAM_BOT_TOKEN: HINTS.botToken,
@@ -211,6 +227,18 @@ const ENV_HINTS: Record<string, HintCopy> = {
   SLACK_APP_TOKEN: {
     hint: "Slack app-level token (xapp-) for socket mode. From Basic Information → App-Level Tokens.",
     example: "xapp-…",
+  },
+  PENDANT_MAILBOX_URL: {
+    hint: "gantry-pendant Worker room. The crane dials out — wss://…/ws/<this-slug>. Not a Gantree URL.",
+    example: "wss://gantry-pendant.example.workers.dev/ws/kit",
+  },
+  PENDANT_BEARER: {
+    hint: "Mailbox bearer bound to this slug. Rotate in Worker secrets and here, then recreate. Not a Google token.",
+    example: "a long random string",
+  },
+  PENDANT_ALLOWED_USERS: {
+    hint: "Google sub ids who may talk on the pendant. Email after a colon is a label only. Empty fails boot. Recreate after save.",
+    example: "1182…:ada@example.com",
   },
   GEMINI_SEARCH_API_KEY: {
     hint: "Google AI Studio key for google-search. Wins over the crane LLM_API_KEY. Set this when the mouth is a local model.",

@@ -321,6 +321,9 @@ function pickChannel(keys: string[]): string | null {
   if (keys.includes("SLACK_BOT_TOKEN")) {
     return "slack";
   }
+  if (keys.includes("PENDANT_BEARER") || keys.includes("PENDANT_MAILBOX_URL")) {
+    return "pendant";
+  }
   return null;
 }
 

@@ -16,6 +16,8 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [channel, setChannel] = useState("telegram");
   const [token, setToken] = useState("");
   const [allow, setAllow] = useState("");
+  const [mailbox, setMailbox] = useState("");
+  const [bearer, setBearer] = useState("");
   const [bot, setBot] = useState<{ username: string | null; link: string | null; firstName: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -63,6 +65,11 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
       env.TELEGRAM_BOT_TOKEN = token;
       env.TELEGRAM_ALLOWED_USERS = allow;
     }
+    if (channel === "pendant") {
+      env.PENDANT_MAILBOX_URL = mailbox;
+      env.PENDANT_BEARER = bearer;
+      env.PENDANT_ALLOWED_USERS = allow;
+    }
     const res = await yardFetch("/api/gantries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -78,6 +85,8 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
     setSlug("");
     setToken("");
     setAllow("");
+    setMailbox("");
+    setBearer("");
     setBot(null);
     onBuilt();
   }
@@ -95,6 +104,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   }
 
   const tokenLook = secretLook({ set: false, secret: true }, token, "token");
+  const bearerLook = secretLook({ set: false, secret: true }, bearer, "token");
 
   return (
     <form onSubmit={submit} className="rounded-lg border border-line bg-panel/70 p-4 text-sm">
@@ -135,6 +145,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
             <option value="telegram">telegram</option>
             <option value="discord">discord</option>
             <option value="slack">slack</option>
+            <option value="pendant">pendant</option>
             <option value="stdio">stdio (dev)</option>
           </select>
         </HintField>
@@ -190,6 +201,45 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
                       )
                     : null}
                 </div>
+              </>
+            )
+          : null}
+        {channel === "pendant"
+          ? (
+              <>
+                <HintField label="mailbox URL" className="sm:col-span-2" {...HINTS.pendantMailbox}>
+                  <input
+                    className="rounded border border-edge bg-canvas px-2 py-1"
+                    value={mailbox}
+                    onChange={(e) => setMailbox(e.target.value)}
+                    placeholder="wss://gantry-pendant.example.workers.dev/ws/kit"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </HintField>
+                <HintField label="mailbox bearer" {...HINTS.pendantBearer}>
+                  <input
+                    className={`rounded border bg-canvas px-2 py-1 ${
+                      bearerLook.missing ? "border-accent-line placeholder:text-mark/90" : "border-edge"
+                    }`}
+                    type={bearerLook.type}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder={bearerLook.placeholder}
+                    value={bearer}
+                    onChange={(e) => setBearer(e.target.value)}
+                  />
+                </HintField>
+                <HintField label="Google sub allowlist" className="sm:col-span-2" {...HINTS.pendantAllowlist}>
+                  <input
+                    className="rounded border border-edge bg-canvas px-2 py-1"
+                    value={allow}
+                    onChange={(e) => setAllow(e.target.value)}
+                    placeholder="1182…:ada@example.com"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </HintField>
               </>
             )
           : null}

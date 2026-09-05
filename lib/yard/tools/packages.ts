@@ -8,6 +8,9 @@ export const CRANE_CORE_KEYS = [
   "CHANNEL",
   "TELEGRAM_BOT_TOKEN",
   "TELEGRAM_ALLOWED_USERS",
+  "PENDANT_MAILBOX_URL",
+  "PENDANT_BEARER",
+  "PENDANT_ALLOWED_USERS",
 ];
 
 /** Yard GitHub org — google-search must not fetch zchee/mcp-gemini-search. */

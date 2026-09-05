@@ -7,8 +7,11 @@ import {
   AVATAR_MAX_BYTES,
   copyAvatarTo,
   findAvatar,
+  mailboxToAvatarUrl,
   saveAvatar,
+  setPendantProfilePhoto,
   setTelegramProfilePhoto,
+  shouldPushPendant,
   shouldPushTelegram,
   resolveChannelAndToken,
   type TelegramPoster,
@@ -207,6 +210,82 @@ describe("applyAvatar", () => {
     });
     expect(r.telegram).toBe("updated");
     expect(r.detail).toContain("Telegram profile photo updated");
+  });
+});
+
+describe("shouldPushPendant / mailboxToAvatarUrl", () => {
+  it("is only pendant and maps the wss mailbox", () => {
+    expect(shouldPushPendant("pendant")).toBe(true);
+    expect(shouldPushPendant("telegram")).toBe(false);
+    expect(mailboxToAvatarUrl("wss://gantry-pendant.example.workers.dev/ws/kit")).toBe(
+      "https://gantry-pendant.example.workers.dev/api/avatar?slug=kit",
+    );
+    expect(mailboxToAvatarUrl("ftp://x/ws/kit")).toBeNull();
+  });
+});
+
+describe("setPendantProfilePhoto", () => {
+  it("posts multipart file with the crane bearer and redacts it", async () => {
+    const bearer = "crane-secret-token";
+    let url = "";
+    let auth = "";
+    let hasFile = false;
+    const post: TelegramPoster = async (u, init) => {
+      url = u;
+      auth = init.headers?.Authorization ?? "";
+      if (init.body instanceof FormData) {
+        hasFile = init.body.get("file") instanceof Blob;
+      }
+      return { status: 200, body: JSON.stringify({ ok: true, rev: 1 }) };
+    };
+    const r = await setPendantProfilePhoto(
+      "wss://example.workers.dev/ws/kit",
+      bearer,
+      fakeJpeg(),
+      post,
+    );
+    expect(r.ok).toBe(true);
+    expect(url).toBe("https://example.workers.dev/api/avatar?slug=kit");
+    expect(auth).toBe(`Bearer ${bearer}`);
+    expect(hasFile).toBe(true);
+    expect(r.detail).not.toContain(bearer);
+  });
+});
+
+describe("applyAvatar pendant", () => {
+  it("saves and pushes the Worker face when the channel is pendant", async () => {
+    const persona = join(tmp(), "persona");
+    let url = "";
+    const post: TelegramPoster = async (u) => {
+      url = u;
+      return { status: 200, body: JSON.stringify({ ok: true, rev: 2 }) };
+    };
+    const r = await applyAvatar({
+      personaDir: persona,
+      channel: "pendant",
+      token: null,
+      mailboxUrl: "wss://example.workers.dev/ws/kit",
+      bearer: "tok",
+      bytes: fakeJpeg(),
+      post,
+    });
+    expect(r.telegram).toBe("skipped");
+    expect(r.pendant).toBe("updated");
+    expect(r.detail).toContain("pendant face updated");
+    expect(url).toContain("/api/avatar?slug=kit");
+    expect(existsSync(join(persona, "avatar.jpg"))).toBe(true);
+  });
+
+  it("skips pendant without a mailbox", async () => {
+    const persona = join(tmp(), "persona");
+    const r = await applyAvatar({
+      personaDir: persona,
+      channel: "pendant",
+      token: null,
+      bytes: fakeJpeg(),
+    });
+    expect(r.pendant).toBe("skipped");
+    expect(r.detail).toContain("no mailbox");
   });
 });
 

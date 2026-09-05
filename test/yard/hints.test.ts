@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { envHint, HINTS } from "@/lib/yard/hints";
 
 describe("envHint", () => {
+  it("describes pendant mailbox secrets", () => {
+    expect(envHint("PENDANT_BEARER").hint).toMatch(/bearer/i);
+    expect(envHint("PENDANT_MAILBOX_URL").hint).toMatch(/wss/);
+    expect(HINTS.pendantAllowlist.hint).toMatch(/Google sub/);
+  });
+
   it("describes the Telegram bot token and what it looks like", () => {
     expect(envHint("TELEGRAM_BOT_TOKEN")).toEqual(HINTS.botToken);
     expect(HINTS.botToken.hint).toMatch(/BotFather/);

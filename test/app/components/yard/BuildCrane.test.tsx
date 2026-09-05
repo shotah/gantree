@@ -33,6 +33,19 @@ describe("BuildCrane", () => {
     expect(tip?.textContent).toMatch(/123456789:/);
   });
 
+  it("collects pendant mailbox secrets when that mouth is picked", () => {
+    render(<BuildCrane onBuilt={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
+    fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
+    expect(screen.getByLabelText("mailbox URL")).toBeTruthy();
+    expect(screen.getByLabelText("mailbox bearer")).toBeTruthy();
+    expect(screen.getByLabelText("Google sub allowlist")).toBeTruthy();
+    const tip = document.getElementById(
+      screen.getByLabelText("mailbox URL").getAttribute("aria-describedby") ?? "",
+    );
+    expect(tip?.textContent).toMatch(/dials out/);
+  });
+
   it("does not look pre-filled when the bot token is still blank", () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));

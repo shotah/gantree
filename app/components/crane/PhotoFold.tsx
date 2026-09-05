@@ -12,13 +12,13 @@ export function PhotoFold({ dash }: { dash: AgentDash }) {
       title="Photo"
       persistKey={craneLayoutKey("photo")}
       shot="photo"
-      hint="persona/avatar.jpg — Telegram uses the same picture"
+      hint="persona/avatar.jpg — Telegram and the pendant mouth use the same picture"
     >
       <p className="mb-3 text-xs text-faint">
         Saved as
         {" "}
         <code className="text-dim">persona/avatar.jpg</code>
-        . Telegram bots get the same picture.
+        . Telegram bots and the pendant mouth get the same picture.
       </p>
       <div className="flex flex-wrap items-center gap-4">
         <CraneAvatar slug={slug} rev={gantry?.avatarRev ?? null} size="xl" />

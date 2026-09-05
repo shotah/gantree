@@ -28,6 +28,7 @@ export type AvatarFile = { path: string; name: string; rev: number; type: string
 export type AvatarApply = {
   detail: string;
   telegram: "updated" | "skipped" | "failed";
+  pendant: "updated" | "skipped" | "failed";
   rev: number;
 };
 
@@ -107,24 +108,126 @@ export async function setTelegramProfilePhoto(
   }
 }
 
+export function shouldPushPendant(channel: string | null): boolean {
+  return (channel ?? "").trim().toLowerCase() === "pendant";
+}
+
+const SLUG = /^[a-z][a-z0-9-]{0,31}$/;
+
+/** `wss://…/ws/kit` → `https://…/api/avatar?slug=kit` */
+export function mailboxToAvatarUrl(raw: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(raw.trim());
+  } catch {
+    return null;
+  }
+  if (u.protocol === "wss:") {
+    u.protocol = "https:";
+  } else if (u.protocol === "ws:") {
+    u.protocol = "http:";
+  } else if (u.protocol !== "http:" && u.protocol !== "https:") {
+    return null;
+  }
+  const parts = u.pathname.split("/").filter(Boolean);
+  const slug = parts[0] === "ws" && parts[1] ? parts[1].trim().toLowerCase() : "";
+  if (!SLUG.test(slug)) {
+    return null;
+  }
+  u.pathname = "/api/avatar";
+  u.search = "";
+  u.hash = "";
+  u.searchParams.set("slug", slug);
+  return u.toString();
+}
+
+export async function setPendantProfilePhoto(
+  mailboxUrl: string,
+  bearer: string,
+  jpeg: Uint8Array,
+  post: TelegramPoster = telegramPost,
+): Promise<{ ok: boolean; detail: string }> {
+  const endpoint = mailboxToAvatarUrl(mailboxUrl);
+  const t = bearer.trim();
+  if (!endpoint) {
+    return { ok: false, detail: "bad PENDANT_MAILBOX_URL" };
+  }
+  if (!t) {
+    return { ok: false, detail: "no PENDANT_BEARER" };
+  }
+  const form = new FormData();
+  const copy = new Uint8Array(jpeg.byteLength);
+  copy.set(jpeg);
+  form.append("file", new Blob([copy], { type: "image/jpeg" }), "avatar.jpg");
+  try {
+    const res = await post(endpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${t}` },
+      body: form,
+      signal: AbortSignal.timeout(15_000),
+    });
+    try {
+      const j = JSON.parse(res.body) as { ok?: boolean; detail?: unknown; error?: unknown };
+      if (j.ok === true) {
+        return { ok: true, detail: "pendant face updated" };
+      }
+      const err = typeof j.detail === "string" ? j.detail : typeof j.error === "string" ? j.error : res.body;
+      return { ok: false, detail: redactToken(t, String(err || `HTTP ${res.status}`)).slice(0, 240) };
+    } catch {
+      return { ok: false, detail: redactToken(t, res.body.trim() || `HTTP ${res.status}`).slice(0, 240) };
+    }
+  } catch (err) {
+    return { ok: false, detail: redactToken(t, err instanceof Error ? err.message : String(err)) };
+  }
+}
+
 export async function applyAvatar(opts: {
   personaDir: string;
   channel: string | null;
   token: string | null;
   bytes: Uint8Array;
   post?: TelegramPoster;
+  mailboxUrl?: string | null;
+  bearer?: string | null;
 }): Promise<AvatarApply> {
   const saved = saveAvatar(opts.personaDir, opts.bytes);
-  if (!shouldPushTelegram(opts.channel)) {
-    return { detail: "saved avatar.jpg", telegram: "skipped", rev: saved.rev };
+  let telegram: AvatarApply["telegram"] = "skipped";
+  let pendant: AvatarApply["pendant"] = "skipped";
+  const notes = ["saved avatar.jpg"];
+  const post = opts.post ?? telegramPost;
+
+  if (shouldPushTelegram(opts.channel)) {
+    const token = opts.token?.trim() || "";
+    if (!token) {
+      notes.push("Telegram skipped (no TELEGRAM_BOT_TOKEN)");
+    } else {
+      const tg = await setTelegramProfilePhoto(token, opts.bytes, post);
+      if (tg.ok) {
+        telegram = "updated";
+        notes.push("Telegram profile photo updated");
+      } else {
+        telegram = "failed";
+        notes.push(`Telegram: ${tg.detail}`);
+      }
+    }
   }
-  const token = opts.token?.trim() || "";
-  if (!token) {
-    return { detail: "saved avatar.jpg; Telegram skipped (no TELEGRAM_BOT_TOKEN)", telegram: "skipped", rev: saved.rev };
+
+  if (shouldPushPendant(opts.channel)) {
+    const mailboxUrl = opts.mailboxUrl?.trim() || "";
+    const bearer = opts.bearer?.trim() || "";
+    if (!mailboxUrl || !bearer) {
+      notes.push("pendant skipped (no mailbox)");
+    } else {
+      const p = await setPendantProfilePhoto(mailboxUrl, bearer, opts.bytes, post);
+      if (p.ok) {
+        pendant = "updated";
+        notes.push("pendant face updated");
+      } else {
+        pendant = "failed";
+        notes.push(`pendant: ${p.detail}`);
+      }
+    }
   }
-  const tg = await setTelegramProfilePhoto(token, opts.bytes, opts.post ?? telegramPost);
-  if (tg.ok) {
-    return { detail: "saved avatar.jpg; Telegram profile photo updated", telegram: "updated", rev: saved.rev };
-  }
-  return { detail: `saved avatar.jpg; Telegram: ${tg.detail}`, telegram: "failed", rev: saved.rev };
+
+  return { detail: notes.join("; "), telegram, pendant, rev: saved.rev };
 }

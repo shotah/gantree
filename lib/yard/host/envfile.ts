@@ -8,6 +8,7 @@ const SECRET_KEYS = new Set([
   "DISCORD_BOT_TOKEN",
   "SLACK_BOT_TOKEN",
   "SLACK_APP_TOKEN",
+  "PENDANT_BEARER",
 ]);
 
 export function isSecretKey(k: string): boolean {

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { denyUnlessCraneMutate, denyUnlessCraneRead, withDoor } from "@/lib/yard/door";
 import { acceptJpeg, applyAvatar, findAvatar } from "@/lib/yard/host/avatar";
 import { craneTelegramAuth } from "@/lib/yard/crane/telegram";
+import { loadEnvFile } from "@/lib/yard/host/envfile";
 import { getGantry } from "@/lib/yard/crane/inventory";
 
 export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
@@ -57,11 +58,14 @@ export const POST = withDoor(async (req: Request, ctx: { params: Promise<{ slug:
     return Response.json({ error: check.detail }, { status: 400 });
   }
   const { channel, token } = await craneTelegramAuth(g);
+  const craneEnv = loadEnvFile(g.envFile);
   const result = await applyAvatar({
     personaDir: g.personaDir,
     channel,
     token,
     bytes,
+    mailboxUrl: craneEnv.PENDANT_MAILBOX_URL,
+    bearer: craneEnv.PENDANT_BEARER,
   });
   return Response.json({ ok: true, ...result });
 });
