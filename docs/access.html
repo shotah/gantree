@@ -41,18 +41,18 @@
     <article class="prose"><h1 id="access-who-may-operate-who-may-talk">Access — who may operate, who may talk</h1>
 <p>Three repos, three doors, one household. This page is how a <strong>person</strong>
 lines up across them: the yard login here, the Google sign-in on the
-pendant, and the allowlist the crane actually obeys. It answers one
-question: <em>does the email Gantree writes into a crane’s <code>.env</code> become
-the list of Google accounts the pendant will let in?</em></p>
-<p>Today: <strong>no</strong>. Proposed: <strong>yes, through the crane.</strong> What exists, why
-it feels disconnected, and the smallest set of changes that pins it
-together without merging the three into one product.</p>
+pendant, and the allowlist the crane actually obeys.</p>
+<p>The crane’s <code>.env</code> is the one human allowlist. Gantree writes it. The
+crane reads it at boot and, on dial, publishes an <code>allow</code> frame. The
+Worker enforces that room list. Yank a person = edit <code>.env</code> + recreate,
+the same motion as Telegram.</p>
 <p>Door details: <a href="security.html">security.md</a>. People on the yard:
 <a href="operators.html">operators.md</a>. Pendant side (nested checkout, dev only):
 <code>repos/gantry-pendant/docs/setup.md</code>, <code>security.md</code>, <code>edgecases.md</code>.
-Harness contract: <code>repos/ai-gantry/docs/gantree-contract.md</code>.</p>
+Harness contract: <code>repos/ai-gantry/docs/gantree-contract.md</code>. Outstanding
+walks: <a href="https://github.com/shotah/gantree/blob/main/docs/todo.md">todo.md</a>.</p>
 <hr>
-<h2 id="why-it-feels-stitched">Why it feels stitched</h2>
+<h2 id="why-three-doors">Why three doors</h2>
 <p>The three were built independent on purpose. Each has its own idea of
 a person, and none of them reads another’s database.</p>
 <table>
@@ -67,20 +67,20 @@ a person, and none of them reads another’s database.</p>
 <tbody><tr>
 <td><strong>gantree</strong> (yard)</td>
 <td>Docker + files. Writes crane <code>.env</code>, <code>mcp.toml</code>, persona.</td>
-<td>operator row: name, passphrase hash, role, cranes, email, chat ids</td>
+<td>operator row: name, passphrase hash, role, cranes, email, chat ids, Google <code>sub</code></td>
 <td><code>/login</code> passphrase</td>
 </tr>
 <tr>
 <td><strong>ai-gantry</strong> (crane)</td>
 <td>The agent. Reads <code>.env</code> at boot. Never learns the yard exists.</td>
-<td>allowlist in env: Telegram id, Discord id, Slack id, or Google <code>sub</code></td>
+<td>allowlist in env: Telegram id, Discord id, Slack id, or Google <code>sub</code> / email</td>
 <td><code>*_ALLOWED_USERS</code>, fail closed</td>
 </tr>
 <tr>
 <td><strong>gantry-pendant</strong> (mouth)</td>
 <td>Cloudflare Worker + Durable Object room per crane. Phone and crane both dial in.</td>
 <td>Google <code>sub</code> from OIDC; crane by bearer</td>
-<td><code>ALLOWED_SUBS</code> secret + <code>CRANE_BEARERS</code></td>
+<td>room list from the crane’s <code>allow</code> frame; optional <code>ALLOWED_SUBS</code> break-glass</td>
 </tr>
 </tbody></table>
 <p>Two different populations live here, and they only overlap:</p>
@@ -95,94 +95,126 @@ her phone and never see the board. That is fine. The mistake is
 looking for one login that does both.</p>
 <pre><code class="language-text">                gantree (yard)          passphrase door
                  operator row
-                 email · chat ids
+                 email · google sub · chat ids
                       |
-                      | writes .env       (already: TELEGRAM_ALLOWED_USERS)
+                      | writes .env       TELEGRAM_ALLOWED_USERS
+                      |                   PENDANT_ALLOWED_USERS
                       v
 phone -- Google --&gt; Worker room &lt;-- crane (bearer)   CHANNEL=pendant
-        ALLOWED_SUBS (secret)      PENDANT_ALLOWED_USERS (.env)
+        room list from &quot;allow&quot;     PENDANT_ALLOWED_USERS (.env)
                       |
-                      | frame.user_id = sub
+                      | frame.user_id = sub, frame.email
                       v
                  ai-gantry Completer
 </code></pre>
-<p>Two human lists on the right (<code>ALLOWED_SUBS</code>, <code>PENDANT_ALLOWED_USERS</code>)
-that must agree, and a yard on the left that knows the person’s email
-but writes neither of them for the pendant. That is the seam.</p>
-<hr>
-<h2 id="what-exists-today-be-honest">What exists today (be honest)</h2>
-<table>
-<thead>
-<tr>
-<th>Question</th>
-<th>Today</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Does the yard email reach the crane?</td>
-<td>Only as text. <strong>Inject user</strong> copies it into <code>PERSONA.md</code> <em>About you</em>. It is not a key.</td>
-</tr>
-<tr>
-<td>Does the yard email reach the Worker?</td>
-<td>No. The Worker never talks to Gantree and ignores the yard cookie.</td>
-</tr>
-<tr>
-<td>Does the crane allowlist reach the Worker?</td>
-<td>No. The crane dials in with a bearer and publishes <code>cmds</code> (slash catalog). It does not publish who may talk to it.</td>
-</tr>
-<tr>
-<td>Who decides whether Ada may sign in?</td>
-<td><code>ALLOWED_SUBS</code>, a Cloudflare secret you <code>wrangler secret put</code> by hand. Unknown <code>sub</code> gets no session at all.</td>
-</tr>
-<tr>
-<td>Who decides whether Kit answers Ada?</td>
-<td><code>PENDANT_ALLOWED_USERS</code> in Kit’s <code>.env</code>, read at boot. Recreate, not restart.</td>
-</tr>
-<tr>
-<td>How does Ada learn her <code>sub</code>?</td>
-<td>She cannot until she is already on <code>ALLOWED_SUBS</code>. First human is a laptop job (decode a Google ID token).</td>
-</tr>
-<tr>
-<td>Can Gantree push a person onto a pendant list?</td>
-<td>No. Telegram has the confirm-scary push (<code>saveGantryAllowlist</code> writes <code>TELEGRAM_ALLOWED_USERS</code>). Pendant does not.</td>
-</tr>
-<tr>
-<td>Is there a Google id on the operator row?</td>
-<td>No. <code>channels</code> holds <code>telegram</code> / <code>slack</code> / <code>discord</code>. A <code>chatGoogle</code> hint exists in <code>lib/yard/hints.ts</code> with no field behind it.</td>
-</tr>
-</tbody></table>
-<p>So for five cranes with five people you keep ten strings in sync across
-two hosts, and the yard, which is where you <em>manage people</em>, writes
-none of the pendant ones.</p>
+<p>Two checks of <strong>one</strong> list, written from <strong>one</strong> place. Static
+<code>ALLOWED_SUBS</code> on the Worker is optional yard-wide extra (the Cloudflare
+account owner’s break-glass), not a second human roster.</p>
 <hr>
 <h2 id="the-principle">The principle</h2>
 <p><strong>The crane’s <code>.env</code> is the one human allowlist. Everything else reads
 it.</strong></p>
 <ul>
-<li>Gantree already writes it (build wizard, Secrets, Telegram push).</li>
-<li>The crane already reads it at boot and fails closed.</li>
-<li>The crane already dials the Worker and publishes state on connect.</li>
+<li>Gantree writes it (build wizard, Secrets, Telegram push, pendant
+panel).</li>
+<li>The crane reads it at boot and fails closed.</li>
+<li>The crane dials the Worker and publishes state on connect — including
+who may talk.</li>
 </ul>
-<p>So the missing hop is one frame: <strong>the crane tells its room who may
-talk to it.</strong> The Worker stops keeping a parallel human list and
-enforces the crane’s. Yank a person = edit <code>.env</code> + recreate, the same
-motion as Telegram today, and the Worker follows on the next dial.</p>
+<p>The Worker does not keep a parallel human list as the source of truth.
+Yank a person = edit <code>.env</code> + recreate, and the Worker follows on the
+next dial.</p>
 <p>Nothing here gives the harness a port, a yard name, or a settings API.
 The frame goes <em>out</em> on the socket it already holds.</p>
-<pre><code class="language-text">                gantree (yard)
-                operator: email (+ learned sub)
-                      |
-                      | confirm-scary push → PENDANT_ALLOWED_USERS   (mirrors Telegram)
-                      v
-                crane .env  ── boot ──► ai-gantry  ── dial ──► &quot;allow&quot; frame
-                                                                     |
-phone -- Google --&gt; Worker room  ◄── per-room allowlist (remembered on the DO)
-                      |
-                      | frame.user_id = sub, frame.email
-                      v
-                ai-gantry checks the same list (fail closed)
+<hr>
+<h2 id="shared-contract">Shared contract</h2>
+<p>Every repo codes to this section. Change it here first.</p>
+<h3 id="allowlist-entry-grammar-pendantallowedusers">Allowlist entry grammar (<code>PENDANT_ALLOWED_USERS</code>)</h3>
+<p>Comma or whitespace separated. Three forms:</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Parse</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>118212345678901234567</code></td>
+<td><code>sub</code> = digits</td>
+</tr>
+<tr>
+<td><code>118212345678901234567:ada@example.com</code></td>
+<td>split at the <strong>first</strong> <code>:</code>; <code>sub</code> left, email right (lowercased)</td>
+</tr>
+<tr>
+<td><code>ada@example.com</code></td>
+<td>no <code>:</code> and contains <code>@</code> → email only, lowercased</td>
+</tr>
+</tbody></table>
+<p>Normalize: trim, drop empties, dedupe by <code>sub</code> then by email. Anything
+that is neither digits nor an email is a config error at boot (crane)
+and a dropped entry with a warning (Worker). Empty after normalization
+fails boot.</p>
+<h3 id="frames-crane-room">Frames (crane ↔ room)</h3>
+<p>Crane → room, right after <code>cmds</code>, and again on every reconnect:</p>
+<pre><code class="language-json">{ &quot;kind&quot;: &quot;allow&quot;, &quot;users&quot;: [
+  { &quot;sub&quot;: &quot;118212345678901234567&quot;, &quot;email&quot;: &quot;ada@example.com&quot; },
+  { &quot;email&quot;: &quot;bob@example.com&quot; }
+] }
 </code></pre>
-<p>Two checks of <strong>one</strong> list, written from <strong>one</strong> place.</p>
+<p>Room → crane, <code>email</code> beside <code>user_id</code>:</p>
+<pre><code class="language-json">{ &quot;kind&quot;: &quot;msg&quot;, &quot;user_id&quot;: &quot;118212345678901234567&quot;,
+  &quot;email&quot;: &quot;ada@example.com&quot;, &quot;text&quot;: &quot;…&quot;, &quot;context&quot;: { } }
+</code></pre>
+<p><code>user_id</code> is always the Google <code>sub</code>. <code>email</code> is Google’s verified
+claim, lowercased, or omitted. Crane admits when <code>user_id</code> <strong>or</strong>
+<code>email</code> is on its list. Session id: <code>pendant:&lt;slug&gt;:&lt;sub&gt;</code>.</p>
+<h3 id="worker-admission">Worker admission</h3>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Where</th>
+<th>On miss</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Google ID token (<code>iss</code>, <code>aud</code>, <code>exp</code>, nonce, signature)</td>
+<td>callback</td>
+<td><code>unauthorized</code>, no cookie</td>
+</tr>
+<tr>
+<td>Session cookie (JWE, hard 7d)</td>
+<td>handshake, every frame</td>
+<td><code>4401</code></td>
+</tr>
+<tr>
+<td><code>sub</code> ∈ room list <strong>or</strong> (<code>email_verified</code> ∧ <code>email</code> ∈ room list) <strong>or</strong> <code>sub</code> ∈ <code>ALLOWED_SUBS</code></td>
+<td>handshake, every frame</td>
+<td><code>4401</code></td>
+</tr>
+<tr>
+<td>Crane bearer bound to slug</td>
+<td>handshake</td>
+<td><code>unauthorized</code></td>
+</tr>
+</tbody></table>
+<p>Room list = last <code>allow</code> frame stored on that slug’s Durable Object.
+New <code>allow</code> → re-check every phone socket, close the ones no longer on
+it.</p>
+<h3 id="apiauthme"><code>/api/auth/me</code></h3>
+<pre><code class="language-json">{ &quot;sub&quot;: &quot;118212345678901234567&quot;, &quot;email&quot;: &quot;ada@example.com&quot;,
+  &quot;cranes&quot;: [&quot;kit&quot;, &quot;ada&quot;] }
+</code></pre>
+<p><code>cranes</code> comes from the directory (KV: <code>sub:&lt;sub&gt;</code> and <code>email:&lt;email&gt;</code>
+→ slugs), written by each DO when it stores an <code>allow</code> frame. Empty
+list is a valid answer for a signed-in stranger. The only identity a
+stranger sees is their own.</p>
+<h3 id="gantree-operator-row">Gantree operator row</h3>
+<p><code>channels.google</code> is digits (<code>/^\d{10,32}$/</code>), same caps as Telegram.
+<code>@</code> is rejected: needs the Google <code>sub</code>, not the email. Email already
+exists on the row. Push writes <code>sub:email</code> when <code>google</code> is set,
+<code>email</code> when it is not.</p>
 <hr>
 <h2 id="key-sub-email-or-both">Key: <code>sub</code>, email, or both</h2>
 <p>Google’s stable id is <code>sub</code> (a ~21-digit string). Humans and Gantree
@@ -200,7 +232,7 @@ know <strong>emails</strong>. Pick both, with a rule:</p>
 </tr>
 <tr>
 <td><code>118212345678901234567:ada@example.com</code></td>
-<td><code>sub</code> with a label. Today’s form.</td>
+<td><code>sub</code> with a label.</td>
 </tr>
 <tr>
 <td><code>ada@example.com</code></td>
@@ -219,70 +251,59 @@ the email changes later.</li>
 <code>+tag</code> normalization. A Workspace <code>hd</code> gate is a later knob.</li>
 <li>Gantree writes <code>sub:email</code> when it knows the <code>sub</code>, <code>email</code> when it
 does not. Once the person has talked, the harness logs <code>user_id</code> in
-<code>turn perf</code>; the yard already maps that to a display name for spend
-and already suggests unseen ids. <strong>Learn the <code>sub</code> from that, offer
-to store it on the profile.</strong> No one decodes a JWT.</li>
+<code>turn perf</code>; the yard maps that to a display name for spend and
+offers to store an unseen id on the matching operator. <strong>No one
+decodes a JWT.</strong></li>
 </ul>
 <p>Email-as-alias is what makes “the email on the operator is the
-allowlist” true. If you would rather keep <code>sub</code>-only (no harness
-change), the bootstrap below still works because the phone can now show
-the <code>sub</code> — it is just one more paste.</p>
+allowlist” true. The phone can also show the <code>sub</code> after sign-in.</p>
 <hr>
-<h2 id="what-changes-per-repo">What changes, per repo</h2>
-<p>Each slice is backward compatible and ships alone. Order matters only
-for the walk at the end.</p>
-<h3 id="ai-gantry-crane">ai-gantry (crane)</h3>
-<ul>
-<li><code>PENDANT_ALLOWED_USERS</code> accepts emails as well as <code>sub</code> / <code>sub:email</code>.
-Empty still fails boot.</li>
-<li>Inbound frame gains <code>email</code> next to <code>user_id</code>. <code>isAllowed</code> checks
-either. Session id keeps <code>sub</code>.</li>
-<li>On dial, publish an <code>allow</code> frame after <code>cmds</code>: the normalized list
-(<code>sub</code> and/or lowercased email per entry). Re-publish on reconnect.
-Not on a timer, not on a port.</li>
-<li>Contract page gains one line: the console may write emails there.</li>
-</ul>
-<h3 id="gantry-pendant-worker">gantry-pendant (Worker)</h3>
-<ul>
-<li>The Durable Object remembers the last <code>allow</code> frame per slug the way
-it remembers <code>cmds</code>. Any phone socket whose <code>sub</code> / email is no longer
-on it closes <code>4401</code> on the next frame.</li>
-<li>Handshake admits a phone if it is on the <strong>room</strong> list. Keep the
-static <code>ALLOWED_SUBS</code> as an optional yard-wide extra (the Cloudflare
-account owner’s break-glass), not a requirement — <code>resolveAuthMode</code>
-needs Google + <code>SESSION_SECRET</code> + <code>CRANE_BEARERS</code> only.</li>
-<li>Google callback mints a session for <strong>any verified Google account</strong>.
-The cookie opens nothing by itself; every room still checks. <code>/api/ auth/me</code> returns <code>{ sub, email, cranes: [...] }</code>. Empty <code>cranes</code>
-paints “not on any crane yet — give this to your yard admin” with the
-email and <code>sub</code>. That kills the decode-a-JWT bootstrap and stays
-no-enumeration (you only see <em>your own</em> id). Rate-limit the callback.</li>
-<li>A directory so the phone stops typing <code>kit</code>: when a DO stores an
-<code>allow</code> frame it writes <code>sub → slugs</code> and <code>email → slugs</code> to a small
-KV (or one directory DO). <code>/api/auth/me</code> reads it. Slug picker becomes
-a list of your cranes.</li>
-<li><code>CRANE_BEARERS</code> stays a Cloudflare secret. One paste per <strong>crane</strong>,
-once, is the price of the Worker trusting the crane. The bearer
-already lets its holder run the whole room, so letting it also name
-who may enter that room adds no reach.</li>
-</ul>
-<h3 id="gantree-yard">gantree (yard)</h3>
-<ul>
-<li>Operator profile grows a <strong>Google</strong> channel (<code>sub</code>). The hint is
-already written; add the field to <code>channels</code> with the same shape as
-Telegram (<code>digits, not the email</code>). Email already exists.</li>
-<li>Crane pendant panel grows <strong>add this operator to the allowlist</strong> —
-the Telegram twin. Writes <code>PENDANT_ALLOWED_USERS</code> as <code>sub:email</code> or
-<code>email</code>, nags recreate, audits who did it. <code>user</code> / admin on that
-crane only; <code>readonly</code> looks.</li>
-<li>Spend <code>by user</code> already resolves slog <code>user_id</code> to a display name via
-profile chat ids; include the Google <code>sub</code>. When a <code>user_id</code> shows up
-that matches no one but the crane list has an <code>email</code> entry, suggest
-“store <code>1182…</code> on ada’s profile.” Suggest ≠ write.</li>
-<li>Build wizard <strong>pendant</strong> step: offer operators as checkboxes next to
-the free-text allowlist, same as it should for Telegram.</li>
-</ul>
+<h2 id="what-each-piece-does">What each piece does</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Does the yard email reach the crane?</td>
+<td><strong>Yes, as an allowlist entry.</strong> Kit’s pendant panel writes <code>PENDANT_ALLOWED_USERS</code> as <code>email</code> until the <code>sub</code> is learned, then <code>sub:email</code>. Inject user still copies email into <code>PERSONA.md</code> <em>About you</em> as text, not a key.</td>
+</tr>
+<tr>
+<td>Does the yard email reach the Worker?</td>
+<td>No. The Worker never talks to Gantree and ignores the yard cookie. The crane’s <code>allow</code> frame carries the list.</td>
+</tr>
+<tr>
+<td>Does the crane allowlist reach the Worker?</td>
+<td>Yes, via the <code>allow</code> frame on dial.</td>
+</tr>
+<tr>
+<td>Who decides whether Ada may sign in?</td>
+<td>The room list from the crane. Optional <code>ALLOWED_SUBS</code> is break-glass, not the roster.</td>
+</tr>
+<tr>
+<td>Who decides whether Kit answers Ada?</td>
+<td><code>PENDANT_ALLOWED_USERS</code> in Kit’s <code>.env</code>, read at boot. Recreate, not restart.</td>
+</tr>
+<tr>
+<td>How does Ada learn her <code>sub</code>?</td>
+<td>Spend and the pendant panel show slog <code>user_id</code> and offer to store it on her profile. The pendant <code>/me</code> shows her own id. No JWT decode.</td>
+</tr>
+<tr>
+<td>Can Gantree push a person onto a pendant list?</td>
+<td><strong>Yes.</strong> Twin of Telegram: confirm-scary push writes <code>PENDANT_ALLOWED_USERS</code>, nags recreate, audits <code>pendant.allowlist</code>.</td>
+</tr>
+<tr>
+<td>Is there a Google id on the operator row?</td>
+<td><strong>Yes.</strong> <code>channels.google</code> is digits. Email already existed.</td>
+</tr>
+</tbody></table>
 <p>Gantree still never writes Cloudflare secrets, never chats, and never
-sends the yard cookie anywhere.</p>
+sends the yard cookie anywhere. <code>CRANE_BEARERS</code> stays a Cloudflare
+secret — one paste per <strong>crane</strong>, once, is the price of the Worker
+trusting the crane. The bearer already lets its holder run the whole
+room, so letting it also name who may enter that room adds no reach.</p>
 <hr>
 <h2 id="should-the-yard-log-in-with-google">Should the yard log in with Google?</h2>
 <p>Asked directly: no, not as the door. Reasons that hold on a Mini:</p>
@@ -345,7 +366,8 @@ stores it and indexes the email.</li>
 <code>1182…</code> and suggests storing it on ada’s profile. Admin accepts;
 next push writes <code>sub:email</code>.</li>
 </ol>
-<p>No Cloudflare step. No JWT decoding. One recreate.</p>
+<p>No Cloudflare step after the first bearer. No JWT decoding. One
+recreate.</p>
 <h3 id="yank">Yank</h3>
 <ol>
 <li>Untick / remove from Kit’s list. Recreate. Kit’s dial publishes the
@@ -363,8 +385,9 @@ learn the <code>sub</code> when it can.</p>
 <h3 id="operator-leaves-the-yard">Operator leaves the yard</h3>
 <p>Settings → remove. Their sessions cascade. <strong>Their <code>sub</code> is still on
 any crane list you pushed it to</strong> — the row is gone, the <code>.env</code> is a
-file. Gantree should nag: “ada is on Kit’s pendant list; untick and
-recreate.” Isolation stays the feature: no silent cross-crane edit.</p>
+file. The confirm-scary modal nags: “ada is on Kit’s pendant list;
+untick and recreate.” Isolation stays the feature: no silent
+cross-crane edit.</p>
 <hr>
 <h2 id="threats-that-move">Threats that move</h2>
 <table>
@@ -439,24 +462,34 @@ yard, no MCP OAuth token doubling as a login.</p>
 </tr>
 </tbody></table>
 <hr>
-<h2 id="order-of-work">Order of work</h2>
-<p>Checklists, the shared contract (entry grammar, frame shapes,
-admission table), and a walk per milestone:
-<a href="https://github.com/shotah/gantree/blob/main/docs/access_todo.md">access_todo.md</a>.</p>
+<h2 id="fit-gates">Fit gates</h2>
+<p>Fail one and the task is later, or it belongs somewhere else.</p>
 <ol>
-<li><strong>ai-gantry</strong>: accept email entries; <code>email</code> on inbound frames;
-<code>allow</code> frame on dial. Harmless to a Worker that ignores the frame.</li>
-<li><strong>gantry-pendant</strong>: store <code>allow</code> on the DO, enforce per room, make
-<code>ALLOWED_SUBS</code> optional, mint sessions for verified accounts, <code>/me</code>
-with <code>cranes</code>, directory index. Until this lands, keep pasting
-<code>ALLOWED_SUBS</code> by hand.</li>
-<li><strong>gantree</strong>: Google <code>sub</code> on the profile; pendant allowlist push;
-spend suggestion for unseen <code>sub</code>; leave-nag.</li>
+<li><strong>One human list.</strong> The crane <code>.env</code> is the allowlist. The Worker
+enforces what the crane published. Gantree writes it. No fourth
+copy.</li>
+<li><strong>Pull and dial, never punch.</strong> The <code>allow</code> frame rides the socket
+the crane already opened. No port, no scrape, no timer, no yard
+name inside the harness.</li>
+<li><strong><code>sub</code> is the key, verified email is an alias.</strong> Session id and
+<code>user_id</code> are always <code>sub</code>. Email only ever <em>matches</em>; it never
+<em>identifies</em>. Exact, lowercased, <code>email_verified</code> required.</li>
+<li><strong>Fail closed, both ends.</strong> Empty crane list fails boot. Worker
+with no room list admits nobody (static <code>ALLOWED_SUBS</code> is optional
+extra, not a fallback that opens the door).</li>
+<li><strong>No enumeration.</strong> Every miss is the same <code>unauthorized</code>. The only
+identity a stranger sees is their own.</li>
+<li><strong>Yard door stays passphrase.</strong> Google is a field on the operator
+and a login on the Worker. Not a yard session, not an IdP hop the
+Mini needs to boot.</li>
+<li><strong>Isolation.</strong> Pushing a person onto Kit does not touch Ada’s
+crane. Kit’s bearer cannot name Ada’s humans.</li>
+<li><strong>Gantree writes files, not Cloudflare.</strong> No CF API token on the
+Mini. The Worker never accepts <code>gantree_session</code>.</li>
 </ol>
-<p>Then the pendant <code>setup.md</code> collapses “three pastes” to one recreate,
-and this page becomes the walk. Tests: <code>test/yard/door/</code> for the field
-and the push, <code>test/yard/crane/</code> for the <code>.env</code> write, and the pendant
-<code>test/auth/</code> for room admission by email.</p>
+<p>Stranger walks that still prove this loop, and leftover cleanup across
+the three repos:
+<a href="https://github.com/shotah/gantree/blob/main/docs/todo.md">docs/todo.md</a>.</p>
 </article>
   </main>
   <footer class="foot">

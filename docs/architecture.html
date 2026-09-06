@@ -44,10 +44,13 @@
 chat. The crane is the product — why the harness is worth operating lives
 in the <a href="../index.html">root readme</a>. What you click on the board:
 <a href="console.html">console.md</a>. People (login, profile, settings):
-<a href="operators.html">operators.md</a>. This page is how the yard is put together —
-stack, host I/O, and why the console never sits in a chat turn.</p>
+<a href="operators.html">operators.md</a>. One person across yard, pendant, and crane:
+<a href="access.html">access.md</a>. This page is how the yard is put together — stack,
+host I/O, and the choices that stay true as the board grows.</p>
 <p>Harness-side design note (nested checkout, <strong>dev only</strong>):
 <a href="https://github.com/shotah/ai-gantry/blob/main/docs/gantree.md">repos/ai-gantry/docs/gantree.md</a>.</p>
+<p>Open items live in the repo, not on the site:
+<a href="https://github.com/shotah/gantree/blob/main/docs/todo.md">docs/todo.md</a>.</p>
 <hr>
 <h2 id="operator-plane">Operator plane</h2>
 <pre><code class="language-text">[ browser ]
@@ -76,7 +79,7 @@ harness stays Go. The dashboard is not Go.</p>
 <p>The thing that would be wrong is putting that framework <strong>where Docker
 is not</strong>. Vinext’s happy path is Cloudflare Workers. Workers cannot
 open <code>docker.sock</code>, tail a container, or rewrite <code>mcp.toml</code> on the Mini.
-v1 is therefore <strong>Vinext targeting Node</strong> (<code>--platform=node</code> /
+The console is therefore <strong>Vinext targeting Node</strong> (<code>--platform=node</code> /
 standalone), running <strong>on the Docker host</strong> — Mini or a small VM.</p>
 <table>
 <thead>
@@ -106,8 +109,8 @@ standalone), running <strong>on the Docker host</strong> — Mini or a small VM.
 <code>lib/yard</code>), never in a React Server Component. Vinext’s native-addon
 footgun is real; this is how we don’t step on it.</p>
 <p>Later, the <em>same</em> <code>app/</code> can sit on Workers as a portal that calls this
-host. That is a second skin, not v1. Tailscale or a Cloudflare Tunnel
-in front of the Node console is how you reach a cloud VM today.</p>
+host. That is a second skin, not this runtime. Tailscale or a Cloudflare
+Tunnel in front of the Node console is how you reach a cloud VM today.</p>
 <p><strong>Avoid:</strong> Next-on-Vercel as the host. A SPA plus a mystery API.
 Harness + console in one Distroless image.</p>
 <p>No second language, no <code>gantree</code> CLI until a real gap forces it:</p>
@@ -133,12 +136,16 @@ npm run dev        # vinext dev
 <td><code>docker logs</code> stream, structured in the UI</td>
 </tr>
 <tr>
-<td>CPU / RAM / net graphs</td>
-<td>sampled <code>docker stats</code> / cgroup (ring + yard sqlite, 7d cap). Host card rolls containers up by role (agents / dashboard / other).</td>
+<td>CPU / RAM / net / blkio</td>
+<td>sampled <code>docker stats</code> / cgroup (ring + yard sqlite). Host card rolls containers up by role (agents / dashboard / other).</td>
+</tr>
+<tr>
+<td>Data-dir size</td>
+<td><code>du</code> of the crane’s <code>data/</code> on the host</td>
 </tr>
 <tr>
 <td>Turn / token graphs</td>
-<td>JSON slog <code>turn perf</code> (<code>prompt_est_tokens</code>, <code>gen_est_tokens</code>, <code>iterations</code>, <code>user_id</code>) — same sqlite so a bounce keeps this billing month (local 1st)</td>
+<td>JSON slog <code>turn perf</code> (<code>prompt_est_tokens</code>, <code>gen_est_tokens</code>, <code>iterations</code>, <code>user_id</code>, native <code>usage</code> when Completer sent it, <code>model</code> / <code>finish_reason</code> / <code>duration_ms</code> when present) — same sqlite so a bounce keeps this billing month (local 1st)</td>
 </tr>
 <tr>
 <td>Published vs skipped MCP</td>
@@ -152,6 +159,10 @@ npm run dev        # vinext dev
 <td>Telegram bot</td>
 <td>Bot API <code>getMe</code> / <code>setMy*</code> after a token exists. Allowlist is <code>.env</code>. Never <code>getUpdates</code>.</td>
 </tr>
+<tr>
+<td>Pendant mouth</td>
+<td><code>.env</code> (<code>CHANNEL=pendant</code>, mailbox URL, bearer present?, <code>PENDANT_ALLOWED_USERS</code>). Gantree writes the list; the Worker never sees the yard cookie.</td>
+</tr>
 </tbody></table>
 <p>Files remain the source of truth. The UI is an editor of those files,
 not a second inventory. Secrets never go in git. Console-in-Docker must
@@ -160,15 +171,123 @@ see those files at the inventory path — uncomment the same-path volume in
 Metrics and container env still work without it; persona and <code>mcp.toml</code> do not.</p>
 <p>Inventory is <code>gantree.toml</code> (no secrets). One mutation path: the UI
 calls <code>lib/yard</code>. Never dockerode from a React Server Component.</p>
-<p><strong>Meh yard, tight crane.</strong> The operator can wait 200ms for a chart. The
-human on Telegram cannot wait for a serial tool loop. Never add a listen
-port, a scrape, or a hook that taxes parallel tool calls, Completer
-rounds, or RSS. If a dashboard want would make <code>ai-gantry</code> slower, the
-want is wrong.</p>
+<p>Yard memory (<code>gantree.db</code>) is <strong>sessions, operators, graph samples,
+audit</strong> — not a second inventory of cranes. Operators are independent of
+each crane’s <code>gantry.db</code>. Restore a crane’s memory from a stamp; do not
+clone Kit into Ada.</p>
 <p>Recreate / pin <strong>keep</strong> the crane’s host <code>user</code> (Vinext uid:gid, never
 image <code>65532</code>), <code>network_mode</code>, and extra binds. Dropping uid is how
 <code>session store open failed</code> happens: Distroless cannot write a
-<code>gantry.db</code> owned by your login.</p>
+<code>gantry.db</code> owned by your login. Env change <strong>recreates</strong>; restart keeps
+a ghost allowlist.</p>
+<hr>
+<h2 id="choices-that-stay-true">Choices that stay true</h2>
+<p>If a task fails one of these, it is later, or it belongs in <code>ai-gantry</code>.</p>
+<ol>
+<li><strong>Files are truth.</strong> The UI edits <code>gantree.toml</code>, <code>mcp.toml</code>, <code>.env</code>,
+persona files. Crane inventory is toml, not a second DB.</li>
+<li><strong>Pull, don’t punch.</strong> Gantry stays outbound-only. No <code>/metrics</code>
+port on the crane. Graphs sample Docker stats + JSON slog; logs
+stream from <code>docker logs</code>. Doctor from files + <code>gantry status</code>.
+One page per instance — never a mixed fleet log.</li>
+<li><strong>One mutation path.</strong> Route handlers call <code>lib/yard</code>. Never
+dockerode from a React Server Component.</li>
+<li><strong>One language.</strong> TypeScript. Vinext on Node. The harness is
+already Go — this repo does not grow a second CLI in a second
+language. <code>npm start</code> / <code>vinext start</code> is enough.</li>
+<li><strong>Node on the host.</strong> Vinext <code>--platform=node</code> / standalone.
+Workers is a later portal, not this console.</li>
+<li><strong>Bind localhost.</strong> <code>127.0.0.1</code> by default. Tailscale / Tunnel if
+you leave the box. Never a public load balancer.</li>
+<li><strong>Isolation.</strong> One human, one bot, one directory, one <code>data/</code>.
+Delete a tryout = delete that directory. Pushing a person onto Kit
+does not touch Ada’s crane.</li>
+<li><strong>Not chat.</strong> Telegram and the pendant are the mouths. No pairing
+the agent through the console. The yard never sits in a chat turn.</li>
+<li><strong>Import over write.</strong> dockerode, compose, Vinext. Don’t invent a
+Docker client.</li>
+<li><strong>Meh yard, tight crane.</strong> Gantree is JS in a browser. That stack
+will never be as fast as the Go harness — and that is fine. The
+operator can wait 200ms for a chart. The human on Telegram cannot
+wait for a serial tool loop. Never sit in the token path. Never
+add a listen port, a scrape, or a hook that taxes parallel tool
+calls, Completer rounds, or RSS. If a dashboard want would make
+<code>ai-gantry</code> slower, the want is wrong. Parse what the harness
+already logs. Do not invent instrumentation for prettier graphs.</li>
+<li><strong>Every route is a door.</strong> Setup + login + session on every API
+and log SSE. Admin sees every crane; <code>user</code> / <code>readonly</code> their
+assigned. What the door checks: <a href="security.html">security.md</a>.</li>
+<li><strong>Yard door stays passphrase.</strong> Google is a field on the operator
+and a login on the pendant Worker. Not a yard session. The Mini
+must open when <code>accounts.google.com</code> does not.</li>
+<li><strong>The crane’s <code>.env</code> is the human allowlist.</strong> Gantree writes it.
+The crane reads it at boot. The Worker enforces what the crane
+published. No Cloudflare API token on the Mini. Details:
+<a href="access.html">access.md</a>.</li>
+<li><strong>Estimates stay estimates.</strong> Spend is slog tokens (native
+<code>usage</code> when Completer sent it, else chars/4) plus an optional
+pasted $/1M. Not a GCP invoice. <code>unknown</code> is a first-class slice
+when <code>source</code> is missing or outside <code>user|cron|watch|reaction</code>.</li>
+</ol>
+<hr>
+<h2 id="what-the-yard-is-today">What the yard is today</h2>
+<p>One runtime: Linux + Docker + Vinext on <strong>Node on the Docker host</strong>.
+Hub image <code>shotah/gantree</code> with <code>docker.sock</code>. Two install stories
+(home Mini vs cloud VM), same console.</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Yard home</td>
+<td>Cards: name, alive, model, channel, published vs skipped MCP, last error, last turn, spend. Nags for skipped MCP / needs-auth.</td>
+</tr>
+<tr>
+<td>Agent dashboard</td>
+<td>Per instance: metric graphs + visual logs. Kit’s page is only Kit. Folds for Tools, persona, secrets, Telegram, pendant, run.</td>
+</tr>
+<tr>
+<td>Build crane</td>
+<td>Wizard: home vs cloud, slug, persona seed, model, channel + token + operator checkboxes for Telegram / pendant, <code>slim</code> / <code>life</code> / <code>life-cast</code></td>
+</tr>
+<tr>
+<td>Tools</td>
+<td>Catalog + custom binary; toggle writes <code>[[server]]</code>, <code>tools-fetch</code>, recreate; “needs auth” is a button</td>
+</tr>
+<tr>
+<td>Persona + secrets</td>
+<td>Markdown editor; <code>.env</code> form; token push explicit and scary; never copy <code>data/</code> by default</td>
+</tr>
+<tr>
+<td>Run</td>
+<td>Start / stop / recreate; live visual log; image pin; backup button (<code>gantry.db</code> + <code>SELF.md</code>); destroy (optional files)</td>
+</tr>
+<tr>
+<td>Door</td>
+<td><code>/setup</code> then <code>/login</code>. Operators in yard sqlite. Profile: email, Telegram, Google <code>sub</code>. Audit of who mutated what.</td>
+</tr>
+<tr>
+<td>Yard pane</td>
+<td>Retain (host vs turns), timezone, default pin, optional $/1M. Admin writes; others can read the rates.</td>
+</tr>
+<tr>
+<td>Host page</td>
+<td><code>gantree.toml</code> + yard sqlite. CPU/RAM/net rollup by role.</td>
+</tr>
+<tr>
+<td>Spend</td>
+<td>Names from profile chat ids and Google <code>sub</code>. Suggest storing a slog <code>user_id</code> on the matching operator. Event strip: kind filter + jsonl.</td>
+</tr>
+<tr>
+<td>Process</td>
+<td><code>npm start</code> / <code>vinext start</code> (or compose). Bind <code>127.0.0.1</code>. <code>npm run release</code> tags and publishes the console image.</td>
+</tr>
+</tbody></table>
+<p>Cranes pin <code>shotah/ai-gantry:latest</code>. Nested <code>repos/ai-gantry</code> is <strong>dev
+only</strong>.</p>
 <hr>
 <h2 id="repo-layout">Repo layout</h2>
 <pre><code class="language-text">gantree/                    this repo — shipping yard
@@ -178,7 +297,7 @@ image <code>65532</code>), <code>network_mode</code>, and extra binds. Dropping 
 │       ├── shared/         DoorShell, DashFold, HintField, avatars, EventStrip
 │       ├── yard/           YardBoard, BuildCrane, HostCard, BoardsCard, SpendBoard
 │       ├── boards/         BoardsDashboard (`/boards`)
-│       ├── crane/          AgentDashboard + folds, Telegram, logs, charts
+│       ├── crane/          AgentDashboard + folds, Telegram, pendant, logs, charts
 │       ├── host/           HostDashboard, HostCharts
 │       └── operators/      AuthForms, OperatorProfile, YardSettings panes
 ├── site/                   GitHub Pages source (`npm run pages` → dist/pages)
@@ -194,7 +313,7 @@ image <code>65532</code>), <code>network_mode</code>, and extra binds. Dropping 
 ├── lib/yard/               host I/O (not RSC)
 │   ├── door/               operators, session, audit events
 │   ├── host/               dockerode, identity, stats, files, .env, avatar, telegram, logs
-│   ├── crane/              inventory, build, run, doctor
+│   ├── crane/              inventory, build, run, doctor, telegram, pendant
 │   ├── tools/              catalog, grant, mcp, auth
 │   ├── observe/            stats samples, sqlite memory, spend rollup
 │   └── shot/               screenshot yard (`npm run seed` + GANTREE_SHOT)
@@ -203,8 +322,8 @@ image <code>65532</code>), <code>network_mode</code>, and extra binds. Dropping 
 │   ├── app/                mirrors app/ (components by screen, lib helpers)
 │   └── scripts/            mirrors scripts/
 └── repos/                  local nested checkouts (gitignored)
-    └── ai-gantry/          harness — own remote, own git
-        └── repos/          MCP servers — own remotes
+    ├── ai-gantry/          harness — own remote, own git
+    └── gantry-pendant/     phone mouth — own remote, own git
 </code></pre>
 <p>Nested checkouts are for <strong>dev</strong>. Runtime pins <code>shotah/ai-gantry:latest</code>
 and speaks the file/env contract. Each nested project keeps its own
@@ -212,10 +331,12 @@ remote when you push. Do not copy <code>.env</code> or <code>data/</code> from a
 checkout.</p>
 <p><code>lib/yard</code> is the host I/O surface: inventory, build, grant/revoke,
 doctor, run (start / stop / recreate), logs, stats, auth hop,
-<code>tools-fetch</code>, the operator door (<code>lib/yard/door</code>, yard <code>gantree.db</code> —
-operators, sessions, graph samples, audit). Import dockerode from
-<code>lib/yard</code>, not from <code>app/</code>. Import leaf modules (<code>@/lib/yard/crane/build</code>),
-not a root barrel.</p>
+<code>tools-fetch</code>, Telegram / pendant allowlists, the operator door
+(<code>lib/yard/door</code>, yard <code>gantree.db</code> — operators, sessions, graph
+samples, audit). Import dockerode from <code>lib/yard</code>, not from <code>app/</code>.
+Import leaf modules (<code>@/lib/yard/crane/build</code>), not a root barrel.
+Client code that needs the pendant grammar imports
+<code>@/lib/yard/crane/pendantShape</code> — not <code>pendant.ts</code> (that pulls Node I/O).</p>
 <p><strong>Tests live under <code>test/</code>.</strong> They mirror the source tree and never sit
 beside production files. <code>test/yard/</code> covers <code>lib/yard</code> (Node / Docker /
 files). <code>test/app/</code> covers the UI and <code>app/lib/</code> helpers. <code>test/scripts/</code>
@@ -237,37 +358,20 @@ plugin system. Grant is still “listed in <code>mcp.toml</code>.” <code>life-
 home-only (mDNS / host network). Custom servers:
 <a href="custom-mcp.html">custom-mcp.md</a>.</p>
 <hr>
-<h2 id="v1-vs-v2-vs-v3-vs-later">v1 vs v2 vs v3 vs later</h2>
-<p><strong>v1:</strong> this Node process on the Docker host, or the Hub image
-<code>shotah/gantree</code> with <code>docker.sock</code>. Board, per-crane dashboard, host
-page (<code>gantree.toml</code> + yard sqlite),
-build wizard, MCP toggles, auth hop, start / stop / recreate, image pin.
-Telegram + Hub <code>shotah/ai-gantry</code>. Bind localhost (LAN publish is a
-home choice). <code>npm run release</code> tags and publishes
-the console image (same Hub secrets as the harness).</p>
-<p><strong>v2 (delivered):</strong> a door on that process (setup + login + session on
-every API and log SSE), a handful of operators in yard <code>gantree.db</code>
-(independent of each crane’s <code>gantry.db</code>; admin sees every crane, user /
-readonly their assigned), board nags for skipped MCP / needs-auth,
-sqlite so graphs survive a bounce, audit of who mutated what. What that
-door checks: <a href="security.html">security.md</a>. Portal (Workers skin) is a
-parallel / last walk with mobile — not a blocker for calling the door
-done. Walk: <a href="https://github.com/shotah/gantree/blob/main/todo.md">todo.md</a> (<strong>v2 looks like</strong>).</p>
-<p><strong>v3:</strong> the yard you live in. Settings beyond people (retain, timezone,
-default pin, optional $/1M). Richer pull-only graphs (net, disk, turn
-duration when slog has it). Profile chat ids label spend and can be
-pushed onto a crane allowlist. Backup is a loop (list / restore /
-prune); retire a tryout. Compare overlay and a filterable audit.
-Inventory still toml. Still pull, never a <code>/metrics</code> port on the crane.
-Mobile / phone layout is someone else’s track. Walk: <a href="https://github.com/shotah/gantree/blob/main/todo.md">todo.md</a>
-(<strong>v3 looks like</strong>).</p>
-<p><strong>Later:</strong> systemd yards; a <code>gantree</code> CLI only if <code>npm</code> scripts are
-genuinely not enough (still TypeScript); Prometheus; billed-provider
-invoices; SSO.</p>
-<p><strong>Not the product:</strong> hosted Gantree SaaS, Kubernetes, Cloud Run / Lambda,
-a shared family brain, pairing the <em>agent</em> through the console, anything
-that makes the harness slower so this UI looks nicer.</p>
-<p>Walk order: <a href="https://github.com/shotah/gantree/blob/main/todo.md">todo.md</a>.</p>
+<h2 id="later-and-not-the-product">Later, and not the product</h2>
+<p><strong>Later</strong> (when a real gap forces it): Workers portal (same <code>app/</code>,
+remote to this host); operator saved watches / drag-and-drop tiles
+(catalog + one attention surface before a dashboard builder); systemd
+yards; a <code>gantree</code> CLI only if <code>npm</code> scripts are genuinely not enough
+(still TypeScript); Prometheus; billed-provider invoices; SSO; Link
+Google on <code>/profile</code> (OIDC that writes <code>sub</code> + email onto your row, not
+a session).</p>
+<p><strong>Not the product:</strong> hosted Gantree SaaS, Kubernetes, Cloud Run /
+Lambda, a shared family brain, pairing the <em>agent</em> through the console,
+multi-tenant orgs, invite links, billing, anything that makes the
+harness slower so this UI looks nicer.</p>
+<p>Open items and stranger walks:
+<a href="https://github.com/shotah/gantree/blob/main/docs/todo.md">docs/todo.md</a>.</p>
 </article>
   </main>
   <footer class="foot">

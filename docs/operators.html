@@ -88,11 +88,12 @@ not the cog, and it is not the operator list.</p>
 <li>photo (JPEG / PNG / WebP / GIF; PNG and WebP convert on upload)</li>
 <li>display name (what the header shows)</li>
 <li>login name (what <code>/login</code> asks for)</li>
-<li>email (a <strong>label</strong> — not a reset path, not a mailbox)</li>
+<li>email (what the pendant matches until the Google <code>sub</code> is learned — not a reset path, not a mailbox)</li>
 <li>description</li>
-<li>chat ids (Telegram numeric, Slack <code>U…</code>, Discord snowflake) — stored on
-you; not wired into crane allowlists yet. How they should line up with
-the pendant’s Google sign-in: <a href="access.html">access.md</a></li>
+<li>chat ids (Telegram numeric, Slack <code>U…</code>, Discord snowflake, Google <code>sub</code>) — stored on
+you. Telegram / pendant panels write them onto a crane allowlist; they are not
+auto-copied. How they line up with the pendant’s Google sign-in:
+<a href="access.html">access.md</a></li>
 <li>passphrase (current + new + confirm, plus the confirm-scary checkbox)</li>
 </ul>
 <p>Those fields are what <strong>Inject user</strong> on a crane copies into <code>PERSONA.md</code>

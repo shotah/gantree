@@ -280,7 +280,7 @@ JWT in <code>localStorage</code>.</p>
 access change / passphrase change (checkbox must be JSON <code>true</code>, not
 <code>&quot;true&quot;</code>).</p>
 <ul>
-<li>Each row is a UUID. <code>bob</code> is the login name. Display name, email, description, photo, and Telegram/Slack/Discord ids live on that row. Email is a label — still no reset link. Photos: <code>operators/&lt;uuid&gt;/avatar.jpg</code> next to yard sqlite.</li>
+<li>Each row is a UUID. <code>bob</code> is the login name. Display name, email, description, photo, Telegram/Slack/Discord ids, and a Google <code>sub</code> live on that row. Email is a label the pendant can match until the <code>sub</code> is learned — still no reset link. Photos: <code>operators/&lt;uuid&gt;/avatar.jpg</code> next to yard sqlite.</li>
 <li>Cannot delete the last operator. Cannot demote or delete the last admin.</li>
 <li>Add uses the same passphrase rules as setup.</li>
 <li>Names are unique ignoring case.</li>
