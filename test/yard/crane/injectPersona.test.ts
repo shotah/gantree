@@ -16,7 +16,7 @@ const ada: PersonaOperator = {
   description: "likes rye jokes",
   timezone: "America/New_York",
   location: "Brooklyn, New York",
-  channels: { telegram: ["99"], slack: ["U012ABCDEF"], discord: [] },
+  channels: { telegram: ["99"], slack: ["U012ABCDEF"], discord: [], google: [] },
 };
 
 describe("injectOperatorIntoPersona", () => {

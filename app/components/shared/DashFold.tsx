@@ -13,6 +13,7 @@ export const CRANE_FOLD_SECTIONS = [
   "photo",
   "tags",
   "telegram",
+  "pendant",
   "metrics",
   "logs",
   "events",

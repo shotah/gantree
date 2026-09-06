@@ -1,18 +1,26 @@
 /** @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BuildCrane } from "@/app/components/yard/BuildCrane";
 
 vi.mock("@/app/lib/yardFetch", () => ({
   yardFetch: vi.fn(),
 }));
 
+import { yardFetch } from "@/app/lib/yardFetch";
+
 afterEach(() => {
   cleanup();
 });
 
 describe("BuildCrane", () => {
+  beforeEach(() => {
+    vi.mocked(yardFetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ operators: [] }),
+    } as Response);
+  });
   it("disables life-cast when the yard is a cloud VM", () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
@@ -56,5 +64,28 @@ describe("BuildCrane", () => {
 
     fireEvent.change(input, { target: { value: "123:secret" } });
     expect((screen.getByLabelText("bot token") as HTMLInputElement).type).toBe("password");
+  });
+
+  it("ticks a profile email into the pendant allowlist", async () => {
+    vi.mocked(yardFetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        operators: [
+          {
+            id: "2",
+            name: "ada",
+            displayName: "Ada",
+            email: "ada@example.com",
+            channels: { telegram: ["99"], google: [] },
+          },
+        ],
+      }),
+    } as Response);
+    render(<BuildCrane onBuilt={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
+    fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    fireEvent.click(screen.getByRole("checkbox", { name: /Ada/ }));
+    expect((screen.getByLabelText("Google sub allowlist") as HTMLInputElement).value).toBe("ada@example.com");
   });
 });

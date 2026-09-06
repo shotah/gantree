@@ -37,6 +37,7 @@ export {
   setupOperator,
   unassignCrane,
   updateOwnProfile,
+  storeOperatorGoogleSub,
   withDevSessionCookie,
   withDoor,
 } from "./gate";

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { jpegFromFile } from "@/app/lib/jpegFromFile";
 import { yardFetch } from "@/app/lib/yardFetch";
 import { shouldPushTelegram } from "@/lib/yard/host/telegram";
+import { shouldPushPendant } from "@/lib/yard/crane/pendantShape";
 import {
   bucketsForWindow,
   filterSamples,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/yard/observe/spend";
 import { optionalKeysForGrant, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import { DEFAULT_IMAGE, type CatalogEntry, type DoctorReport, type GantryCard, type McpSample, type McpServer, type ObservePrefs, type StatSample, type TurnSample, type UptimeSample } from "@/lib/yard/types";
+import type { StoreSubSuggestion } from "@/lib/yard/observe/spend";
 import { useDoor } from "../shared/DoorShell";
 import { envRow, SECRET_NAME, type EnvRow } from "./agentEnv";
 
@@ -36,6 +38,7 @@ export function useAgentDashboard(slug: string) {
   const [mcp, setMcp] = useState<McpSample[]>([]);
   const [uptime, setUptime] = useState<UptimeSample[]>([]);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [storeSub, setStoreSub] = useState<StoreSubSuggestion | null>(null);
   const [observe, setObserve] = useState<ObservePrefs | null>(null);
   const [files, setFiles] = useState<CraneFiles | null>(null);
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
@@ -87,13 +90,14 @@ export function useAgentDashboard(slug: string) {
       .catch(() => undefined);
     yardFetch(`/api/gantries/${slug}/stats`)
       .then((r) => r.json())
-      .then((s: { host: StatSample[]; turns: TurnSample[]; mcp: McpSample[]; uptime: UptimeSample[]; userNames?: Record<string, string>; observe?: ObservePrefs }) => {
+      .then((s: { host: StatSample[]; turns: TurnSample[]; mcp: McpSample[]; uptime: UptimeSample[]; userNames?: Record<string, string>; observe?: ObservePrefs; storeSub?: StoreSubSuggestion | null }) => {
         setHost(s.host ?? []);
         setTurns(s.turns ?? []);
         setMcp(s.mcp ?? []);
         setUptime(s.uptime ?? []);
         setUserNames(s.userNames ?? {});
         setObserve(s.observe ?? null);
+        setStoreSub(s.storeSub ?? null);
         setNow(Date.now());
       })
       .catch(() => undefined);
@@ -354,6 +358,11 @@ export function useAgentDashboard(slug: string) {
     = shouldPushTelegram(gantry?.channel ?? null)
       || shouldPushTelegram(files?.env?.CHANNEL?.value ?? null)
       || Boolean(files?.env?.TELEGRAM_BOT_TOKEN?.set);
+  const pendantOn
+    = shouldPushPendant(gantry?.channel ?? null)
+      || shouldPushPendant(files?.env?.CHANNEL?.value ?? null)
+      || Boolean(files?.env?.PENDANT_MAILBOX_URL?.set)
+      || Boolean(files?.env?.PENDANT_BEARER?.set);
   const since = windowStart(spendWindow, now);
   const allowedBuckets = bucketsForWindow(spendWindow);
   const bucket = allowedBuckets.includes(spendBucket) ? spendBucket : "cumulative";
@@ -370,6 +379,7 @@ export function useAgentDashboard(slug: string) {
     mcp,
     uptime,
     userNames,
+    storeSub,
     observe,
     files,
     catalog,
@@ -434,6 +444,7 @@ export function useAgentDashboard(slug: string) {
     canBuild,
     mutate,
     telegramOn,
+    pendantOn,
     since,
     allowedBuckets,
     bucket,

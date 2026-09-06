@@ -181,7 +181,7 @@ A handful of people in yard sqlite. Confirm-scary on add / remove /
 access change / passphrase change (checkbox must be JSON `true`, not
 `"true"`).
 
-- Each row is a UUID. `bob` is the login name. Display name, email, description, photo, and Telegram/Slack/Discord ids live on that row. Email is a label — still no reset link. Photos: `operators/<uuid>/avatar.jpg` next to yard sqlite.
+- Each row is a UUID. `bob` is the login name. Display name, email, description, photo, Telegram/Slack/Discord ids, and a Google `sub` live on that row. Email is a label the pendant can match until the `sub` is learned — still no reset link. Photos: `operators/<uuid>/avatar.jpg` next to yard sqlite.
 - Cannot delete the last operator. Cannot demote or delete the last admin.
 - Add uses the same passphrase rules as setup.
 - Names are unique ignoring case.

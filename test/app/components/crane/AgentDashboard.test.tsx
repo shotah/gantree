@@ -12,6 +12,7 @@ vi.mock("@/app/lib/yardFetch", () => ({
 vi.mock("@/app/components/crane/LogViewer", () => ({ LogViewer: () => null }));
 vi.mock("@/app/components/shared/EventStrip", () => ({ EventStrip: () => null }));
 vi.mock("@/app/components/crane/TelegramBot", () => ({ TelegramBot: () => null }));
+vi.mock("@/app/components/crane/PendantPanel", () => ({ PendantPanel: () => null }));
 vi.mock("@/app/components/crane/DoctorPanel", () => ({ DoctorPanel: () => null }));
 vi.mock("@/app/components/crane/MetricCharts", () => ({ MetricCharts: () => null }));
 vi.mock("@/app/components/shared/DoorShell", () => ({

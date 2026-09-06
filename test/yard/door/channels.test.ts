@@ -18,6 +18,10 @@ describe("operator channel ids", () => {
     expect(parseChannelIds("discord", "abc")).toEqual({ ok: false, error: "discord ids are numeric" });
     expect(parseChannelIds("slack", "U012ABCDEF")).toEqual({ ok: true, ids: ["U012ABCDEF"] });
     expect(parseChannelIds("slack", "@here")).toEqual({ ok: false, error: "slack needs the platform id, not @username" });
+    expect(parseChannelIds("google", "118212345678901234567")).toEqual({ ok: true, ids: ["118212345678901234567"] });
+    expect(parseChannelIds("google", "ada@example.com")).toEqual({ ok: false, error: "needs the Google sub, not the email." });
+    expect(parseChannelIds("google", "@ada")).toEqual({ ok: false, error: "needs the Google sub, not the email." });
+    expect(parseChannelIds("google", "123")).toEqual({ ok: false, error: "google ids are numeric" });
   });
 
   it("parses stored json and ignores junk", () => {
@@ -25,8 +29,9 @@ describe("operator channel ids", () => {
       telegram: ["9"],
       slack: [],
       discord: [],
+      google: [],
     });
-    expect(parseOperatorChannels("not-json")).toEqual({ telegram: [], slack: [], discord: [] });
+    expect(parseOperatorChannels("not-json")).toEqual({ telegram: [], slack: [], discord: [], google: [] });
     expect(parseRole("readonly")).toBe("readonly");
     expect(parseRole("owner")).toBeNull();
     expect(validateEmail("")).toBeNull();

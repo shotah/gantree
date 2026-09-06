@@ -1,4 +1,4 @@
-export const OPERATOR_CHANNEL_KINDS = ["telegram", "slack", "discord"] as const;
+export const OPERATOR_CHANNEL_KINDS = ["telegram", "slack", "discord", "google"] as const;
 export type OperatorChannelKind = (typeof OPERATOR_CHANNEL_KINDS)[number];
 
 export type OperatorRole = "admin" | "user" | "readonly";
@@ -7,6 +7,7 @@ export type OperatorChannels = {
   telegram: string[];
   slack: string[];
   discord: string[];
+  google: string[];
 };
 
 export const MAX_CHANNEL_IDS = 16;
@@ -18,6 +19,7 @@ export const MAX_LOCATION = 80;
 const TELEGRAM_ID = /^-?\d+$/;
 const DISCORD_ID = /^\d{5,20}$/;
 const SLACK_ID = /^[A-Za-z][A-Za-z0-9._-]{2,63}$/;
+const GOOGLE_SUB = /^\d{10,32}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** C0 + DEL. `allowWrap` keeps tab/LF/CR so a description can wrap. */
@@ -35,7 +37,7 @@ function hasForbiddenControls(s: string, allowWrap = false): boolean {
 }
 
 export function emptyChannels(): OperatorChannels {
-  return { telegram: [], slack: [], discord: [] };
+  return { telegram: [], slack: [], discord: [], google: [] };
 }
 
 export function parseRole(raw: unknown): OperatorRole | null {
@@ -116,6 +118,26 @@ export function validateLocation(raw: string): string | null {
   return null;
 }
 
+function channelIdOk(kind: OperatorChannelKind, id: string): boolean {
+  switch (kind) {
+    case "telegram":
+      return TELEGRAM_ID.test(id);
+    case "discord":
+      return DISCORD_ID.test(id);
+    case "slack":
+      return SLACK_ID.test(id);
+    case "google":
+      return GOOGLE_SUB.test(id);
+  }
+}
+
+function channelIdError(kind: OperatorChannelKind): string {
+  if (kind === "slack") {
+    return "slack ids look like U012ABCDEF, not @name";
+  }
+  return `${kind} ids are numeric`;
+}
+
 export function parseChannelIds(
   kind: OperatorChannelKind,
   raw: string | string[] | null | undefined,
@@ -128,18 +150,15 @@ export function parseChannelIds(
     if (!id) {
       continue;
     }
+    if (kind === "google" && (id.startsWith("@") || id.includes("@"))) {
+      return { ok: false, error: "needs the Google sub, not the email." };
+    }
     if (id.startsWith("@")) {
       return { ok: false, error: `${kind} needs the platform id, not @username` };
     }
-    const ok = kind === "telegram" ? TELEGRAM_ID.test(id) : kind === "discord" ? DISCORD_ID.test(id) : SLACK_ID.test(id);
+    const ok = channelIdOk(kind, id);
     if (!ok) {
-      return {
-        ok: false,
-        error:
-          kind === "slack"
-            ? "slack ids look like U012ABCDEF, not @name"
-            : `${kind} ids are numeric`,
-      };
+      return { ok: false, error: channelIdError(kind) };
     }
     if (seen.has(id)) {
       continue;

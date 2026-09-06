@@ -38,8 +38,8 @@ export const HINTS = {
     example: "a long random string",
   },
   pendantAllowlist: {
-    hint: "Google sub ids who may talk on the pendant. Email after a colon is a label only. Empty fails boot.",
-    example: "1182…:ada@example.com",
+    hint: "Who may talk on the pendant: Google sub, sub:email, or email. Empty fails boot.",
+    example: "1182…:ada@example.com,bob@example.com",
   },
   hostRetain: {
     hint: "How long host CPU/RAM samples stay in yard sqlite. Shortening deletes older rows. Session idle is not this field.",
@@ -93,7 +93,7 @@ export const HINTS = {
     example: "ada",
   },
   email: {
-    hint: "Canonical Google / Workspace email. Inject user can copy this into PERSONA.md. Not a mailbox, not a reset path.",
+    hint: "Canonical Google / Workspace email. The pendant matches this address until the Google sub is learned. Inject user can copy this into PERSONA.md. Not a mailbox, not a reset path.",
     example: "ada@example.com",
   },
   profileLocation: {
@@ -120,7 +120,7 @@ export const HINTS = {
     example: "123456789012345678",
   },
   chatGoogle: {
-    hint: "Google OpenID sub for the pendant mouth. Digits, not the email. The phone shows this after Sign in with Google. Paste the same id onto the crane PENDANT_ALLOWED_USERS and the Worker ALLOWED_SUBS. Not auto-copied.",
+    hint: "Google OpenID sub for the pendant mouth. Digits, not the email. Learned from spend after they talk, or paste from the phone after Sign in with Google. The crane pendant panel writes this onto PENDANT_ALLOWED_USERS.",
     example: "118212345678901234567",
   },
   currentPass: {
@@ -237,8 +237,8 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "a long random string",
   },
   PENDANT_ALLOWED_USERS: {
-    hint: "Google sub ids who may talk on the pendant. Email after a colon is a label only. Empty fails boot. Recreate after save.",
-    example: "1182…:ada@example.com",
+    hint: "Google sub, sub:email, or email who may talk on the pendant. Empty fails boot. Recreate after save.",
+    example: "1182…:ada@example.com,bob@example.com",
   },
   GEMINI_SEARCH_API_KEY: {
     hint: "Google AI Studio key for google-search. Wins over the crane LLM_API_KEY. Set this when the mouth is a local model.",

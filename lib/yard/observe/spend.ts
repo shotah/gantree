@@ -175,15 +175,15 @@ export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
 export type ChannelNameInput = {
   name: string;
   displayName: string;
-  channels: { telegram: string[]; slack: string[]; discord: string[] };
+  channels: { telegram: string[]; slack: string[]; discord: string[]; google: string[] };
 };
 
-/** Map Telegram / Slack / Discord ids on operator profiles to a display name. */
+/** Map Telegram / Slack / Discord / Google ids on operator profiles to a display name. */
 export function namesFromOperators(ops: ChannelNameInput[]): Record<string, string> {
   const names: Record<string, string> = {};
   for (const op of ops) {
     const label = op.displayName.trim() || op.name;
-    for (const ids of [op.channels.telegram, op.channels.slack, op.channels.discord]) {
+    for (const ids of [op.channels.telegram, op.channels.slack, op.channels.discord, op.channels.google]) {
       for (const id of ids) {
         if (id && !names[id]) {
           names[id] = label;
@@ -192,6 +192,70 @@ export function namesFromOperators(ops: ChannelNameInput[]): Record<string, stri
     }
   }
   return names;
+}
+
+export type StoreSubSuggestion = {
+  userId: string;
+  operatorId: string;
+  operatorName: string;
+  email: string;
+};
+
+const GOOGLE_SUB = /^\d{10,32}$/;
+
+/**
+ * When slog `user_id` matches nobody, the crane list has an email-only entry,
+ * and exactly one operator holds that email — offer to store the sub on them.
+ * At most one suggestion (one unlabeled sub + one uniquely-owned email).
+ */
+export function suggestStoreGoogleSub(
+  userIds: string[],
+  allowlist: { sub: string | null; email: string | null }[],
+  operators: { id: string; name: string; displayName: string; email: string; channels: { google: string[] } }[],
+): StoreSubSuggestion | null {
+  const known = new Set<string>();
+  for (const op of operators) {
+    for (const id of op.channels.google) {
+      if (id) {
+        known.add(id);
+      }
+    }
+  }
+  const unlabeled: string[] = [];
+  const seenUnlabeled = new Set<string>();
+  for (const raw of userIds) {
+    const id = raw.trim();
+    if (!GOOGLE_SUB.test(id) || known.has(id) || seenUnlabeled.has(id)) {
+      continue;
+    }
+    seenUnlabeled.add(id);
+    unlabeled.push(id);
+  }
+  if (unlabeled.length !== 1) {
+    return null;
+  }
+
+  const emailOnly = [...new Set(
+    allowlist
+      .filter((e) => e.email && !e.sub)
+      .map((e) => (e.email ?? "").trim().toLowerCase())
+      .filter(Boolean),
+  )];
+  if (emailOnly.length !== 1) {
+    return null;
+  }
+  const email = emailOnly[0];
+  const holders = operators.filter((op) => op.email.trim().toLowerCase() === email);
+  if (holders.length !== 1) {
+    return null;
+  }
+  const op = holders[0];
+  return {
+    userId: unlabeled[0],
+    operatorId: op.id,
+    operatorName: op.displayName.trim() || op.name,
+    email,
+  };
 }
 
 export function labelSlices(slices: SpendSlice[], names: Record<string, string>): SpendSlice[] {

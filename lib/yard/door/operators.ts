@@ -1,5 +1,6 @@
 import { accessForRole, serializeCranes } from "./access";
 import {
+  parseChannelIds,
   parseChannelsPatch,
   parseRole,
   serializeOperatorChannels,
@@ -343,4 +344,31 @@ export function updateOwnProfile(
     return { ok: false, error: "operator write vanished", status: 500 };
   }
   return { ok: true, operator: next };
+}
+
+/** Append a Google sub onto an operator. Suggest ≠ write — caller is the button. */
+export function storeOperatorGoogleSub(
+  operatorId: string,
+  sub: string,
+): { ok: true; operator: OperatorRow } | DoorFail {
+  if (typeof sub !== "string") {
+    return { ok: false, error: "Google sub required", status: 400 };
+  }
+  const parsed = parseChannelIds("google", sub);
+  if (!parsed.ok) {
+    return { ok: false, error: parsed.error, status: 400 };
+  }
+  if (parsed.ids.length !== 1) {
+    return { ok: false, error: "need a Google sub", status: 400 };
+  }
+  const op = getOperator(operatorId);
+  if (!op) {
+    return { ok: false, error: "operator not found", status: 404 };
+  }
+  if (op.channels.google.includes(parsed.ids[0])) {
+    return { ok: true, operator: op };
+  }
+  return updateOwnProfile(operatorId, {
+    channels: { ...op.channels, google: [...op.channels.google, ...parsed.ids] },
+  });
 }

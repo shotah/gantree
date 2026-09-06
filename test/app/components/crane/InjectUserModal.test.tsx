@@ -37,7 +37,7 @@ describe("InjectUserModal", () => {
             description: "likes rye",
             timezone: "America/New_York",
             location: "Brooklyn, New York",
-            channels: { telegram: ["99"], slack: [], discord: [] },
+            channels: { telegram: ["99"], slack: [], discord: [], google: [] },
           },
         ],
       });
@@ -74,7 +74,7 @@ describe("InjectUserModal", () => {
             displayName: "Kit",
             email: "",
             description: "",
-            channels: { telegram: [], slack: [], discord: [] },
+            channels: { telegram: [], slack: [], discord: [], google: [] },
           },
         ],
       })) as Response,

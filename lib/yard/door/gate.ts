@@ -37,6 +37,7 @@ export {
   setupOperator,
   unassignCrane,
   updateOwnProfile,
+  storeOperatorGoogleSub,
 } from "./operators";
 export type { DoorFail, DoorStatus, Operator, OperatorProfilePatch, OperatorRow } from "./shape";
 

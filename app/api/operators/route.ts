@@ -14,9 +14,11 @@ import {
   recordFromRequest,
   removeOperator,
   setOperatorAccess,
+  storeOperatorGoogleSub,
   updateOwnProfile,
   withDoor,
 } from "@/lib/yard/door";
+import { cranesHoldingOperator } from "@/lib/yard/crane/envscan";
 import type { OperatorChannels, OperatorRole } from "@/lib/yard/door";
 
 export const GET = withDoor(async (req: Request) => {
@@ -28,7 +30,10 @@ export const GET = withDoor(async (req: Request) => {
   if (you.role !== "admin") {
     return Response.json({ operators: self ? [self] : [], you: self });
   }
-  return Response.json({ operators: listOperators(), you: self });
+  return Response.json({
+    operators: listOperators().map((op) => ({ ...op, mouthCranes: cranesHoldingOperator(op) })),
+    you: self,
+  });
 });
 
 export const POST = withDoor(async (req: Request) => {
@@ -53,6 +58,7 @@ export const POST = withDoor(async (req: Request) => {
     crane?: string | null;
     cranes?: unknown;
     channels?: OperatorChannels;
+    sub?: string;
   };
   if (body.op === "profile") {
     const targetId = typeof body.id === "string" && body.id ? body.id : you.id;
@@ -68,6 +74,21 @@ export const POST = withDoor(async (req: Request) => {
       location: body.location,
       channels: body.channels,
     });
+    if (!result.ok) {
+      return Response.json({ error: result.error }, { status: result.status });
+    }
+    recordFromRequest(req, "operator-profile", null, result.operator.name);
+    return Response.json({ ok: true, operator: result.operator });
+  }
+  if (body.op === "google-sub") {
+    const targetId = typeof body.id === "string" && body.id ? body.id : you.id;
+    if (!canEditOperator(you, targetId)) {
+      return Response.json({ error: "can only change your own profile" }, { status: 403 });
+    }
+    if (typeof body.sub !== "string") {
+      return Response.json({ error: "Google sub required" }, { status: 400 });
+    }
+    const result = storeOperatorGoogleSub(targetId, body.sub);
     if (!result.ok) {
       return Response.json({ error: result.error }, { status: result.status });
     }
@@ -160,5 +181,5 @@ export const POST = withDoor(async (req: Request) => {
     recordFromRequest(req, "operator-access", null, `${result.operator.name}:${result.operator.role}`);
     return Response.json({ ok: true, operator: result.operator });
   }
-  return Response.json({ error: "op must be add|remove|passphrase|profile|access" }, { status: 400 });
+  return Response.json({ error: "op must be add|remove|passphrase|profile|access|google-sub" }, { status: 400 });
 });

@@ -1,11 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HINTS } from "@/lib/yard/hints";
 import { secretLook } from "@/lib/yard/secretLook";
+import { parseAllowlist } from "@/lib/yard/host/telegram";
+import {
+  formatPendantEntry,
+  operatorOnPendantList,
+  parsePendantAllowlist,
+  pendantEntryForOperator,
+} from "@/lib/yard/crane/pendantShape";
 import { BotFatherHint } from "../crane/BotFatherHint";
 import { HintField } from "../shared/HintField";
 import { yardFetch } from "@/app/lib/yardFetch";
+
+type BuildOperator = {
+  id: string;
+  name: string;
+  displayName: string;
+  email: string;
+  channels?: { telegram?: string[]; google?: string[] };
+};
 
 export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [open, setOpen] = useState(false);
@@ -21,6 +36,19 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [bot, setBot] = useState<{ username: string | null; link: string | null; firstName: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [operators, setOperators] = useState<BuildOperator[]>([]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    yardFetch("/api/operators")
+      .then((r) => r.json())
+      .then((d: { operators?: BuildOperator[] }) => {
+        setOperators(d.operators ?? []);
+      })
+      .catch(() => undefined);
+  }, [open]);
 
   async function probeToken(value: string): Promise<boolean> {
     const t = value.trim();
@@ -174,6 +202,24 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
                 <HintField label="allowlist" className="sm:col-span-2" {...HINTS.allowlist}>
                   <input className="rounded border border-edge bg-canvas px-2 py-1" value={allow} onChange={(e) => setAllow(e.target.value)} placeholder="123456789" />
                 </HintField>
+                <OperatorAllowChecks
+                  className="sm:col-span-2"
+                  operators={operators.filter((o) => (o.channels?.telegram ?? []).length > 0)}
+                  checked={(op) => {
+                    const have = new Set(parseAllowlist(allow));
+                    return (op.channels?.telegram ?? []).every((id) => have.has(id));
+                  }}
+                  onToggle={(op, on) => {
+                    const ids = op.channels?.telegram ?? [];
+                    if (on) {
+                      setAllow(parseAllowlist([allow, ...ids]).join(","));
+                      return;
+                    }
+                    const drop = new Set(ids);
+                    setAllow(parseAllowlist(allow).filter((id) => !drop.has(id)).join(","));
+                  }}
+                  extra={(op) => (op.channels?.telegram ?? []).join(", ")}
+                />
                 <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
                   <button
                     type="button"
@@ -240,6 +286,35 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
                     spellCheck={false}
                   />
                 </HintField>
+                <OperatorAllowChecks
+                  className="sm:col-span-2"
+                  operators={operators.filter((o) => pendantEntryForOperator({ email: o.email, channels: { google: o.channels?.google ?? [] } }).ok)}
+                  checked={(op) =>
+                    operatorOnPendantList(
+                      { email: op.email, channels: { google: op.channels?.google ?? [] } },
+                      parsePendantAllowlist(allow),
+                    )}
+                  onToggle={(op, on) => {
+                    const made = pendantEntryForOperator({ email: op.email, channels: { google: op.channels?.google ?? [] } });
+                    if (!made.ok) {
+                      return;
+                    }
+                    if (on) {
+                      setAllow(parsePendantAllowlist([allow, made.entry]).map(formatPendantEntry).join(","));
+                      return;
+                    }
+                    const email = op.email.trim().toLowerCase();
+                    const google = new Set(op.channels?.google ?? []);
+                    setAllow(
+                      parsePendantAllowlist(allow)
+                        .filter((e) => !((e.sub && google.has(e.sub)) || (e.email && email && e.email === email)))
+                        .map(formatPendantEntry)
+                        .join(","),
+                    );
+                  }}
+                  extra={(op) => op.email || (op.channels?.google ?? [])[0] || ""}
+                  badge={(op) => ((op.channels?.google ?? [])[0] ? "sub" : null)}
+                />
               </>
             )
           : null}
@@ -249,5 +324,54 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
         {busy ? "building…" : "Build crane"}
       </button>
     </form>
+  );
+}
+
+function OperatorAllowChecks({
+  className,
+  operators,
+  checked,
+  onToggle,
+  extra,
+  badge,
+}: {
+  className?: string;
+  operators: BuildOperator[];
+  checked: (op: BuildOperator) => boolean;
+  onToggle: (op: BuildOperator, on: boolean) => void;
+  extra: (op: BuildOperator) => string;
+  badge?: (op: BuildOperator) => string | null;
+}) {
+  if (operators.length === 0) {
+    return null;
+  }
+  return (
+    <div className={className}>
+      <p className="text-[10px] uppercase tracking-wide text-faint">operators</p>
+      <ul className="mt-1 flex flex-wrap gap-1.5">
+        {operators.map((op) => {
+          const label = op.displayName.trim() || op.name;
+          const mark = badge?.(op);
+          return (
+            <li key={op.id}>
+              <label className="inline-flex items-center gap-1.5 rounded border border-line bg-canvas px-2 py-1 text-xs text-fg">
+                <input type="checkbox" checked={checked(op)} onChange={(e) => onToggle(op, e.target.checked)} />
+                {label}
+                {extra(op)
+                  ? (
+                      <span className="text-dim">{extra(op)}</span>
+                    )
+                  : null}
+                {mark
+                  ? (
+                      <span className="rounded border border-edge px-1 text-[10px] text-muted">{mark}</span>
+                    )
+                  : null}
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

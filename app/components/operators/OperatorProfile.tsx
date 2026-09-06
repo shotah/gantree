@@ -39,6 +39,7 @@ const CHANNEL_HINT: Record<OperatorChannelKind, { label: string; placeholder: st
   telegram: { label: "Telegram", placeholder: "numeric id", hint: HINTS.chatTelegram.hint, example: HINTS.chatTelegram.example },
   slack: { label: "Slack", placeholder: "U012ABCDEF", hint: HINTS.chatSlack.hint, example: HINTS.chatSlack.example },
   discord: { label: "Discord", placeholder: "snowflake id", hint: HINTS.chatDiscord.hint, example: HINTS.chatDiscord.example },
+  google: { label: "Google", placeholder: "numeric sub", hint: HINTS.chatGoogle.hint, example: HINTS.chatGoogle.example },
 };
 
 function pingDoor() {
@@ -234,7 +235,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                   {" "}
                   <code className="text-dim">{subject.id}</code>
                   {" "}
-                  — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram. Email, timezone, location, and the description can be injected into a crane's PERSONA.md — they are not auto-copied. Email is not a reset path.
+                  — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram and the pendant Google sub. Email, timezone, location, and the description can be injected into a crane's PERSONA.md — they are not auto-copied. Email is what the pendant matches until the sub is learned, not a reset path.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <OperatorAvatar id={subject.id} rev={subject.avatarRev} name={displayName || subject.displayName} size="xl" />

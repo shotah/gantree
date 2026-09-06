@@ -81,7 +81,7 @@ function ensureOperator(spec: ShotOperator): string {
     description: spec.description,
     timezone: spec.timezone,
     location: spec.location,
-    channels: { telegram: [spec.telegram], slack: [], discord: [] },
+    channels: { telegram: [spec.telegram], slack: [], discord: [], google: [] },
   });
   if (!profile.ok) {
     throw new Error(profile.error);
@@ -131,7 +131,7 @@ function seedCrane(spec: (typeof SHOT_CRANES)[number]): void {
       description: about.description,
       timezone: about.timezone,
       location: about.location,
-      channels: { telegram: [about.telegram], slack: [], discord: [] },
+      channels: { telegram: [about.telegram], slack: [], discord: [], google: [] },
     },
     defaultFieldSelection({
       displayName: about.displayName,
@@ -139,7 +139,7 @@ function seedCrane(spec: (typeof SHOT_CRANES)[number]): void {
       description: about.description,
       timezone: about.timezone,
       location: about.location,
-      channels: { telegram: [about.telegram], slack: [], discord: [] },
+      channels: { telegram: [about.telegram], slack: [], discord: [], google: [] },
     }),
   );
   overwriteText(resolve(files.personaDir, "PERSONA.md"), persona);

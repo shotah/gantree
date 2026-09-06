@@ -13,6 +13,7 @@ import { InjectUserModal } from "./InjectUserModal";
 import { LogViewer } from "./LogViewer";
 import { CraneSpend, SpendScope } from "../yard/SpendBoard";
 import { TelegramBot } from "./TelegramBot";
+import { PendantPanel } from "./PendantPanel";
 import { ChartSkeleton } from "../shared/WhenVisible";
 import { YardModal } from "../shared/YardModal";
 import { PersonaFold } from "./PersonaFold";
@@ -37,6 +38,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
     mcp,
     uptime,
     userNames,
+    storeSub,
     observe,
     notice,
     busy,
@@ -62,6 +64,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
     mutate,
     canBuild,
     telegramOn,
+    pendantOn,
     since,
     allowedBuckets,
     bucket,
@@ -168,6 +171,21 @@ export function AgentDashboard({ slug }: { slug: string }) {
           )
         : null}
 
+      {pendantOn
+        ? (
+            <PendantPanel
+              slug={slug}
+              busy={busy}
+              setBusy={setBusy}
+              onNotice={setNotice}
+              onSaved={refresh}
+              onEnvWritten={() => setEnvRecreateOpen(true)}
+              storeSub={storeSub}
+              readOnly={!mutate}
+            />
+          )
+        : null}
+
       <DashFold
         title="Metrics"
         persistKey={craneLayoutKey("metrics")}
@@ -183,7 +201,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
           />
         )}
       >
-        <CraneSpend rollup={labelRollup(rollupTurns(slug, turnsInWindow), userNames)} scope={fmtSpendWindow(spendWindow)} observe={observe} />
+        <CraneSpend rollup={labelRollup(rollupTurns(slug, turnsInWindow), userNames)} scope={fmtSpendWindow(spendWindow)} observe={observe} storeSub={storeSub} onStoreSub={refresh} />
         <Suspense fallback={<ChartSkeleton n={6} />}>
           <MetricCharts host={host} turns={turns} mcp={mcp} uptime={uptime} bucket={bucket} since={since} now={now} timeZone={observe?.timezone} />
         </Suspense>

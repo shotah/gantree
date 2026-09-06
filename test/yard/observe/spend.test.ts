@@ -20,6 +20,7 @@ import {
   hostShare,
   namesFromOperators,
   labelSlices,
+  suggestStoreGoogleSub,
   spendPace,
   sourceChartSeries,
   thinChartPoints,
@@ -343,19 +344,78 @@ describe("namesFromOperators", () => {
       {
         name: "ada",
         displayName: "Ada",
-        channels: { telegram: ["42"], slack: [], discord: [] },
+        channels: { telegram: ["42"], slack: [], discord: [], google: ["118212345678901234567"] },
       },
       {
         name: "bob",
         displayName: "",
-        channels: { telegram: ["42", "99"], slack: ["U1"], discord: [] },
+        channels: { telegram: ["42", "99"], slack: ["U1"], discord: [], google: [] },
       },
     ]);
-    expect(names).toEqual({ 42: "Ada", 99: "bob", U1: "bob" });
+    expect(names).toEqual({ 42: "Ada", 99: "bob", U1: "bob", "118212345678901234567": "Ada" });
     expect(labelSlices([{ id: "42", turns: 1, estTokens: 10 }, { id: "7", turns: 1, estTokens: 3 }], names)).toEqual([
       { id: "42", turns: 1, estTokens: 10, label: "Ada" },
       { id: "7", turns: 1, estTokens: 3 },
     ]);
+  });
+});
+
+describe("suggestStoreGoogleSub", () => {
+  const ada = {
+    id: "ada-id",
+    name: "ada",
+    displayName: "Ada",
+    email: "ada@example.com",
+    channels: { google: [] as string[] },
+  };
+
+  it("fires once when one unlabeled sub matches one uniquely-owned email entry", () => {
+    expect(
+      suggestStoreGoogleSub(
+        ["118212345678901234567"],
+        [{ sub: null, email: "ada@example.com" }],
+        [ada],
+      ),
+    ).toEqual({
+      userId: "118212345678901234567",
+      operatorId: "ada-id",
+      operatorName: "Ada",
+      email: "ada@example.com",
+    });
+  });
+
+  it("does not fire for two operators sharing the email, two unlabeled subs, or a sub already on a profile", () => {
+    expect(
+      suggestStoreGoogleSub(
+        ["118212345678901234567"],
+        [{ sub: null, email: "ada@example.com" }],
+        [ada, { ...ada, id: "other", name: "other", displayName: "Other" }],
+      ),
+    ).toBeNull();
+    expect(
+      suggestStoreGoogleSub(
+        ["118212345678901234567", "118212345678901234568"],
+        [{ sub: null, email: "ada@example.com" }],
+        [ada],
+      ),
+    ).toBeNull();
+    expect(
+      suggestStoreGoogleSub(
+        ["118212345678901234567"],
+        [{ sub: null, email: "ada@example.com" }],
+        [{ ...ada, channels: { google: ["118212345678901234567"] } }],
+      ),
+    ).toBeNull();
+    expect(
+      suggestStoreGoogleSub(
+        ["118212345678901234567"],
+        [
+          { sub: null, email: "ada@example.com" },
+          { sub: null, email: "bob@example.com" },
+        ],
+        [ada, { id: "bob-id", name: "bob", displayName: "Bob", email: "bob@example.com", channels: { google: [] } }],
+      ),
+    ).toBeNull();
   });
 });
 

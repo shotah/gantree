@@ -17,6 +17,7 @@ export type SettingsOperator = {
   cranes: string[];
   avatarRev: number | null;
   createdAt: string;
+  mouthCranes?: { slug: string; kind: "pendant" | "telegram" }[];
 };
 
 export function PeoplePane({
@@ -194,36 +195,50 @@ export function PeoplePane({
               : null}
             {admin && removeId === o.id
               ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <label className="flex items-center gap-2 text-mark">
-                      <input type="checkbox" checked={removeConfirm} onChange={(e) => setRemoveConfirm(e.target.checked)} />
-                      I am removing this operator. Their sessions dies.
-                    </label>
-                    <button
-                      type="button"
-                      disabled={busy || !removeConfirm || last}
-                      onClick={async () => {
-                        if (await post({ op: "remove", id: o.id, confirm: true })) {
-                          setNotice(`${o.name} removed`);
+                  <div className="mt-3 flex flex-col gap-2 text-xs">
+                    {o.mouthCranes?.length
+                      ? (
+                          <p className="text-mark">
+                            {o.displayName || o.name}
+                            {" "}
+                            is still on
+                            {" "}
+                            {o.mouthCranes.map((h) => `${h.slug} (${h.kind})`).join(", ")}
+                            . Untick and recreate — this does not edit those lists.
+                          </p>
+                        )
+                      : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="flex items-center gap-2 text-mark">
+                        <input type="checkbox" checked={removeConfirm} onChange={(e) => setRemoveConfirm(e.target.checked)} />
+                        I am removing this operator. Their sessions dies.
+                      </label>
+                      <button
+                        type="button"
+                        disabled={busy || !removeConfirm || last}
+                        onClick={async () => {
+                          if (await post({ op: "remove", id: o.id, confirm: true })) {
+                            setNotice(`${o.name} removed`);
+                            setRemoveId(null);
+                            setRemoveConfirm(false);
+                            onChanged();
+                          }
+                        }}
+                        className="rounded border border-danger-line px-2 py-1 text-danger disabled:opacity-50"
+                      >
+                        confirm remove
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
                           setRemoveId(null);
                           setRemoveConfirm(false);
-                          onChanged();
-                        }
-                      }}
-                      className="rounded border border-danger-line px-2 py-1 text-danger disabled:opacity-50"
-                    >
-                      confirm remove
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRemoveId(null);
-                        setRemoveConfirm(false);
-                      }}
-                      className="text-dim"
-                    >
-                      cancel
-                    </button>
+                        }}
+                        className="text-dim"
+                      >
+                        cancel
+                      </button>
+                    </div>
                   </div>
                 )
               : null}

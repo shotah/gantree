@@ -63,6 +63,36 @@ describe("YardSettings", () => {
     expect(edits.map((el) => el.getAttribute("href"))).toEqual(["/profile", "/profile/2"]);
   });
 
+  it("nags cranes that still carry the operator on a mouth list", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/gantries")) {
+        return { json: async () => ({ gantries: [{ slug: "kit" }] }) } as Response;
+      }
+      return {
+        json: async () => ({
+          operators: [
+            { id: "1", name: "kit", displayName: "kit", role: "admin", cranes: [], createdAt: "now" },
+            {
+              id: "2",
+              name: "ada",
+              displayName: "Ada",
+              role: "user",
+              cranes: ["kit"],
+              createdAt: "now",
+              mouthCranes: [{ slug: "kit", kind: "pendant" }],
+            },
+          ],
+          you: { id: "1", name: "kit", displayName: "kit", role: "admin", cranes: [], createdAt: "now" },
+        }),
+      } as Response;
+    });
+    render(<YardSettings />);
+    const removes = await screen.findAllByRole("button", { name: "remove" });
+    fireEvent.click(removes[1]);
+    expect(screen.getByText(/still on kit \(pendant\)/)).toBeTruthy();
+  });
+
   it("hides add/remove for readonly", async () => {
     vi.mocked(yardFetch).mockResolvedValue({
       json: async () => ({

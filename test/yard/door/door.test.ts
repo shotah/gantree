@@ -30,6 +30,7 @@ import {
   setupOperator,
   unassignCrane,
   updateOwnProfile,
+  storeOperatorGoogleSub,
   withDevSessionCookie,
   withDoor,
 } from "@/lib/yard/door/gate";
@@ -727,7 +728,7 @@ describe("operator profile", () => {
       description: "owns the mini",
       timezone: "America/New_York",
       location: "Brooklyn, New York",
-      channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"] },
+      channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"], google: [] },
     });
     expect(updated.ok).toBe(true);
     if (!updated.ok) {
@@ -741,7 +742,7 @@ describe("operator profile", () => {
       description: "owns the mini",
       timezone: "America/New_York",
       location: "Brooklyn, New York",
-      channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"] },
+      channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"], google: [] },
     });
 
     const renamed = updateOwnProfile(id, { name: "robert" });
@@ -762,7 +763,7 @@ describe("operator profile", () => {
     if (!first.ok) {
       return;
     }
-    expect(updateOwnProfile(first.operator.id, { channels: { telegram: ["@bob"], slack: [], discord: [] } })).toMatchObject({
+    expect(updateOwnProfile(first.operator.id, { channels: { telegram: ["@bob"], slack: [], discord: [], google: [] } })).toMatchObject({
       ok: false,
       status: 400,
     });
@@ -779,6 +780,22 @@ describe("operator profile", () => {
     const hit = readOperatorAvatar(first.operator.id);
     expect(hit?.type).toBe("image/jpeg");
     expect(getOperator(first.operator.id)?.avatarRev).toBeGreaterThan(0);
+  });
+
+  it("stores a Google sub on the profile and rejects email", () => {
+    const first = setupOperator("ada", pass);
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    expect(storeOperatorGoogleSub(first.operator.id, "ada@example.com")).toMatchObject({ ok: false, status: 400 });
+    const stored = storeOperatorGoogleSub(first.operator.id, "118212345678901234567");
+    expect(stored.ok).toBe(true);
+    if (!stored.ok) {
+      return;
+    }
+    expect(stored.operator.channels.google).toEqual(["118212345678901234567"]);
+    expect(storeOperatorGoogleSub(first.operator.id, "118212345678901234567").ok).toBe(true);
   });
 
   it("adds profile columns onto an existing operator table", () => {

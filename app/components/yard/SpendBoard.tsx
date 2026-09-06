@@ -17,6 +17,9 @@ import {
   type SpendWindow,
 } from "@/lib/yard/observe/spend";
 import type { LastTurn, ObservePrefs, SpendRollup, SpendSlice, YardSpend } from "@/lib/yard/types";
+import type { StoreSubSuggestion } from "@/lib/yard/observe/spend";
+import { useDoor } from "../shared/DoorShell";
+import { yardFetch } from "@/app/lib/yardFetch";
 
 const WINDOW_LABELS: Record<SpendWindow, string> = {
   "1h": "1h",
@@ -479,7 +482,24 @@ export function SpendBoard({
   );
 }
 
-export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; scope: string; observe?: ObservePrefs | null }) {
+export function CraneSpend({
+  rollup,
+  scope,
+  observe,
+  storeSub = null,
+  onStoreSub,
+}: {
+  rollup: SpendRollup;
+  scope: string;
+  observe?: ObservePrefs | null;
+  storeSub?: StoreSubSuggestion | null;
+  onStoreSub?: () => void;
+}) {
+  const { operator } = useDoor();
+  const [storing, setStoring] = useState(false);
+  const canStore
+    = Boolean(storeSub)
+      && Boolean(operator && (operator.role === "admin" || operator.id === storeSub?.operatorId));
   if (rollup.turns === 0) {
     return (
       <p className="mb-3 text-xs text-faint">
@@ -546,6 +566,47 @@ export function CraneSpend({ rollup, scope, observe }: { rollup: SpendRollup; sc
         {unknownShare(rollup) > 0.5
           ? (
               <p className="mt-1 text-[11px] text-warn">most turns have no contract source — pin/recreate</p>
+            )
+          : null}
+        {storeSub
+          ? (
+              <div className="mt-2 text-[11px] text-mark">
+                <p>
+                  store
+                  {" "}
+                  <code className="text-fg">{storeSub.userId}</code>
+                  {" "}
+                  on
+                  {" "}
+                  {storeSub.operatorName}
+                  's profile
+                </p>
+                {canStore
+                  ? (
+                      <button
+                        type="button"
+                        disabled={storing}
+                        onClick={() => {
+                          setStoring(true);
+                          void yardFetch("/api/operators", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ op: "google-sub", id: storeSub.operatorId, sub: storeSub.userId }),
+                          }).then(() => {
+                            setStoring(false);
+                            onStoreSub?.();
+                          }).catch(() => setStoring(false));
+                        }}
+                        className="mt-1 rounded border border-accent-line px-2 py-0.5 text-xs text-mark hover:border-accent disabled:opacity-50"
+                      >
+                        store on
+                        {" "}
+                        {storeSub.operatorName}
+                        's profile
+                      </button>
+                    )
+                  : null}
+              </div>
             )
           : null}
       </div>

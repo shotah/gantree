@@ -65,11 +65,12 @@ Here you can change:
 - photo (JPEG / PNG / WebP / GIF; PNG and WebP convert on upload)
 - display name (what the header shows)
 - login name (what `/login` asks for)
-- email (a **label** — not a reset path, not a mailbox)
+- email (what the pendant matches until the Google `sub` is learned — not a reset path, not a mailbox)
 - description
-- chat ids (Telegram numeric, Slack `U…`, Discord snowflake) — stored on
-  you; not wired into crane allowlists yet. How they should line up with
-  the pendant’s Google sign-in: [access.md](access.md)
+- chat ids (Telegram numeric, Slack `U…`, Discord snowflake, Google `sub`) — stored on
+  you. Telegram / pendant panels write them onto a crane allowlist; they are not
+  auto-copied. How they line up with the pendant’s Google sign-in:
+  [access.md](access.md)
 - passphrase (current + new + confirm, plus the confirm-scary checkbox)
 
 Those fields are what **Inject user** on a crane copies into `PERSONA.md`

@@ -109,7 +109,10 @@ Telegram crane, **Telegram** (below the photo) can `getMe` the token, push
 name / about / the `/` command menu (including `/new`), ask an allowlisted
 chatter to tap `/new` (distill, then drop that thread — the yard cannot send
 as her), and edit `TELEGRAM_ALLOWED_USERS` from numeric ids (slog `user_id`
-after someone talks — not `@username`). Grant
+after someone talks — not `@username`). On a pendant crane, **Pendant** ticks
+operators (email until the Google `sub` is learned) onto
+`PENDANT_ALLOWED_USERS`, nags recreate, and offers to store an unseen `sub`
+on the matching profile. Grant
 a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 `/tools` is the crane’s mouth; this page is the operator’s.
 
