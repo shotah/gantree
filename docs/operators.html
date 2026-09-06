@@ -6,7 +6,7 @@
   <title>Operators — login, profile, settings — gantree</title>
   <meta name="description" content="Operators — login, profile, settings">
   <link rel="canonical" href="https://shotah.github.io/gantree/docs/operators.html">
-  <meta name="theme-color" content="#09090b">
+  <meta name="theme-color" content="#0e1316">
   <meta property="og:title" content="Operators — login, profile, settings — gantree">
   <meta property="og:description" content="Operators — login, profile, settings">
   <meta property="og:type" content="website">
@@ -31,6 +31,7 @@
         <a href="../docs/headless.html">Headless</a>
         <a href="../docs/architecture.html">Architecture</a>
         <a href="../docs/security.html">Security</a>
+        <a href="../docs/access.html">Access</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
         <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
@@ -90,7 +91,8 @@ not the cog, and it is not the operator list.</p>
 <li>email (a <strong>label</strong> — not a reset path, not a mailbox)</li>
 <li>description</li>
 <li>chat ids (Telegram numeric, Slack <code>U…</code>, Discord snowflake) — stored on
-you; not wired into crane allowlists yet</li>
+you; not wired into crane allowlists yet. How they should line up with
+the pendant’s Google sign-in: <a href="access.html">access.md</a></li>
 <li>passphrase (current + new + confirm, plus the confirm-scary checkbox)</li>
 </ul>
 <p>Those fields are what <strong>Inject user</strong> on a crane copies into <code>PERSONA.md</code>
