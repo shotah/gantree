@@ -47,7 +47,7 @@ describe("BuildCrane", () => {
     fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
     expect(screen.getByLabelText("mailbox URL")).toBeTruthy();
     expect(screen.getByLabelText("mailbox bearer")).toBeTruthy();
-    expect(screen.getByLabelText("Google sub allowlist")).toBeTruthy();
+    expect(screen.getByLabelText("pendant allowlist")).toBeTruthy();
     const tip = document.getElementById(
       screen.getByLabelText("mailbox URL").getAttribute("aria-describedby") ?? "",
     );
@@ -86,6 +86,6 @@ describe("BuildCrane", () => {
     fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
     await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
     fireEvent.click(screen.getByRole("checkbox", { name: /Ada/ }));
-    expect((screen.getByLabelText("Google sub allowlist") as HTMLInputElement).value).toBe("ada@example.com");
+    expect((screen.getByLabelText("pendant allowlist") as HTMLInputElement).value).toBe("ada@example.com");
   });
 });

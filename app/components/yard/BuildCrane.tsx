@@ -276,12 +276,12 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
                     onChange={(e) => setBearer(e.target.value)}
                   />
                 </HintField>
-                <HintField label="Google sub allowlist" className="sm:col-span-2" {...HINTS.pendantAllowlist}>
+                <HintField label="pendant allowlist" className="sm:col-span-2" {...HINTS.pendantAllowlist}>
                   <input
                     className="rounded border border-edge bg-canvas px-2 py-1"
                     value={allow}
                     onChange={(e) => setAllow(e.target.value)}
-                    placeholder="1182…:ada@example.com"
+                    placeholder="ada@example.com"
                     autoComplete="off"
                     spellCheck={false}
                   />

@@ -38,8 +38,8 @@ export const HINTS = {
     example: "a long random string",
   },
   pendantAllowlist: {
-    hint: "Who may talk on the pendant: Google sub, sub:email, or email. Empty fails boot.",
-    example: "1182…:ada@example.com,bob@example.com",
+    hint: "Who may talk: an email is enough (or sub, or sub:email). Empty fails boot. The crane does not rewrite this after they connect.",
+    example: "ada@example.com, bob@example.com",
   },
   hostRetain: {
     hint: "How long host CPU/RAM samples stay in yard sqlite. Shortening deletes older rows. Session idle is not this field.",
@@ -120,7 +120,7 @@ export const HINTS = {
     example: "123456789012345678",
   },
   chatGoogle: {
-    hint: "Google OpenID sub for the pendant mouth. Digits, not the email. Learned from spend after they talk, or paste from the phone after Sign in with Google. The crane pendant panel writes this onto PENDANT_ALLOWED_USERS.",
+    hint: "Leave blank. Email on this profile is what the pendant matches. After they talk, spend (or the pendant panel) offers to store the digits here. Not the email. Don't look it up in GCP — the crane never writes this back to .env.",
     example: "118212345678901234567",
   },
   currentPass: {
@@ -237,8 +237,8 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "a long random string",
   },
   PENDANT_ALLOWED_USERS: {
-    hint: "Google sub, sub:email, or email who may talk on the pendant. Empty fails boot. Recreate after save.",
-    example: "1182…:ada@example.com,bob@example.com",
+    hint: "Who may talk: email, Google sub, or sub:email. Email is enough. Empty fails boot. The crane does not rewrite this after they connect — recreate after you save.",
+    example: "ada@example.com, 1182…:bob@example.com",
   },
   GEMINI_SEARCH_API_KEY: {
     hint: "Google AI Studio key for google-search. Wins over the crane LLM_API_KEY. Set this when the mouth is a local model.",

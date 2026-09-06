@@ -5,7 +5,10 @@ describe("envHint", () => {
   it("describes pendant mailbox secrets", () => {
     expect(envHint("PENDANT_BEARER").hint).toMatch(/bearer/i);
     expect(envHint("PENDANT_MAILBOX_URL").hint).toMatch(/wss/);
-    expect(HINTS.pendantAllowlist.hint).toMatch(/Google sub/);
+    expect(HINTS.pendantAllowlist.hint).toMatch(/email is enough/i);
+    expect(HINTS.chatGoogle.hint).toMatch(/Leave blank/);
+    expect(HINTS.chatGoogle.hint).toMatch(/never writes/i);
+    expect(envHint("PENDANT_ALLOWED_USERS").hint).toMatch(/email, Google sub, or sub:email/);
   });
 
   it("describes the Telegram bot token and what it looks like", () => {

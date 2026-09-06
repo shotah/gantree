@@ -92,8 +92,9 @@ who-filter, not a SIEM.
 
 ### Access cleanup (gantree slice)
 
-- [ ] `PENDANT_ALLOWED_USERS` hint shows all three forms (`sub`,
-      `sub:email`, email).
+- [x] `PENDANT_ALLOWED_USERS` hint shows all three forms (`sub`,
+      `sub:email`, email). Profile Google field says leave blank —
+      the crane never writes `.env`.
 - [ ] Stolen-phone paragraph that agrees with the other two repos
       (OS lock → Google sign-out → untick + recreate → rotate bearer).
 
