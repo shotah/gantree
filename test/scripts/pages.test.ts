@@ -94,11 +94,11 @@ describe("markdownToHtml", () => {
 });
 
 describe("buildPages", () => {
-  it("publishes every operator doc except the Hub overview", () => {
+  it("publishes every operator doc except the Hub overview and todo lists", () => {
     const files = readdirSync(join(root, "docs")).filter((f) => f.endsWith(".md"));
     const published = new Set(DOC_PAGES.map((p: { file: string }) => p.file));
     for (const f of files) {
-      if (f === "dockerhub.md") {
+      if (f === "dockerhub.md" || f === "todo.md" || f.endsWith("_todo.md")) {
         expect(published.has(f)).toBe(false);
       } else {
         expect(published.has(f)).toBe(true);

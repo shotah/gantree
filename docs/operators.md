@@ -68,7 +68,8 @@ Here you can change:
 - email (a **label** — not a reset path, not a mailbox)
 - description
 - chat ids (Telegram numeric, Slack `U…`, Discord snowflake) — stored on
-  you; not wired into crane allowlists yet
+  you; not wired into crane allowlists yet. How they should line up with
+  the pendant’s Google sign-in: [access.md](access.md)
 - passphrase (current + new + confirm, plus the confirm-scary checkbox)
 
 Those fields are what **Inject user** on a crane copies into `PERSONA.md`

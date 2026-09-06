@@ -21,6 +21,7 @@ export const DOC_PAGES = [
   { file: "headless.md", nav: "Headless" },
   { file: "architecture.md", nav: "Architecture" },
   { file: "security.md", nav: "Security" },
+  { file: "access.md", nav: "Access" },
   { file: "custom-mcp.md", nav: "Custom MCP" },
 ];
 
@@ -157,7 +158,7 @@ function layout({
   <title>${escapeAttr(title)}</title>
   <meta name="description" content="${escapeAttr(description)}">
   <link rel="canonical" href="${escapeAttr(canonical)}">
-  <meta name="theme-color" content="#09090b">
+  <meta name="theme-color" content="#0e1316">
   <meta property="og:title" content="${escapeAttr(title)}">
   <meta property="og:description" content="${escapeAttr(description)}">
   <meta property="og:type" content="website">

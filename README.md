@@ -169,6 +169,7 @@ day one, this is the wrong stack — and that’s fine.
 | A custom MCP binary | **[docs/custom-mcp.md](docs/custom-mcp.md)** |
 | How the yard is put together | **[docs/architecture.md](docs/architecture.md)** |
 | The door (login, bind, hardening) | **[docs/security.md](docs/security.md)** |
+| One person across yard, pendant, crane | **[docs/access.md](docs/access.md)** |
 
 Never sit in the token path.
 

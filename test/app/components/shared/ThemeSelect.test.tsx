@@ -30,20 +30,18 @@ describe("ThemeSelect", () => {
   it("lists every theme", () => {
     render(<ThemeSelect />);
     openThemes();
-    expect(screen.getByRole("option", { name: "Dark" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Dark · dock" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Light" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Light · mist" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "High contrast" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Boom" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Inlay" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Lamp" })).toBeTruthy();
   });
 
   it("writes the chosen theme onto html so tokens swap", () => {
     render(<ThemeSelect />);
     openThemes();
-    fireEvent.click(screen.getByRole("option", { name: "Light" }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("paper");
-    expect(localStorage.getItem(THEME_KEY)).toBe("paper");
-    expect(screen.getByLabelText("color theme").textContent).toContain("Light");
+    fireEvent.click(screen.getByRole("option", { name: "Inlay" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("inlay");
+    expect(localStorage.getItem(THEME_KEY)).toBe("inlay");
+    expect(screen.getByLabelText("color theme").textContent).toContain("Inlay");
   });
 
   it("paints a two-tone swatch from canvas and accent on each option", () => {
@@ -57,9 +55,9 @@ describe("ThemeSelect", () => {
   });
 
   it("skips a no-op apply so storage listeners cannot loop", () => {
-    applyTheme("mist");
+    applyTheme("lamp");
     const setItem = vi.spyOn(Storage.prototype, "setItem");
-    applyTheme("mist");
+    applyTheme("lamp");
     expect(setItem).not.toHaveBeenCalled();
     setItem.mockRestore();
   });

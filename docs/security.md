@@ -10,6 +10,8 @@ on the LAN *behind* this door. Agents still open **zero** inbound ports.
 Walk: [console.md](console.md). Login, profile, settings:
 [operators.md](operators.md). Bind stories: [install.md](install.md).
 Stack: [architecture.md](architecture.md). Code: `lib/yard/door/`.
+How one person lines up with the pendant’s Google sign-in and the
+crane allowlist: [access.md](access.md).
 
 ---
 
