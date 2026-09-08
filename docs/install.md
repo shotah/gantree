@@ -67,7 +67,8 @@ docker compose -f compose.cloudflare.yml up -d
 ```
 
 Dashboard public hostname origin: `http://gantree:3000`. Login is still
-gantree’s door.
+gantree’s door. Recommended Cloudflare settings:
+[protections.md](protections.md).
 
 Origin TLS on this box (grey-cloud DNS, router **80 and 443**):
 `compose.nginx.yml` + `GANTREE_DOMAIN` / `LETSENCRYPT_EMAIL`. Do not mix
@@ -106,7 +107,8 @@ ssh -N -L 3000:127.0.0.1:80 user@host
 
 **Cloudflare Tunnel** (console only — never the agents):
 `compose.cloudflare.yml` + `CLOUDFLARE_TUNNEL_TOKEN` in `.env`, origin
-`http://gantree:3000`. Quick tunnel without compose:
+`http://gantree:3000`. Recommended Cloudflare settings:
+[protections.md](protections.md). Quick tunnel without compose:
 
 ```bash
 cloudflared tunnel --url http://127.0.0.1:80

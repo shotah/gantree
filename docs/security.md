@@ -9,6 +9,7 @@ on the LAN *behind* this door. Agents still open **zero** inbound ports.
 
 Walk: [console.md](console.md). Login, profile, settings:
 [operators.md](operators.md). Bind stories: [install.md](install.md).
+Cloudflare protections: [protections.md](protections.md).
 Stack: [architecture.md](architecture.md). Code: `lib/yard/door/`.
 How one person lines up with the pendant’s Google sign-in and the
 crane allowlist: [access.md](access.md).
@@ -245,7 +246,8 @@ console does not become the IdP.
 ## Not this
 
 - DDoS / slowloris / filling the disk. Login backoff is anti-guess, not
-  anti-flood. In-memory; restart resets the counters.
+  anti-flood. In-memory; restart resets the counters. Edge limits for a
+  public hostname: [Cloudflare protections](protections.md).
 - A WAN-open console. Login does not make that a good idea.
 - SSO, OIDC, email, invite links, “forgot password.”
 - HaveIBeenPwned / zxcvbn. Offline denylist + structure checks.
@@ -264,7 +266,7 @@ console does not become the IdP.
    `GANTREE_LISTEN=127.0.0.1` + Tailscale or tunnel. No cloud firewall
    hole. Partner keys: **user** on that crane, not a shared admin login.
    Public hostname: `compose.cloudflare.yml` (recommended) or
-   `compose.nginx.yml`.
+   `compose.nginx.yml`. Cloudflare protections: [protections.md](protections.md).
 3. Never set `GANTREE_DEV` in compose.
 4. Forgot passphrase → delete yard sqlite → setup. There is no other
    recovery.

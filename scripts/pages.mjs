@@ -21,6 +21,7 @@ export const DOC_PAGES = [
   { file: "headless.md", nav: "Headless" },
   { file: "architecture.md", nav: "Architecture" },
   { file: "security.md", nav: "Security" },
+  { file: "protections.md", nav: "Cloudflare" },
   { file: "access.md", nav: "Access" },
   { file: "custom-mcp.md", nav: "Custom MCP" },
 ];

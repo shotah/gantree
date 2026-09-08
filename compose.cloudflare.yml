@@ -6,6 +6,8 @@
 #
 # Zero Trust → Networks → Tunnels → public hostname:
 #   Type HTTP. URL http://gantree:3000  (service name + PORT, not host :80)
+# Recommended Cloudflare dashboard settings (Access, WAF, Bot Fight):
+#   docs/protections.md
 # LAN still publishes host:container 80:3000. Do not forward 80/443 on the router.
 # Keep gantree: in sync with compose.yml.
 

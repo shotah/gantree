@@ -132,3 +132,4 @@ demote the last admin.
 
 Bind (loopback vs LAN vs tunnel): [install.md](install.md) ·
 [headless.md](headless.md). Hardening: [security.md](security.md).
+Cloudflare protections: [protections.md](protections.md).
