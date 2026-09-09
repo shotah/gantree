@@ -146,6 +146,48 @@ describe("YardSettings", () => {
     expect(screen.getByRole("button", { name: "Save yard prefs" })).toBeTruthy();
   });
 
+  it("opens the Pendant pane for an admin", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/pendant")) {
+        return {
+          ok: true,
+          json: async () => ({
+            pendant: {
+              ready: false,
+              oauthReady: false,
+              accountId: "",
+              workerName: "gantry-pendant",
+              origin: "",
+              googleClientId: "",
+              allowedSubs: "",
+              apiTokenSet: false,
+              googleClientSecretSet: false,
+              sessionSecretSet: false,
+              craneCount: 0,
+              googleRedirect: null,
+            },
+          }),
+        } as Response;
+      }
+      if (url.includes("/api/gantries")) {
+        return { json: async () => ({ gantries: [{ slug: "kit" }] }) } as Response;
+      }
+      return {
+        json: async () => ({
+          operators: [{ id: "1", name: "kit", displayName: "kit", role: "admin", cranes: [], createdAt: "now" }],
+          you: { id: "1", name: "kit", displayName: "kit", role: "admin", cranes: [], createdAt: "now" },
+        }),
+      } as Response;
+    });
+    render(<YardSettings />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Pendant" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Pendant" }));
+    await waitFor(() => expect(screen.getByLabelText("Cloudflare API token")).toBeTruthy());
+    expect(screen.getByLabelText("Google client id")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save and push" })).toBeTruthy();
+  });
+
   it("lets readonly see rates without a save control", async () => {
     vi.mocked(yardFetch).mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -176,6 +218,7 @@ describe("YardSettings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Yard" }));
     await waitFor(() => expect(screen.getByLabelText("prompt $/1M")).toBeTruthy());
     expect(screen.queryByRole("button", { name: "Save yard prefs" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Pendant" })).toBeNull();
     expect(screen.getByText(/Only admin can write/)).toBeTruthy();
   });
 });

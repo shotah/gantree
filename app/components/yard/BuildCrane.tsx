@@ -22,6 +22,12 @@ type BuildOperator = {
   channels?: { telegram?: string[]; google?: string[] };
 };
 
+type PendantSettingsBrief = {
+  ready?: boolean;
+  origin?: string;
+  googleRedirect?: string | null;
+};
+
 export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [open, setOpen] = useState(false);
   const [yard, setYard] = useState<"home" | "cloud">("home");
@@ -31,8 +37,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [channel, setChannel] = useState("telegram");
   const [token, setToken] = useState("");
   const [allow, setAllow] = useState("");
-  const [mailbox, setMailbox] = useState("");
-  const [bearer, setBearer] = useState("");
+  const [pendant, setPendant] = useState<PendantSettingsBrief | null>(null);
   const [bot, setBot] = useState<{ username: string | null; link: string | null; firstName: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -48,6 +53,12 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
         setOperators(d.operators ?? []);
       })
       .catch(() => undefined);
+    yardFetch("/api/pendant")
+      .then((r) => r.json())
+      .then((d: { pendant?: PendantSettingsBrief }) => {
+        setPendant(d.pendant ?? null);
+      })
+      .catch(() => setPendant(null));
   }, [open]);
 
   async function probeToken(value: string): Promise<boolean> {
@@ -94,8 +105,11 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
       env.TELEGRAM_ALLOWED_USERS = allow;
     }
     if (channel === "pendant") {
-      env.PENDANT_MAILBOX_URL = mailbox;
-      env.PENDANT_BEARER = bearer;
+      if (!pendant?.ready) {
+        setBusy(false);
+        setErr("Pendant Cloudflare is not configured — Settings → Pendant");
+        return;
+      }
       env.PENDANT_ALLOWED_USERS = allow;
     }
     const res = await yardFetch("/api/gantries", {
@@ -113,8 +127,6 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
     setSlug("");
     setToken("");
     setAllow("");
-    setMailbox("");
-    setBearer("");
     setBot(null);
     onBuilt();
   }
@@ -132,7 +144,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   }
 
   const tokenLook = secretLook({ set: false, secret: true }, token, "token");
-  const bearerLook = secretLook({ set: false, secret: true }, bearer, "token");
+  const pendantReady = Boolean(pendant?.ready);
 
   return (
     <form onSubmit={submit} className="rounded-lg border border-line bg-panel/70 p-4 text-sm">
@@ -253,29 +265,27 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
         {channel === "pendant"
           ? (
               <>
-                <HintField label="mailbox URL" className="sm:col-span-2" {...HINTS.pendantMailbox}>
-                  <input
-                    className="rounded border border-edge bg-canvas px-2 py-1"
-                    value={mailbox}
-                    onChange={(e) => setMailbox(e.target.value)}
-                    placeholder="wss://gantry-pendant.example.workers.dev/ws/kit"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </HintField>
-                <HintField label="mailbox bearer" {...HINTS.pendantBearer}>
-                  <input
-                    className={`rounded border bg-canvas px-2 py-1 ${
-                      bearerLook.missing ? "border-accent-line placeholder:text-mark/90" : "border-edge"
-                    }`}
-                    type={bearerLook.type}
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder={bearerLook.placeholder}
-                    value={bearer}
-                    onChange={(e) => setBearer(e.target.value)}
-                  />
-                </HintField>
+                {pendantReady
+                  ? (
+                      <p className="sm:col-span-2 text-xs text-dim">
+                        Mailbox URL and bearer are minted here and pushed to Cloudflare. Recreate after build.
+                        {pendant?.origin
+                          ? (
+                              <>
+                                {" "}
+                                Origin
+                                {" "}
+                                <code className="break-all">{pendant.origin}</code>
+                              </>
+                            )
+                          : null}
+                      </p>
+                    )
+                  : (
+                      <p className="sm:col-span-2 text-sm text-mark">
+                        Open Settings → Pendant first (Cloudflare token, account, Worker name, origin). The yard will mint the bearer — do not paste one from wrangler.
+                      </p>
+                    )}
                 <HintField label="pendant allowlist" className="sm:col-span-2" {...HINTS.pendantAllowlist}>
                   <input
                     className="rounded border border-edge bg-canvas px-2 py-1"
@@ -320,7 +330,11 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
           : null}
       </div>
       {err ? <p className="mt-3 text-xs text-danger">{err}</p> : null}
-      <button disabled={busy} type="submit" className="mt-4 rounded border border-accent-line px-3 py-1.5 text-xs text-mark disabled:opacity-50">
+      <button
+        disabled={busy || (channel === "pendant" && !pendantReady)}
+        type="submit"
+        className="mt-4 rounded border border-accent-line px-3 py-1.5 text-xs text-mark disabled:opacity-50"
+      >
         {busy ? "building…" : "Build crane"}
       </button>
     </form>

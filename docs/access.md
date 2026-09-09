@@ -201,11 +201,11 @@ allowlist” true. The phone can also show the `sub` after sign-in.
 | Can Gantree push a person onto a pendant list? | **Yes.** Twin of Telegram: confirm-scary push writes `PENDANT_ALLOWED_USERS`, nags recreate, audits `pendant.allowlist`. |
 | Is there a Google id on the operator row? | **Yes.** `channels.google` is digits. Email already existed. |
 
-Gantree still never writes Cloudflare secrets, never chats, and never
-sends the yard cookie anywhere. `CRANE_BEARERS` stays a Cloudflare
-secret — one paste per **crane**, once, is the price of the Worker
-trusting the crane. The bearer already lets its holder run the whole
-room, so letting it also name who may enter that room adds no reach.
+Gantree still never chats, and never sends the yard cookie anywhere.
+`CRANE_BEARERS` is a Cloudflare secret the **yard** mints and pushes
+(Settings token, admin only). One bearer per crane. The bearer already
+lets its holder run the whole room, so letting it also name who may
+enter that room adds no reach.
 
 ---
 
@@ -236,13 +236,15 @@ loopback and HTTPS origins only. Skip it while the pendant can show the
 
 ### Once (before any person)
 
-1. Deploy the Worker. GCP **Web application** client, scopes
-   `openid email profile`, redirect `https://<origin>/api/auth/callback/google`.
-   Worker secrets: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-   `SESSION_SECRET`, `CRANE_BEARERS`. `ALLOWED_SUBS` optional.
-2. Per crane: mint a bearer (`npm run secret` in the pendant checkout),
-   append `slug:<bearer>` to `CRANE_BEARERS`. This is the one Cloudflare
-   paste per crane.
+1. Deploy the Worker (code: gantry-pendant CI). GCP **Web application**
+   client, scopes `openid email profile`, redirect
+   `https://<origin>/api/auth/callback/google`.
+   Yard Settings → Pendant pushes `GOOGLE_*`, `SESSION_SECRET`, and
+   per-crane bearers — [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
+   Code deploy stays gantry-pendant CI.
+2. Per crane: Build channel pendant (or Rotate bearer on the panel).
+   The yard mints a bearer, merges `CRANE_BEARERS`, writes
+   `PENDANT_BEARER`. Recreate.
 3. Yard: `/setup`, one admin. Passphrase. As today.
 
 ### Add a human to Kit
@@ -259,8 +261,8 @@ loopback and HTTPS origins only. Skip it while the pendant can show the
    `1182…` and suggests storing it on ada’s profile. Admin accepts;
    next push writes `sub:email`.
 
-No Cloudflare step after the first bearer. No JWT decoding. One
-recreate.
+No Cloudflare dashboard after Settings + first mint. No JWT decoding.
+One recreate.
 
 ### Yank
 
@@ -299,8 +301,8 @@ cross-crane edit.
 | `allow` frame from a crane | A new frame type on the socket | Outbound on the existing connection; same size caps and same bearer as `cmds`. Not a port. |
 
 What does **not** move: no inbound port on the crane, no chat through
-Gantree, no yard cookie on the Worker, no Cloudflare API key in the
-yard, no MCP OAuth token doubling as a login.
+Gantree, no yard cookie on the Worker, no Cloudflare API token on a
+crane, no MCP OAuth token doubling as a login.
 
 ---
 
@@ -309,7 +311,7 @@ yard, no MCP OAuth token doubling as a login.
 | Shape | Why not |
 | --- | --- |
 | One SSO across yard, Worker, and crane | Three products with one IdP dependency. The Mini must open when Google does not. |
-| Gantree pushes `ALLOWED_SUBS` via the Cloudflare API | A Cloudflare token on the Mini, a second write path, and the Worker still cannot ask the crane who is real. |
+| Gantree pushes `ALLOWED_SUBS` as the human roster | That list is break-glass only. The crane `.env` is still who may talk. |
 | Worker as IdP for the yard | Console in the token path’s blast radius. Doc says never. |
 | Central user DB (yard sqlite) read by crane or Worker | Harness must not know the yard exists; Worker is on another network. |
 | Cloudflare Access on the Worker | 403s WebSocket upgrades; crane is not a browser; a fourth identity system. |
@@ -340,8 +342,10 @@ Fail one and the task is later, or it belongs somewhere else.
    Mini needs to boot.
 7. **Isolation.** Pushing a person onto Kit does not touch Ada’s
    crane. Kit’s bearer cannot name Ada’s humans.
-8. **Gantree writes files, not Cloudflare.** No CF API token on the
-   Mini. The Worker never accepts `gantree_session`.
+8. **Gantree writes files, and Worker secrets for this mouth only.**
+   Admin Settings holds a Cloudflare API token (Workers Edit) and
+   pushes Google / session / per-crane bearers. Cranes never get that
+   token. The Worker never accepts `gantree_session`.
 
 Stranger walks that still prove this loop, and leftover cleanup across
 the three repos:

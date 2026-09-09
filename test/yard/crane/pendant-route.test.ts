@@ -11,7 +11,7 @@ vi.mock("@/lib/yard/host/docker", async (importOriginal) => {
   };
 });
 
-import { GET, PUT } from "@/app/api/gantries/[slug]/pendant/route";
+import { GET, POST, PUT } from "@/app/api/gantries/[slug]/pendant/route";
 import { writeCraneFiles } from "@/lib/yard/crane/build";
 import { resetYardDockerCache } from "@/lib/yard/crane/inventory";
 import { addOperator, listYardEvents, loginOperator, SESSION_COOKIE, setupOperator } from "@/lib/yard/door";
@@ -98,5 +98,38 @@ describe("pendant route", () => {
     );
     expect(forbidden.status).toBe(403);
     expect(loadEnvFile(kit.envFile).PENDANT_ALLOWED_USERS).toBe("ada@example.com");
+  });
+
+  it("refuses rotate without confirm or Cloudflare settings", async () => {
+    writeCraneFiles({
+      slug: "kit",
+      channel: "pendant",
+      env: { CHANNEL: "pendant", PENDANT_BEARER: "b", PENDANT_ALLOWED_USERS: "ada@example.com" },
+    });
+    setupOperator("kit", pass);
+    const kit = loginOperator("kit", pass);
+    expect(kit.ok).toBe(true);
+    if (!kit.ok) {
+      return;
+    }
+    const noConfirm = await POST(
+      new Request("http://127.0.0.1/api/gantries/kit/pendant", {
+        method: "POST",
+        headers: { cookie: cookie(kit.token), "content-type": "application/json" },
+        body: JSON.stringify({ op: "rotate" }),
+      }),
+      { params: Promise.resolve({ slug: "kit" }) },
+    );
+    expect(noConfirm.status).toBe(400);
+    const rotated = await POST(
+      new Request("http://127.0.0.1/api/gantries/kit/pendant", {
+        method: "POST",
+        headers: { cookie: cookie(kit.token), "content-type": "application/json" },
+        body: JSON.stringify({ op: "rotate", confirm: true }),
+      }),
+      { params: Promise.resolve({ slug: "kit" }) },
+    );
+    expect(rotated.status).toBe(400);
+    expect(await rotated.json()).toMatchObject({ detail: expect.stringMatching(/Settings → Pendant/) });
   });
 });

@@ -96,7 +96,7 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | Published vs skipped MCP | `mcp.toml` + `gantry status` JSON (`mcp.servers[].reason`: `no_binary` / `no_key` / `no_oauth`) |
 | Persona, secrets | `PERSONA.md`, `avatar.jpg`, `.env`, `data/` on disk |
 | Telegram bot | Bot API `getMe` / `setMy*` after a token exists. Allowlist is `.env`. Never `getUpdates`. |
-| Pendant mouth | `.env` (`CHANNEL=pendant`, mailbox URL, bearer present?, `PENDANT_ALLOWED_USERS`). Gantree writes the list; the Worker never sees the yard cookie. |
+| Pendant mouth | `.env` (`CHANNEL=pendant`, mailbox URL, bearer present?, `PENDANT_ALLOWED_USERS`). Gantree writes the list and pushes Worker secrets (Google, session, `CRANE_BEARERS`) from Settings. The Worker never sees the yard cookie. |
 
 Files remain the source of truth. The UI is an editor of those files,
 not a second inventory. Secrets never go in git. Console-in-Docker must

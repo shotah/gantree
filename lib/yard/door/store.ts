@@ -67,6 +67,20 @@ function migrate(d: DatabaseSync): void {
     );
     CREATE INDEX IF NOT EXISTS idx_operator_session_operator
       ON operator_session(operator_id);
+    CREATE TABLE IF NOT EXISTS pendant_settings (
+      id                   INTEGER PRIMARY KEY CHECK (id = 1),
+      api_token            TEXT NOT NULL DEFAULT '',
+      account_id           TEXT NOT NULL DEFAULT '',
+      worker_name          TEXT NOT NULL DEFAULT 'gantry-pendant',
+      origin               TEXT NOT NULL DEFAULT '',
+      google_client_id     TEXT NOT NULL DEFAULT '',
+      google_client_secret TEXT NOT NULL DEFAULT '',
+      session_secret       TEXT NOT NULL DEFAULT '',
+      allowed_subs         TEXT NOT NULL DEFAULT '',
+      crane_bearers        TEXT NOT NULL DEFAULT '{}',
+      updated_at           TEXT
+    );
+    INSERT OR IGNORE INTO pendant_settings (id) VALUES (1);
     CREATE TABLE IF NOT EXISTS yard_event (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       at          TEXT NOT NULL,

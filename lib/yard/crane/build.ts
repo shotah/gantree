@@ -8,6 +8,7 @@ import { ensureBoardsDir, stringifyMcpToml, tomlPath, upsertTomlGantry, writeTex
 import { seedPersonaFiles } from "./seed";
 import { DEFAULT_IMAGE, type McpServer } from "../types";
 import { loadObservePrefs } from "../observe/prefs";
+import { provisionPendantCrane } from "../pendant/channel";
 
 export { DEFAULT_IMAGE };
 
@@ -195,7 +196,15 @@ export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; deta
   if (input.yard === "cloud" && input.profile === "life-cast") {
     return { ok: false, detail: "life-cast is home only (host network / mDNS)", slug };
   }
-  const files = writeCraneFiles({ ...input, slug });
+  let envIn = { ...(input.env ?? {}) };
+  if ((input.channel || envIn.CHANNEL || "telegram").trim().toLowerCase() === "pendant") {
+    const provisioned = await provisionPendantCrane(slug, envIn.PENDANT_ALLOWED_USERS ?? "");
+    if (!provisioned.ok) {
+      return { ok: false, detail: provisioned.detail, slug };
+    }
+    envIn = { ...envIn, ...provisioned.env };
+  }
+  const files = writeCraneFiles({ ...input, slug, env: envIn });
   const image = input.image || loadObservePrefs().defaultImage;
   try {
     const { pullImage } = await import("../host/docker");
@@ -207,7 +216,7 @@ export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; deta
     LLM_MODEL: input.model || "gemini-3.6-flash",
     CHANNEL: input.channel || "telegram",
     BOARDS_AUTHOR: slug,
-    ...(input.env ?? {}),
+    ...envIn,
   };
   try {
     const created = await createOrReplaceContainer({

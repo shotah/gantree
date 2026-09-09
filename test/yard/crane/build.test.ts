@@ -19,12 +19,15 @@ vi.mock("@/lib/yard/tools/catalog", async (importOriginal) => {
 });
 
 import { buildCrane, dropStaleDoctorSnapshot, writeCraneFiles } from "@/lib/yard/crane/build";
+import { closeYardDb } from "@/lib/yard/door/store";
 import { loadGantreeToml } from "@/lib/yard/host/files";
 import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
 const dirs: string[] = [];
 
 afterEach(() => {
+  closeYardDb();
+  delete process.env.GANTREE_DB;
   for (const d of dirs.splice(0)) {
     rmSync(d, { recursive: true, force: true });
   }
@@ -166,6 +169,17 @@ describe("buildCrane", () => {
     const out = await buildCrane({ slug: "1kit" });
     expect(out).toMatchObject({ ok: false, slug: "1kit" });
     expect(out.detail).toMatch(/lowercase/);
+  });
+
+  it("refuses a pendant crane when Cloudflare is not in Settings", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    process.env.GANTREE_TOML = join(root, "gantree.toml");
+    process.env.GANTREE_DB = join(root, "gantree.db");
+    const out = await buildCrane({ slug: "kit", channel: "pendant" });
+    expect(out.ok).toBe(false);
+    expect(out.detail).toMatch(/Settings → Pendant/);
   });
 
   it("refuses life-cast on a cloud yard", async () => {

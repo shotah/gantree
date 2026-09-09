@@ -93,6 +93,7 @@ describe("yard sqlite", () => {
     expect(names.map((n) => n.name)).toEqual([
       "operator",
       "operator_session",
+      "pendant_settings",
       "sample_host",
       "sample_machine",
       "sample_mcp",

@@ -80,7 +80,8 @@ describe("PendantPanel", () => {
     await waitFor(() => expect(screen.getByText("0 on the list")).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Pendant/ }));
     await waitFor(() => expect(screen.getByText("ada@example.com")).toBeTruthy());
-    fireEvent.click(screen.getByRole("checkbox"));
+    expect(screen.getByRole("button", { name: "Rotate bearer" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Ada/ }));
     expect(screen.getByText("ada@example.com ×")).toBeTruthy();
     expect(screen.getByText(/add 118212345678901234567/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Save allowlist" }));
@@ -124,5 +125,47 @@ describe("PendantPanel", () => {
     await waitFor(() =>
       expect(calls.some((c) => c.url.includes("/api/operators") && c.body?.includes('"op":"google-sub"') && c.body?.includes("118212345678901234567"))).toBe(true),
     );
+  });
+
+  it("posts rotate with confirm", async () => {
+    const calls: { url: string; method?: string; body?: string }[] = [];
+    vi.mocked(yardFetch).mockImplementation(async (url, init) => {
+      const body = typeof init?.body === "string" ? init.body : undefined;
+      calls.push({ url: String(url), method: init?.method, body });
+      if (String(url).includes("/api/operators")) {
+        return { json: async () => ({ operators: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          enabled: true,
+          mailboxUrl: "wss://example/ws/kit",
+          bearerSet: true,
+          allowlist: [],
+          seen: [],
+          suggestion: null,
+          detail: "rotated bearer — recreate to apply (do not just restart)",
+        }),
+      } as Response;
+    });
+    const onEnvWritten = vi.fn();
+    render(
+      <PendantPanel
+        slug="kit"
+        busy={false}
+        setBusy={() => undefined}
+        onNotice={() => undefined}
+        onSaved={() => undefined}
+        onEnvWritten={onEnvWritten}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText("0 on the list")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Pendant/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /rotating this crane/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Rotate bearer" }));
+    await waitFor(() =>
+      expect(calls.some((c) => c.url.includes("/pendant") && c.method === "POST" && c.body?.includes('"op":"rotate"') && c.body?.includes('"confirm":true'))).toBe(true),
+    );
+    await waitFor(() => expect(onEnvWritten).toHaveBeenCalled());
   });
 });

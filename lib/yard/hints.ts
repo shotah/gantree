@@ -30,11 +30,11 @@ export const HINTS = {
     example: "123456789",
   },
   pendantMailbox: {
-    hint: "gantry-pendant Worker room. The crane dials out — wss://…/ws/<this-slug>. Not a Gantree URL. The yard session cookie is never sent there.",
+    hint: "gantry-pendant Worker room. The crane dials out — wss://…/ws/<this-slug>. Filled from Settings → Pendant origin. The yard session cookie is never sent there.",
     example: "wss://gantry-pendant.example.workers.dev/ws/kit",
   },
   pendantBearer: {
-    hint: "Mailbox bearer bound to this slug. Rotate in Worker secrets and here, then recreate. Not a Google token.",
+    hint: "Mailbox bearer bound to this slug. The yard mints it on build and pushes CRANE_BEARERS. Rotate from the Pendant fold, then recreate. Not a Google token.",
     example: "a long random string",
   },
   pendantAllowlist: {
@@ -192,6 +192,35 @@ export const HINTS = {
   cloneDatabase: {
     hint: "Copies gantry.db (memories). Unchecked starts empty. OAuth files and MCP bins stay with the source.",
   },
+  cfApiToken: {
+    hint: "Cloudflare API token with Edit Cloudflare Workers. Lives in yard sqlite, never on a crane. Used only to PUT Worker secrets (Google, session, CRANE_BEARERS).",
+  },
+  cfAccountId: {
+    hint: "Cloudflare account id (32 hex) from Workers & Pages → Overview, right rail. Not the zone id.",
+    example: "0123456789abcdef0123456789abcdef",
+  },
+  cfWorkerName: {
+    hint: "Script name of the already-deployed pendant Worker. Code deploy stays in gantry-pendant CI. Default gantry-pendant.",
+    example: "gantry-pendant",
+  },
+  pendantOrigin: {
+    hint: "HTTPS origin of the Worker. Fills mailbox URLs and the Google redirect to paste in GCP. Not a Gantree URL.",
+    example: "https://gantry-pendant.example.workers.dev",
+  },
+  pendantGoogleClientId: {
+    hint: "GCP Web application client id. Scopes openid email profile only. Gantree does not create the Google client — paste it here and Save pushes it to the Worker.",
+    example: "….apps.googleusercontent.com",
+  },
+  pendantGoogleClientSecret: {
+    hint: "GCP Web application client secret for that same client. Pushed as GOOGLE_CLIENT_SECRET. Never logged.",
+  },
+  pendantSessionSecret: {
+    hint: "Worker SESSION_SECRET. Minted on first Save if empty. Rotate mints a new one and pushes — signed-in phones must Sign in with Google again.",
+  },
+  pendantAllowedSubs: {
+    hint: "Optional yard-wide Google subs that skip the crane list (break-glass). Comma or space separated digits. Not the human roster — that stays PENDANT_ALLOWED_USERS.",
+    example: "118212345678901234567",
+  },
 } as const satisfies Record<string, HintCopy>;
 
 const ENV_HINTS: Record<string, HintCopy> = {
@@ -233,7 +262,7 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "wss://gantry-pendant.example.workers.dev/ws/kit",
   },
   PENDANT_BEARER: {
-    hint: "Mailbox bearer bound to this slug. Rotate in Worker secrets and here, then recreate. Not a Google token.",
+    hint: "Mailbox bearer bound to this slug. Minted by the yard; rotate from the Pendant fold, then recreate. Not a Google token.",
     example: "a long random string",
   },
   PENDANT_ALLOWED_USERS: {

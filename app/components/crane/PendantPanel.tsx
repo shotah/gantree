@@ -48,6 +48,7 @@ export function PendantPanel({
   const [addRaw, setAddRaw] = useState("");
   const [addErr, setAddErr] = useState<string | null>(null);
   const [operators, setOperators] = useState<PendantOperator[]>([]);
+  const [rotateConfirm, setRotateConfirm] = useState(false);
 
   const load = useCallback(() => {
     yardFetch(`/api/gantries/${slug}/pendant`)
@@ -161,6 +162,24 @@ export function PendantPanel({
     onSaved();
   }
 
+  async function rotate() {
+    setBusy(true);
+    const res = await yardFetch(`/api/gantries/${slug}/pendant`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ op: "rotate", confirm: true }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+    onNotice(data.detail || data.error || res.statusText);
+    setBusy(false);
+    setRotateConfirm(false);
+    if (res.ok) {
+      load();
+      onSaved();
+      onEnvWritten?.();
+    }
+  }
+
   return (
     <DashFold
       title="Pendant"
@@ -200,7 +219,9 @@ export function PendantPanel({
       </p>
       {!snap.bearerSet
         ? (
-            <p className="mb-3 text-sm text-mark">Paste PENDANT_BEARER in Secrets, then refresh.</p>
+            <p className="mb-3 text-sm text-mark">
+              No bearer on this crane. Rotate below (needs Settings → Pendant) or rebuild the crane.
+            </p>
           )
         : null}
       {snap.mailboxUrl
@@ -212,8 +233,43 @@ export function PendantPanel({
             </p>
           )
         : (
-            <p className="mb-3 text-sm text-mark">Paste PENDANT_MAILBOX_URL in Secrets.</p>
+            <p className="mb-3 text-sm text-mark">
+              No mailbox URL. Settings → Pendant origin, then rotate or rebuild.
+            </p>
           )}
+
+      {!readOnly
+        ? (
+            <div className="mb-4 rounded border border-line px-3 py-2">
+              <p className="text-xs text-dim">
+                Rotate mints a new bearer, pushes
+                {" "}
+                <code className="text-faint">CRANE_BEARERS</code>
+                , writes
+                {" "}
+                <code className="text-faint">PENDANT_BEARER</code>
+                . Old sockets die immediately. Recreate this crane.
+              </p>
+              <label className="mt-2 flex items-center gap-2 text-xs text-mark">
+                <input
+                  type="checkbox"
+                  checked={rotateConfirm}
+                  disabled={locked}
+                  onChange={(e) => setRotateConfirm(e.target.checked)}
+                />
+                I am rotating this crane&apos;s mailbox bearer
+              </label>
+              <button
+                type="button"
+                disabled={locked || !rotateConfirm}
+                onClick={() => void rotate()}
+                className="mt-2 rounded border border-accent-line px-2 py-1 text-xs text-mark hover:border-accent disabled:opacity-50"
+              >
+                Rotate bearer
+              </button>
+            </div>
+          )
+        : null}
 
       {suggestion
         ? (

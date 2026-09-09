@@ -6,6 +6,7 @@ import { pullImage } from "../host/docker";
 import { loadEnvFile, writeEnvFile } from "../host/envfile";
 import { readText, setTomlGantryTags } from "../host/files";
 import { loadObservePrefs } from "../observe/prefs";
+import { pendantChannelReady, provisionPendantCrane } from "../pendant/channel";
 import { craneDir, createOrReplaceContainer, writeCraneFiles } from "./build";
 import { getGantry } from "./inventory";
 import { slugOk } from "./slug";
@@ -109,6 +110,12 @@ export async function cloneCrane(
   }
 
   const env = opts.settings ? loadEnvFile(source.envFile) : {};
+  if ((env.CHANNEL || "").trim().toLowerCase() === "pendant") {
+    const ready = pendantChannelReady();
+    if (!ready.ok) {
+      return { ok: false, detail: ready.detail, slug: dest };
+    }
+  }
   const image = opts.settings
     ? source.image || composeImage(sourceSlug) || loadObservePrefs().defaultImage
     : loadObservePrefs().defaultImage;
@@ -135,6 +142,14 @@ export async function cloneCrane(
     copyGantryDb(source.dataDir, files.dataDir);
   }
   writeEnvFile(files.envFile, { ...loadEnvFile(files.envFile), BOARDS_AUTHOR: dest });
+  const destEnv = loadEnvFile(files.envFile);
+  if ((destEnv.CHANNEL || "").trim().toLowerCase() === "pendant") {
+    const provisioned = await provisionPendantCrane(dest, destEnv.PENDANT_ALLOWED_USERS ?? "");
+    if (!provisioned.ok) {
+      return { ok: false, detail: provisioned.detail, slug: dest };
+    }
+    writeEnvFile(files.envFile, { ...destEnv, ...provisioned.env, BOARDS_AUTHOR: dest });
+  }
 
   const copied = partsList(opts).join(", ");
   try {

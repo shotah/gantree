@@ -4,6 +4,7 @@ import { unassignCrane } from "../door";
 import { docker, inspectByName } from "../host/docker";
 import { removeTomlGantry, yardRoot } from "../host/files";
 import { forgetCrane } from "../observe/stats";
+import { dropPendantBearer } from "../pendant/channel";
 import { craneDir } from "./build";
 import { getGantry, kickYardDocker, resetYardDockerCache } from "./inventory";
 
@@ -52,11 +53,17 @@ export async function destroyCrane(slug: string, opts: DestroyOpts = {}): Promis
   void kickYardDocker();
 
   const files = opts.removeFiles === true ? dropCraneFiles(slug) : false;
+  const dropped = await dropPendantBearer(slug);
   const bits = [
     container ? "container removed" : "no container",
     inventory ? "dropped from inventory" : "not in inventory",
     opts.removeFiles ? (files ? "files deleted" : "no files") : "files kept",
   ];
+  if (dropped.pushed) {
+    bits.push("Worker bearer dropped");
+  } else if (!dropped.ok) {
+    bits.push(`Worker CRANE_BEARERS still has ${slug}`);
+  }
   return {
     ok: true,
     detail: `destroyed ${slug}: ${bits.join("; ")}`,

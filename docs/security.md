@@ -218,7 +218,7 @@ a real socket.
 | File | Secrets? |
 | --- | --- |
 | `gantree.toml` | No. Inventory only. |
-| yard `gantree.db` / `var/gantree.db` | Yes. Operator hashes, session hashes, samples, audit. Gitignored. Not a crane’s `data/gantry.db`. |
+| yard `gantree.db` / `var/gantree.db` | Yes. Operator hashes, session hashes, samples, audit, pendant Cloudflare token and Worker secrets map. Gitignored. Not a crane’s `data/gantry.db`. |
 | each crane `.env`, `data/`, OAuth files | Yes. On disk next to that crane. Login gates the *UI* that edits them; Unix file mode still matters. |
 | `mcp.toml` | Grant list. Tokens live in `.env` / `data/`, not in the manifest if you kept the usual layout. |
 

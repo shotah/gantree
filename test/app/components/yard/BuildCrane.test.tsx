@@ -16,10 +16,13 @@ afterEach(() => {
 
 describe("BuildCrane", () => {
   beforeEach(() => {
-    vi.mocked(yardFetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({ operators: [] }),
-    } as Response);
+    vi.mocked(yardFetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/pendant")) {
+        return { ok: true, json: async () => ({ pendant: { ready: false } }) } as Response;
+      }
+      return { ok: true, json: async () => ({ operators: [] }) } as Response;
+    });
   });
   it("disables life-cast when the yard is a cloud VM", () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
@@ -41,17 +44,50 @@ describe("BuildCrane", () => {
     expect(tip?.textContent).toMatch(/123456789:/);
   });
 
-  it("collects pendant mailbox secrets when that mouth is picked", () => {
+  it("nags Settings when pendant is picked and Cloudflare is not ready", async () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
     fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
-    expect(screen.getByLabelText("mailbox URL")).toBeTruthy();
-    expect(screen.getByLabelText("mailbox bearer")).toBeTruthy();
-    expect(screen.getByLabelText("pendant allowlist")).toBeTruthy();
-    const tip = document.getElementById(
-      screen.getByLabelText("mailbox URL").getAttribute("aria-describedby") ?? "",
-    );
-    expect(tip?.textContent).toMatch(/dials out/);
+    await waitFor(() => expect(screen.getByText(/Settings → Pendant first/)).toBeTruthy());
+    expect(screen.queryByLabelText("mailbox URL")).toBeNull();
+    expect(screen.queryByLabelText("mailbox bearer")).toBeNull();
+    expect((screen.getByRole("button", { name: "Build crane" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("hides bearer paste when Cloudflare is ready and still ticks an allowlist", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/pendant")) {
+        return {
+          ok: true,
+          json: async () => ({
+            pendant: { ready: true, origin: "https://gantry-pendant.example.workers.dev" },
+          }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          operators: [
+            {
+              id: "2",
+              name: "ada",
+              displayName: "Ada",
+              email: "ada@example.com",
+              channels: { telegram: ["99"], google: [] },
+            },
+          ],
+        }),
+      } as Response;
+    });
+    render(<BuildCrane onBuilt={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
+    fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
+    await waitFor(() => expect(screen.getByText(/minted here and pushed/)).toBeTruthy());
+    expect(screen.queryByLabelText("mailbox bearer")).toBeNull();
+    await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
+    fireEvent.click(screen.getByRole("checkbox", { name: /Ada/ }));
+    expect((screen.getByLabelText("pendant allowlist") as HTMLInputElement).value).toBe("ada@example.com");
   });
 
   it("does not look pre-filled when the bot token is still blank", () => {
@@ -67,20 +103,29 @@ describe("BuildCrane", () => {
   });
 
   it("ticks a profile email into the pendant allowlist", async () => {
-    vi.mocked(yardFetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        operators: [
-          {
-            id: "2",
-            name: "ada",
-            displayName: "Ada",
-            email: "ada@example.com",
-            channels: { telegram: ["99"], google: [] },
-          },
-        ],
-      }),
-    } as Response);
+    vi.mocked(yardFetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/pendant")) {
+        return {
+          ok: true,
+          json: async () => ({ pendant: { ready: true, origin: "https://p.example.workers.dev" } }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          operators: [
+            {
+              id: "2",
+              name: "ada",
+              displayName: "Ada",
+              email: "ada@example.com",
+              channels: { telegram: ["99"], google: [] },
+            },
+          ],
+        }),
+      } as Response;
+    });
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
     fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });

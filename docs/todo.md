@@ -55,6 +55,11 @@ only**; each keeps its own remote.
       Kit for two humans, yanks one, and never opens the Cloudflare
       dashboard after the first bearer paste.
 
+Pendant Worker **secrets** (Google, session, per-crane bearer) are
+pushed from Settings → Pendant (Cloudflare HTTP API, no wrangler).
+Human walk still open:
+[manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
+
 ---
 
 ## Next — gantree
@@ -97,6 +102,8 @@ who-filter, not a SIEM.
       the crane never writes `.env`.
 - [ ] Stolen-phone paragraph that agrees with the other two repos
       (OS lock → Google sign-out → untick + recreate → rotate bearer).
+- [ ] Pendant Cloudflare from Settings + mint bearer on build:
+      [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
 
 Harness / Worker slices of the same cleanup (drop required
 `ALLOWED_SUBS` from their READMEs, unused `acceptHuman` /
@@ -129,9 +136,6 @@ arrived.
   verified email onto your own row. Loopback / HTTPS origins only.
   Not a session.
 - Workspace `hd` gate on the Worker (household on one domain).
-- Bearer registration without the Cloudflare paste (yard key on the
-  Worker). Only if five cranes make one paste each feel like a
-  product gap.
 - systemd yards, not only compose.
 - A `gantree` CLI only if the UI + `npm` scripts are genuinely not
   enough — still TypeScript, not a Go Makefile.
@@ -158,6 +162,7 @@ arrived.
 - Cloudflare Access on the mailbox
 - Pairing codes in chat
 - A central user DB any other repo reads
-- Gantree writing Worker secrets
+- Gantree writing Worker secrets **except** pendant config from
+  Settings ([manage_pendant_cf_todo.md](manage_pendant_cf_todo.md))
 - MCP OAuth as a phone login
 - Anything that makes `ai-gantry` slower so this UI looks nicer
