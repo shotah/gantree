@@ -31,11 +31,13 @@ Open the board at `http://<pc-lan-ip>/` or
 build a crane (yard = home). `npm start` stays `:3000`. Grant search.
 Chat is Telegram (or pendant) — not this UI. Pendant: deploy
 **gantry-pendant code** to Workers (that repo’s CI). Then this board:
-Settings → Pendant (Google + Cloudflare token), Build channel
+Settings → Pendant (Google + Cloudflare token — [access.md](access.md#cloudflare-api-token)), Build channel
 `pendant`, tick operators (email is enough), recreate. The yard mints
 the bearer — do not paste from wrangler. The yard cookie never goes to
 that Worker. The crane `.env` is the human list; Worker `ALLOWED_SUBS`
-is optional break-glass. Walk:
+is optional break-glass. GCP OAuth client is a **Web application**
+(JS origin + `/api/auth/callback/google`) — table:
+[access.md](access.md#google-oauth-client-gcp). Walk:
 [operators.md](operators.md) ·
 [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md) ·
 [gantry-pendant setup](../repos/gantry-pendant/docs/setup.md).

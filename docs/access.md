@@ -236,16 +236,53 @@ loopback and HTTPS origins only. Skip it while the pendant can show the
 
 ### Once (before any person)
 
-1. Deploy the Worker (code: gantry-pendant CI). GCP **Web application**
-   client, scopes `openid email profile`, redirect
-   `https://<origin>/api/auth/callback/google`.
+1. Deploy the Worker (code: gantry-pendant CI).
+2. GCP **Web application** client — [Google OAuth client](#google-oauth-client-gcp).
    Yard Settings → Pendant pushes `GOOGLE_*`, `SESSION_SECRET`, and
    per-crane bearers — [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
    Code deploy stays gantry-pendant CI.
-2. Per crane: Build channel pendant (or Rotate bearer on the panel).
+3. Per crane: Build channel pendant (or Rotate bearer on the panel).
    The yard mints a bearer, merges `CRANE_BEARERS`, writes
    `PENDANT_BEARER`. Recreate.
-3. Yard: `/setup`, one admin. Passphrase. As today.
+4. Yard: `/setup`, one admin. Passphrase. As today.
+
+### Cloudflare API token
+
+Gantree Settings only **PUT**s Worker secrets. That is Account →
+**Workers Scripts Edit**. GitHub CI (code deploy in gantry-pendant)
+also needs **Workers KV Storage Edit** and **Account Settings Read**.
+One token with all three is fine. Not the Global API Key.
+
+**Quick create** (pre-fills the three; still click Create Token):
+
+[Create gantry-pendant token](https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=gantry-pendant)
+
+Yard-only (no CI):
+[Workers Scripts Edit](https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=gantry-pendant%20secrets).
+
+Or Profile → API Tokens → **Edit Cloudflare Workers**. Same token can
+sit in GitHub and Settings. Table:
+[gantry-pendant deployment](../repos/gantry-pendant/docs/deployment.md#cloudflare-api-token).
+
+### Google OAuth client (GCP)
+
+Gantree does **not** create this. **APIs & Services → Credentials →
+Create credentials → OAuth client ID.** Not Desktop, not the
+google-mcp client.
+
+| Field | Value |
+| --- | --- |
+| Application type | **Web application** |
+| Authorized JavaScript origins | `https://<pendant-origin>` |
+| Authorized redirect URIs | `https://<pendant-origin>/api/auth/callback/google` |
+
+Consent screen (once per project): **External** (or Internal if
+Workspace-only). Scopes `openid`, `email`, `profile` only — no
+Gmail/Drive. External + Testing: add yourself as a test user. Not
+`oauth-catch`, not `localhost:4100`.
+
+Paste **Client ID** and **Client secret** into Settings → Pendant.
+The fold shows the redirect after origin is saved.
 
 ### Add a human to Kit
 

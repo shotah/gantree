@@ -43,21 +43,32 @@ ai-gantry           →  dials wss://…/ws/<slug> with that bearer
 fold, admin only. Store token + account off `gantree.toml` (that file
 is inventory, no secrets). Yard sqlite or a gitignored secrets file.
 
-- [x] Cloudflare: `CLOUDFLARE_API_TOKEN` (Edit Cloudflare Workers),
+- [x] Cloudflare: `CLOUDFLARE_API_TOKEN` — Account **Workers Scripts
+      Edit** (PUT secrets). GitHub CI also needs **Workers KV Storage
+      Edit** + **Account Settings Read**. Not the Global API Key.
+      [Create token](https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=gantry-pendant)
+      (pre-fills those three). Same token can be GitHub + Settings.
+      [access.md](access.md#cloudflare-api-token). Also
       `CLOUDFLARE_ACCOUNT_ID`, Worker name (default `gantry-pendant`)
 - [x] OAuth variables pushed to the Worker:
       `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`
 - [x] Mint `SESSION_SECRET` if empty (same job as pendant
       `npm run secret`)
 - [x] Show the redirect to paste in GCP (Gantree does **not** create
-      the Google client):
+      the Google client). GCP → **APIs & Services → Credentials →
+      OAuth client ID:**
 
-      ```text
-      https://<pendant-origin>/api/auth/callback/google
-      ```
+      | Field | Value |
+      | --- | --- |
+      | Application type | **Web application** |
+      | Authorized JavaScript origins | `https://<pendant-origin>` |
+      | Authorized redirect URIs | `https://<pendant-origin>/api/auth/callback/google` |
 
-      Scopes `openid email profile` only. Not `oauth-catch`, not
-      google-mcp Desktop.
+      Consent: **External** (or Internal if Workspace-only). Scopes
+      `openid`, `email`, `profile` only — no Gmail/Drive. External +
+      Testing: add yourself as a test user. Not Desktop, not
+      `oauth-catch`, not google-mcp, not `localhost:4100`.
+      [access.md](access.md#google-oauth-client-gcp)
 - [x] Optional: pendant origin / account subdomain so the wizard can
       fill `PENDANT_MAILBOX_URL=wss://…/ws/<slug>`
 - [x] Optional yard-wide `ALLOWED_SUBS` (break-glass). Not the human

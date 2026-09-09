@@ -120,6 +120,15 @@ Worker name, origin, and the Google Web client. **Save and push** puts
 those on the Worker (no wrangler). Build a pendant crane from there —
 the yard mints the bearer. [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
 
+API token: Account **Workers Scripts Edit** (secrets). CI also needs
+**Workers KV Storage Edit**. [Create token](https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=gantry-pendant)
+(pre-filled). Details: [access.md](access.md#cloudflare-api-token).
+
+GCP client (not this UI): **Web application**. JavaScript origin =
+pendant origin. Redirect =
+`<origin>/api/auth/callback/google`. Scopes `openid email profile`
+only. Full table: [access.md](access.md#google-oauth-client-gcp).
+
 ---
 
 ## Stuck?
