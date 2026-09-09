@@ -33,6 +33,7 @@
         <a href="../docs/security.html">Security</a>
         <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html">Access</a>
+        <a href="../docs/channel_migration_doc.html">Channel</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
         <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
@@ -65,14 +66,18 @@ docker compose up -d
 build a crane (yard = home). <code>npm start</code> stays <code>:3000</code>. Grant search.
 Chat is Telegram (or pendant) — not this UI. Pendant: deploy
 <strong>gantry-pendant code</strong> to Workers (that repo’s CI). Then this board:
-Settings → Pendant (Google + Cloudflare token), Build channel
+Settings → Pendant (Google + Cloudflare token — <a href="access.html#cloudflare-api-token">access.md</a>), Build channel
 <code>pendant</code>, tick operators (email is enough), recreate. The yard mints
 the bearer — do not paste from wrangler. The yard cookie never goes to
 that Worker. The crane <code>.env</code> is the human list; Worker <code>ALLOWED_SUBS</code>
-is optional break-glass. Walk:
+is optional break-glass. GCP OAuth client is a <strong>Web application</strong>
+(JS origin + <code>/api/auth/callback/google</code>) — table:
+<a href="access.html#google-oauth-client-gcp">access.md</a>. Walk:
 <a href="operators.html">operators.md</a> ·
 <a href="manage_pendant_cf_todo.html">manage_pendant_cf_todo.md</a> ·
-<a href="https://github.com/shotah/gantree/blob/main/repos/gantry-pendant/docs/setup.md">gantry-pendant setup</a>.</p>
+<a href="https://github.com/shotah/gantree/blob/main/repos/gantry-pendant/docs/setup.md">gantry-pendant setup</a>.
+Existing Telegram crane → pendant (same <code>gantry.db</code>):
+<a href="channel_migration_doc.html">channel_migration_doc.md</a>.</p>
 <p>Local screenshots / <code>npm run dev</code>: <code>GANTREE_DEV=1</code> plus operator + passphrase
 in <code>.env</code> (<a href="https://github.com/shotah/gantree/blob/main/.env.example">.env.example</a>). Loopback only — compose
 <code>HOST=0.0.0.0</code> ignores the flag. Unset it to photograph <code>/login</code>. Details:

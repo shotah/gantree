@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Channel migration — Telegram to pendant — gantree</title>
+  <meta name="description" content="Channel migration — Telegram to pendant">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/channel_migration_doc.html">
+  <meta name="theme-color" content="#0e1316">
+  <meta property="og:title" content="Channel migration — Telegram to pendant — gantree">
+  <meta property="og:description" content="Channel migration — Telegram to pendant">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/channel_migration_doc.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html">Install</a>
+        <a href="../docs/console.html">Console</a>
+        <a href="../docs/operators.html">Operators</a>
+        <a href="../docs/headless.html">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html">Security</a>
+        <a href="../docs/protections.html">Cloudflare</a>
+        <a href="../docs/access.html">Access</a>
+        <a href="../docs/channel_migration_doc.html" aria-current="page">Channel</a>
+        <a href="../docs/custom-mcp.html">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="channel-migration-telegram-to-pendant">Channel migration — Telegram to pendant</h1>
+<p>One crane, one <code>CHANNEL</code>. This page is how to move <strong>Kit</strong> from Telegram
+(or Discord / Slack) onto the pendant without building a second agent.</p>
+<p>The yard has no “switch mouth” button. You change <code>CHANNEL</code>, mint a
+bearer from Kit’s <strong>Pendant</strong> fold, then <strong>recreate</strong>. Same folder, same
+<code>data/gantry.db</code>, same persona. Telegram on that process goes quiet.</p>
+<p>Who may talk, Google <code>sub</code>, yank: <a href="access.html">access.md</a>. First-time
+Worker + Settings: <a href="operators.html">operators.md</a> ·
+<a href="access.html#end-to-end">access.md</a>. New cranes (not a migrate):
+<a href="install.html">install.md</a>.</p>
+<hr>
+<h2 id="same-crane-vs-two-mouths">Same crane vs two mouths</h2>
+<table>
+<thead>
+<tr>
+<th>Want</th>
+<th>Do</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Kit herself on the phone, keep her memory</td>
+<td>This walk. Change Kit’s <code>CHANNEL</code>.</td>
+</tr>
+<tr>
+<td>Kit still on Telegram <strong>and</strong> a phone mouth</td>
+<td>Two processes. <a href="#keep-telegram-too">Clone</a> Kit, migrate the copy. Memories fork from that stamp.</td>
+</tr>
+<tr>
+<td>A brand-new pendant crane</td>
+<td>Build, channel <code>pendant</code>. Not this page.</td>
+</tr>
+</tbody></table>
+<p>The bot token (Telegram / Discord / Slack) can stay in Secrets. It will
+not poll while <code>CHANNEL=pendant</code>. Paste it back if you ever switch the
+mouth the other way.</p>
+<hr>
+<h2 id="before-you-start">Before you start</h2>
+<ol>
+<li><strong>gantry-pendant code</strong> is on Workers (that repo’s CI). Secrets are
+not pasted in the Cloudflare dashboard.</li>
+<li>Yard <strong>Settings → Pendant</strong> is filled and saved: Cloudflare token,
+account, Worker name, origin, Google Web client. <strong>Save and push</strong>
+must have landed <code>GOOGLE_*</code> and <code>SESSION_SECRET</code>. The fold shows
+ready. Pointer:
+<a href="access.html#cloudflare-api-token">access.md</a> ·
+<a href="access.html#google-oauth-client-gcp">Google OAuth</a>.</li>
+<li>GCP client is a <strong>Web application</strong>. Origin =
+<code>https://&lt;pendant-origin&gt;</code>. Redirect =
+<code>https://&lt;pendant-origin&gt;/api/auth/callback/google</code>.</li>
+<li>Ada (the human who will talk) has <strong>email</strong> on her Profile. Leave
+Google blank; the yard learns <code>sub</code> after she talks.</li>
+</ol>
+<p>If Settings is not ready, Kit’s Pendant fold will refuse the mint with
+a pointer back to that page. Do not paste a bearer by hand.</p>
+<hr>
+<h2 id="walk">Walk</h2>
+<p>Examples use <strong>Kit</strong> (crane) and <strong>Ada</strong> (operator / chatter). Same
+motion for Discord or Slack: only the old token name differs.</p>
+<h3 id="1-email-on-the-person">1. Email on the person</h3>
+<p>Ada → header name → <strong>Profile</strong> → email → save. That is what Pendant
+matches until Google <code>sub</code> is learned. Not a reset path, not a mailbox.</p>
+<h3 id="2-point-the-mouth">2. Point the mouth</h3>
+<p>Kit → <strong>Secrets</strong> → set <code>CHANNEL</code> to <code>pendant</code> → save.</p>
+<p><strong>Do not recreate yet.</strong> Empty <code>PENDANT_ALLOWED_USERS</code> fails boot.</p>
+<p>The Pendant fold appears once <code>CHANNEL</code> is pendant (or a mailbox /
+bearer is already in <code>.env</code>). Changing Secrets does <strong>not</strong> mint a
+bearer by itself.</p>
+<h3 id="3-who-may-talk">3. Who may talk</h3>
+<p>Kit → <strong>Pendant</strong>. Tick Ada (or paste <code>ada@example.com</code>). Confirm-scary
+<strong>Save allowlist</strong>.</p>
+<p>Someone who is not an operator can still be a chatter: paste their
+email. They never need a yard login.</p>
+<h3 id="4-mint-the-mailbox">4. Mint the mailbox</h3>
+<p>Confirm-scary <strong>Rotate bearer</strong>. First time is a mint, not a rotation:
+the yard writes <code>PENDANT_MAILBOX_URL</code> (<code>wss://…/ws/kit</code>) and
+<code>PENDANT_BEARER</code>, merges <code>kit:&lt;token&gt;</code> into Worker <code>CRANE_BEARERS</code>.
+No wrangler. Do not also <code>secret put</code> that map from the pendant CLI —
+a bulk put can drop yard-minted slugs.</p>
+<h3 id="5-recreate-kit">5. Recreate Kit</h3>
+<p><strong>Recreate</strong>, not restart. Boot reads <code>.env</code>, dials the mailbox,
+publishes <code>allow</code>. Restart keeps a ghost allowlist.</p>
+<h3 id="6-phone">6. Phone</h3>
+<p>Open the pendant origin from Settings. Sign in with Google. Ada should
+see Kit and talk.</p>
+<p>After a few turns, spend may show a raw <code>1182…</code> and offer to store it
+on Ada’s profile. Accept; the next allowlist push becomes <code>sub:email</code>.</p>
+<hr>
+<h2 id="keep-telegram-too">Keep Telegram too</h2>
+<p>Clone Kit with settings + persona + <strong>database</strong>. The copy is a new
+slug. If the source was already pendant, clone mints a <strong>new</strong> bearer
+(never copies <code>PENDANT_BEARER</code>). If the source is still Telegram,
+migrate the clone with the walk above; leave Kit on Telegram.</p>
+<p>Two processes, two memories after that stamp. One Completer does not
+speak two mouths.</p>
+<hr>
+<h2 id="back-to-telegram">Back to Telegram</h2>
+<p>Kit → Secrets → <code>CHANNEL=telegram</code>. Confirm <code>TELEGRAM_BOT_TOKEN</code> and
+<code>TELEGRAM_ALLOWED_USERS</code> (numeric ids, not <code>@username</code>). Recreate.</p>
+<p>Pendant keys can stay unused. The Worker still has <code>kit:&lt;token&gt;</code> until
+you rotate on a pendant crane or destroy Kit (destroy drops the slug
+from <code>CRANE_BEARERS</code>).</p>
+<hr>
+<h2 id="stuck">Stuck</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pendant fold missing</td>
+<td><code>CHANNEL</code> is not <code>pendant</code> yet, or Secrets save did not write the file.</td>
+</tr>
+<tr>
+<td>Crane dies on boot / empty list</td>
+<td>Save the allowlist (email is enough), then recreate.</td>
+</tr>
+<tr>
+<td>Google works, crane list empty</td>
+<td>Allowlist not saved, or recreate never ran. Until <code>/me</code> lists a crane the phone used to fetch Kit’s avatar (<code>401</code> on <code>/api/avatar?slug=kit</code>). Type the real slug on that screen, or wait for <code>pendant allow sent</code> and refresh.</td>
+</tr>
+<tr>
+<td>Phone 401 / stuck on Kit</td>
+<td>Google is fine. The picker is not yard “assigned cranes” — it is Google email/<code>sub</code> → rooms that published <code>allow</code>.</td>
+</tr>
+<tr>
+<td>Worker <code>503 config</code></td>
+<td>Settings → Pendant did not land Google / <code>SESSION_SECRET</code>. Save and push again.</td>
+</tr>
+<tr>
+<td>Rotate says not pendant</td>
+<td>Secrets still has the old <code>CHANNEL</code>. Save <code>pendant</code> first.</td>
+</tr>
+<tr>
+<td>Rotate / Build points at Settings</td>
+<td>Cloudflare token, account, Worker name, or origin missing.</td>
+</tr>
+<tr>
+<td>Sign-in redirect error</td>
+<td>GCP client must be Web, redirect exactly <code>/api/auth/callback/google</code> on the pendant origin.</td>
+</tr>
+<tr>
+<td>Telegram still answers</td>
+<td>Recreate did not run, or <code>CHANNEL</code> never saved. One process, one mouth.</td>
+</tr>
+</tbody></table>
+<p>The yard cookie never goes to the Worker. Ada’s Google login is not a
+yard session.</p>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>

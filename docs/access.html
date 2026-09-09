@@ -33,6 +33,7 @@
         <a href="../docs/security.html">Security</a>
         <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html" aria-current="page">Access</a>
+        <a href="../docs/channel_migration_doc.html">Channel</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
         <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
@@ -51,7 +52,9 @@ the same motion as Telegram.</p>
 <a href="operators.html">operators.md</a>. Pendant side (nested checkout, dev only):
 <code>repos/gantry-pendant/docs/setup.md</code>, <code>security.md</code>, <code>edgecases.md</code>.
 Harness contract: <code>repos/ai-gantry/docs/gantree-contract.md</code>. Outstanding
-walks: <a href="https://github.com/shotah/gantree/blob/main/docs/todo.md">todo.md</a>.</p>
+walks: <a href="https://github.com/shotah/gantree/blob/main/docs/todo.md">todo.md</a>.
+Telegram (or Discord / Slack) crane → pendant, same memory:
+<a href="channel_migration_doc.html">channel_migration_doc.md</a>.</p>
 <hr>
 <h2 id="why-three-doors">Why three doors</h2>
 <p>The three were built independent on purpose. Each has its own idea of
@@ -344,17 +347,59 @@ loopback and HTTPS origins only. Skip it while the pendant can show the
 <h2 id="end-to-end">End to end</h2>
 <h3 id="once-before-any-person">Once (before any person)</h3>
 <ol>
-<li>Deploy the Worker (code: gantry-pendant CI). GCP <strong>Web application</strong>
-client, scopes <code>openid email profile</code>, redirect
-<code>https://&lt;origin&gt;/api/auth/callback/google</code>.
+<li>Deploy the Worker (code: gantry-pendant CI).</li>
+<li>GCP <strong>Web application</strong> client — <a href="#google-oauth-client-gcp">Google OAuth client</a>.
 Yard Settings → Pendant pushes <code>GOOGLE_*</code>, <code>SESSION_SECRET</code>, and
 per-crane bearers — <a href="manage_pendant_cf_todo.html">manage_pendant_cf_todo.md</a>.
 Code deploy stays gantry-pendant CI.</li>
 <li>Per crane: Build channel pendant (or Rotate bearer on the panel).
 The yard mints a bearer, merges <code>CRANE_BEARERS</code>, writes
-<code>PENDANT_BEARER</code>. Recreate.</li>
+<code>PENDANT_BEARER</code>. Recreate. Telegram crane already running:
+<a href="channel_migration_doc.html">channel_migration_doc.md</a>.</li>
 <li>Yard: <code>/setup</code>, one admin. Passphrase. As today.</li>
 </ol>
+<h3 id="cloudflare-api-token">Cloudflare API token</h3>
+<p>Gantree Settings only <strong>PUT</strong>s Worker secrets. That is Account →
+<strong>Workers Scripts Edit</strong>. GitHub CI (code deploy in gantry-pendant)
+also needs <strong>Workers KV Storage Edit</strong> and <strong>Account Settings Read</strong>.
+One token with all three is fine. Not the Global API Key.</p>
+<p><strong>Quick create</strong> (pre-fills the three; still click Create Token):</p>
+<p><a href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&amp;accountId=%2A&amp;zoneId=all&amp;name=gantry-pendant">Create gantry-pendant token</a></p>
+<p>Yard-only (no CI):
+<a href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%5D&amp;accountId=%2A&amp;zoneId=all&amp;name=gantry-pendant%20secrets">Workers Scripts Edit</a>.</p>
+<p>Or Profile → API Tokens → <strong>Edit Cloudflare Workers</strong>. Same token can
+sit in GitHub and Settings. Table:
+<a href="https://github.com/shotah/gantree/blob/main/repos/gantry-pendant/docs/deployment.md#cloudflare-api-token">gantry-pendant deployment</a>.</p>
+<h3 id="google-oauth-client-gcp">Google OAuth client (GCP)</h3>
+<p>Gantree does <strong>not</strong> create this. <strong>APIs &amp; Services → Credentials →
+Create credentials → OAuth client ID.</strong> Not Desktop, not the
+google-mcp client.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Application type</td>
+<td><strong>Web application</strong></td>
+</tr>
+<tr>
+<td>Authorized JavaScript origins</td>
+<td><code>https://&lt;pendant-origin&gt;</code></td>
+</tr>
+<tr>
+<td>Authorized redirect URIs</td>
+<td><code>https://&lt;pendant-origin&gt;/api/auth/callback/google</code></td>
+</tr>
+</tbody></table>
+<p>Consent screen (once per project): <strong>External</strong> (or Internal if
+Workspace-only). Scopes <code>openid</code>, <code>email</code>, <code>profile</code> only — no
+Gmail/Drive. External + Testing: add yourself as a test user. Not
+<code>oauth-catch</code>, not <code>localhost:4100</code>.</p>
+<p>Paste <strong>Client ID</strong> and <strong>Client secret</strong> into Settings → Pendant.
+The fold shows the redirect after origin is saved.</p>
 <h3 id="add-a-human-to-kit">Add a human to Kit</h3>
 <ol>
 <li>Admin (or <code>user</code> on Kit) opens Kit → pendant panel. Ticks the

@@ -33,6 +33,7 @@
         <a href="../docs/security.html">Security</a>
         <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html">Access</a>
+        <a href="../docs/channel_migration_doc.html">Channel</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
         <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
@@ -147,7 +148,17 @@ demote the last admin.</p>
 <p>Admin also gets a <strong>Pendant</strong> fold: Cloudflare API token, account,
 Worker name, origin, and the Google Web client. <strong>Save and push</strong> puts
 those on the Worker (no wrangler). Build a pendant crane from there —
-the yard mints the bearer. <a href="manage_pendant_cf_todo.html">manage_pendant_cf_todo.md</a>.</p>
+the yard mints the bearer.
+<a href="manage_pendant_cf_todo.html">manage_pendant_cf_todo.md</a>.
+Move an existing Telegram crane:
+<a href="channel_migration_doc.html">channel_migration_doc.md</a>.</p>
+<p>API token: Account <strong>Workers Scripts Edit</strong> (secrets). CI also needs
+<strong>Workers KV Storage Edit</strong>. <a href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&amp;accountId=%2A&amp;zoneId=all&amp;name=gantry-pendant">Create token</a>
+(pre-filled). Details: <a href="access.html#cloudflare-api-token">access.md</a>.</p>
+<p>GCP client (not this UI): <strong>Web application</strong>. JavaScript origin =
+pendant origin. Redirect =
+<code>&lt;origin&gt;/api/auth/callback/google</code>. Scopes <code>openid email profile</code>
+only. Full table: <a href="access.html#google-oauth-client-gcp">access.md</a>.</p>
 <hr>
 <h2 id="stuck">Stuck?</h2>
 <table>
