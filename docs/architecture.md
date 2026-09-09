@@ -6,8 +6,10 @@ chat. The crane is the product — why the harness is worth operating lives
 in the [root readme](../README.md). What you click on the board:
 [console.md](console.md). People (login, profile, settings):
 [operators.md](operators.md). One person across yard, pendant, and crane:
-[access.md](access.md). This page is how the yard is put together — stack,
-host I/O, and the choices that stay true as the board grows.
+[access.md](access.md). Switch a running crane’s mouth:
+[channel_migration_doc.md](channel_migration_doc.md). This page is how
+the yard is put together — stack, host I/O, and the choices that stay
+true as the board grows.
 
 Harness-side design note (nested checkout, **dev only**):
 [repos/ai-gantry/docs/gantree.md](../repos/ai-gantry/docs/gantree.md).

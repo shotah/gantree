@@ -112,7 +112,8 @@ as her), and edit `TELEGRAM_ALLOWED_USERS` from numeric ids (slog `user_id`
 after someone talks — not `@username`). On a pendant crane, **Pendant** ticks
 operators (email until the Google `sub` is learned) onto
 `PENDANT_ALLOWED_USERS`, nags recreate, and offers to store an unseen `sub`
-on the matching profile. Grant
+on the matching profile. Telegram crane → pendant (same memory):
+[channel_migration_doc.md](channel_migration_doc.md). Grant
 a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
 `/tools` is the crane’s mouth; this page is the operator’s.
 

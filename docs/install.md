@@ -41,6 +41,8 @@ is optional break-glass. GCP OAuth client is a **Web application**
 [operators.md](operators.md) ·
 [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md) ·
 [gantry-pendant setup](../repos/gantry-pendant/docs/setup.md).
+Existing Telegram crane → pendant (same `gantry.db`):
+[channel_migration_doc.md](channel_migration_doc.md).
 
 Local screenshots / `npm run dev`: `GANTREE_DEV=1` plus operator + passphrase
 in `.env` ([.env.example](../.env.example)). Loopback only — compose

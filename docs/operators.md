@@ -118,7 +118,10 @@ demote the last admin.
 Admin also gets a **Pendant** fold: Cloudflare API token, account,
 Worker name, origin, and the Google Web client. **Save and push** puts
 those on the Worker (no wrangler). Build a pendant crane from there —
-the yard mints the bearer. [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
+the yard mints the bearer.
+[manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
+Move an existing Telegram crane:
+[channel_migration_doc.md](channel_migration_doc.md).
 
 API token: Account **Workers Scripts Edit** (secrets). CI also needs
 **Workers KV Storage Edit**. [Create token](https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=gantry-pendant)

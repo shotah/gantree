@@ -14,6 +14,8 @@ Door details: [security.md](security.md). People on the yard:
 `repos/gantry-pendant/docs/setup.md`, `security.md`, `edgecases.md`.
 Harness contract: `repos/ai-gantry/docs/gantree-contract.md`. Outstanding
 walks: [todo.md](https://github.com/shotah/gantree/blob/main/docs/todo.md).
+Telegram (or Discord / Slack) crane → pendant, same memory:
+[channel_migration_doc.md](channel_migration_doc.md).
 
 ---
 
@@ -243,7 +245,8 @@ loopback and HTTPS origins only. Skip it while the pendant can show the
    Code deploy stays gantry-pendant CI.
 3. Per crane: Build channel pendant (or Rotate bearer on the panel).
    The yard mints a bearer, merges `CRANE_BEARERS`, writes
-   `PENDANT_BEARER`. Recreate.
+   `PENDANT_BEARER`. Recreate. Telegram crane already running:
+   [channel_migration_doc.md](channel_migration_doc.md).
 4. Yard: `/setup`, one admin. Passphrase. As today.
 
 ### Cloudflare API token

@@ -23,6 +23,7 @@ export const DOC_PAGES = [
   { file: "security.md", nav: "Security" },
   { file: "protections.md", nav: "Cloudflare" },
   { file: "access.md", nav: "Access" },
+  { file: "channel_migration_doc.md", nav: "Channel" },
   { file: "custom-mcp.md", nav: "Custom MCP" },
 ];
 

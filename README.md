@@ -171,6 +171,7 @@ day one, this is the wrong stack — and that’s fine.
 | The door (login, bind, hardening) | **[docs/security.md](docs/security.md)** |
 | Cloudflare protections (Access, rate-limit, bots) | **[docs/protections.md](docs/protections.md)** |
 | One person across yard, pendant, crane | **[docs/access.md](docs/access.md)** |
+| Move a crane from Telegram to pendant | **[docs/channel_migration_doc.md](docs/channel_migration_doc.md)** |
 | Open items | **[docs/todo.md](docs/todo.md)** |
 
 Never sit in the token path.
