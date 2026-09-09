@@ -31,6 +31,7 @@
         <a href="../docs/headless.html">Headless</a>
         <a href="../docs/architecture.html">Architecture</a>
         <a href="../docs/security.html">Security</a>
+        <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html">Access</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
@@ -62,11 +63,15 @@ docker compose up -d
 <p>Open the board at <code>http://&lt;pc-lan-ip&gt;/</code> or
 <code>http://&lt;headless-lan-ip&gt;/</code> (compose). Create the first operator, then
 build a crane (yard = home). <code>npm start</code> stays <code>:3000</code>. Grant search.
-Chat is Telegram (or pendant) — not this UI. Pendant: deploy gantry-pendant
-to Workers, pick channel <code>pendant</code> in the wizard, paste mailbox URL + bearer,
-tick operators (email is enough), recreate. The yard cookie never goes to
-that Worker. The crane <code>.env</code> is the human list; Worker <code>ALLOWED_SUBS</code> is
-optional break-glass, not a Gantree save. Walk:
+Chat is Telegram (or pendant) — not this UI. Pendant: deploy
+<strong>gantry-pendant code</strong> to Workers (that repo’s CI). Then this board:
+Settings → Pendant (Google + Cloudflare token), Build channel
+<code>pendant</code>, tick operators (email is enough), recreate. The yard mints
+the bearer — do not paste from wrangler. The yard cookie never goes to
+that Worker. The crane <code>.env</code> is the human list; Worker <code>ALLOWED_SUBS</code>
+is optional break-glass. Walk:
+<a href="operators.html">operators.md</a> ·
+<a href="manage_pendant_cf_todo.html">manage_pendant_cf_todo.md</a> ·
 <a href="https://github.com/shotah/gantree/blob/main/repos/gantry-pendant/docs/setup.md">gantry-pendant setup</a>.</p>
 <p>Local screenshots / <code>npm run dev</code>: <code>GANTREE_DEV=1</code> plus operator + passphrase
 in <code>.env</code> (<a href="https://github.com/shotah/gantree/blob/main/.env.example">.env.example</a>). Loopback only — compose
@@ -92,7 +97,8 @@ zone is already on Cloudflare (no WAN ports, orange cloud is fine):</p>
 docker compose -f compose.cloudflare.yml up -d
 </code></pre>
 <p>Dashboard public hostname origin: <code>http://gantree:3000</code>. Login is still
-gantree’s door.</p>
+gantree’s door. Recommended Cloudflare settings:
+<a href="protections.html">protections.md</a>.</p>
 <p>Origin TLS on this box (grey-cloud DNS, router <strong>80 and 443</strong>):
 <code>compose.nginx.yml</code> + <code>GANTREE_DOMAIN</code> / <code>LETSENCRYPT_EMAIL</code>. Do not mix
 the two hostname files.</p>
@@ -120,7 +126,8 @@ to the world.</p>
 </code></pre>
 <p><strong>Cloudflare Tunnel</strong> (console only — never the agents):
 <code>compose.cloudflare.yml</code> + <code>CLOUDFLARE_TUNNEL_TOKEN</code> in <code>.env</code>, origin
-<code>http://gantree:3000</code>. Quick tunnel without compose:</p>
+<code>http://gantree:3000</code>. Recommended Cloudflare settings:
+<a href="protections.html">protections.md</a>. Quick tunnel without compose:</p>
 <pre><code class="language-bash">cloudflared tunnel --url http://127.0.0.1:80
 </code></pre>
 <p>OAuth is always the laptop hop: <strong>needs auth</strong> → start hop or <code>/auth</code> in

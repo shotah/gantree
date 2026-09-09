@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cloudflare protections — gantree</title>
+  <meta name="description" content="Cloudflare protections">
+  <link rel="canonical" href="https://shotah.github.io/gantree/docs/protections.html">
+  <meta name="theme-color" content="#0e1316">
+  <meta property="og:title" content="Cloudflare protections — gantree">
+  <meta property="og:description" content="Cloudflare protections">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shotah.github.io/gantree/docs/protections.html">
+  <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="top">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.svg" width="28" height="28" alt="">
+      gantree
+    </a>
+    <nav class="nav" aria-label="Site">
+        <a href="../index.html">Home</a>
+        <a href="../docs/install.html">Install</a>
+        <a href="../docs/console.html">Console</a>
+        <a href="../docs/operators.html">Operators</a>
+        <a href="../docs/headless.html">Headless</a>
+        <a href="../docs/architecture.html">Architecture</a>
+        <a href="../docs/security.html">Security</a>
+        <a href="../docs/protections.html" aria-current="page">Cloudflare</a>
+        <a href="../docs/access.html">Access</a>
+        <a href="../docs/custom-mcp.html">Custom MCP</a>
+        <a href="https://github.com/shotah/gantree">GitHub</a>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+    </nav>
+  </header>
+  <main id="content" class="wrap">
+    <article class="prose"><h1 id="cloudflare-protections">Cloudflare protections</h1>
+<p>Recommended Cloudflare settings when Gantree is published with
+<a href="https://github.com/shotah/gantree/blob/main/compose.cloudflare.yml"><code>compose.cloudflare.yml</code></a>. These controls live
+in the Cloudflare dashboard (Zero Trust and WAF), not in the compose
+file. <code>cloudflared</code> only maintains the outbound tunnel.</p>
+<p>Stand the hostname up first: <a href="install.html">install.md</a>. Gantree’s own
+login, backoff, and roles: <a href="security.html">security.md</a>. Agents still
+open <strong>zero</strong> inbound ports — protect the console hostname, not the
+cranes.</p>
+<hr>
+<h2 id="recommendations">Recommendations</h2>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Setting</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Recommended</strong></td>
+<td><a href="#cloudflare-access">Cloudflare Access</a> on the public hostname, with <strong>Protect with Access</strong> on the tunnel</td>
+<td>Unauthenticated traffic never reaches the origin</td>
+</tr>
+<tr>
+<td><strong>Recommended</strong></td>
+<td><a href="#rate-limit-login">WAF rate limit</a> on <code>POST /api/login</code> and <code>/api/setup</code></td>
+<td>Login hashing is expensive; a spray can stall a small host</td>
+</tr>
+<tr>
+<td><strong>Recommended</strong></td>
+<td><a href="#bot-fight-mode">Bot Fight Mode</a></td>
+<td>Challenges known automated clients</td>
+</tr>
+<tr>
+<td><strong>Recommended</strong></td>
+<td>Keep WAN ports closed; on a cloud VM set <code>GANTREE_LISTEN=127.0.0.1</code></td>
+<td>The tunnel is bypassed if 80/443 are forwarded on the router or cloud firewall</td>
+</tr>
+<tr>
+<td>Optional</td>
+<td><a href="#optional-waf-settings">Security level High</a>, country or ASN allowlists</td>
+<td>Useful when operators only sign in from a known region</td>
+</tr>
+<tr>
+<td>Incident only</td>
+<td><a href="#under-attack-mode">Under Attack Mode</a></td>
+<td>JS-challenge every request while an attack is underway</td>
+</tr>
+</tbody></table>
+<p>Access plus a login rate-limit is the stack we recommend for a personal
+or household console. The optional rows are extra.</p>
+<hr>
+<h2 id="what-the-tunnel-already-provides">What the tunnel already provides</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cloudflare Tunnel</td>
+<td>Outbound-only connection. No public origin IP and no WAN ports to publish.</td>
+</tr>
+<tr>
+<td>Proxied hostname</td>
+<td>Traffic is already on Cloudflare’s DDoS path.</td>
+</tr>
+<tr>
+<td>Gantree login backoff</td>
+<td>After 8 failed attempts per name (or 40 globally) in 15 minutes, login returns <code>429</code> for 15 minutes. Unknown names get the same error; a dummy hash runs so timing is not a tell.</td>
+</tr>
+</tbody></table>
+<p>Backoff is in-memory and clears on process restart. It slows guessing; it
+does not absorb a flood. Each login attempt still runs on the origin
+after Cloudflare forwards the request.</p>
+<p>On first boot, whoever posts <code>/api/setup</code> first owns the yard. Finish
+setup before the hostname is a habit. Access blocks that path from the
+public Internet; it does not replace care on a LAN port.</p>
+<hr>
+<h2 id="cloudflare-access">Cloudflare Access</h2>
+<p><strong>Recommended.</strong> Cloudflare Zero Trust → <strong>Access</strong> → <strong>Applications</strong> →
+add a <strong>self-hosted</strong> application for the same public hostname as the
+tunnel.</p>
+<p>Create an <strong>Allow</strong> policy for the operators’ email addresses (or a
+domain you control). Use an identity provider you already have (Google,
+GitHub, or one-time PIN). Session lifetime can be days; Gantree <code>/login</code>
+still runs after Access.</p>
+<p>Then Zero Trust → <strong>Networks</strong> → <strong>Tunnels</strong> → the public hostname →
+enable <strong>Protect with Access</strong>. <code>cloudflared</code> rejects requests that do
+not present an Access cookie, so the origin never sees a bare
+<code>POST /api/login</code> from the Internet.</p>
+<p>Access on the Zero Trust free plan is enough for a small operator list.
+A partner who only updates keys is still a <strong>user</strong> on that crane after
+both gates — <a href="operators.html">operators.md</a>.</p>
+<p>Visitors will see two prompts: Cloudflare, then Gantree. That is
+intentional. Access is the Internet gate; Gantree’s passphrase is who
+may operate the yard. Do not disable the yard login because Access is
+on.</p>
+<hr>
+<h2 id="rate-limit-login">Rate-limit login</h2>
+<p><strong>Recommended.</strong> Security → <strong>WAF</strong> → <strong>Rate limiting rules</strong>. On plans
+with a small rule quota, spend it here:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>When</td>
+<td><code>POST</code> and URI path <code>/api/login</code> (include <code>/api/setup</code> in the same rule if possible)</td>
+</tr>
+<tr>
+<td>Rate</td>
+<td>5–10 requests per 10 seconds per IP</td>
+</tr>
+<tr>
+<td>Action</td>
+<td><strong>Managed Challenge</strong>, then Block if the client continues</td>
+</tr>
+</tbody></table>
+<p>Without Access, this is the control that keeps login hashing off the
+host. With Access, it still catches anything that slipped past.</p>
+<p>Dashboard labels change; the intent does not: limit <strong>POSTs to login
+and setup</strong>, not every static GET.</p>
+<hr>
+<h2 id="bot-fight-mode">Bot Fight Mode</h2>
+<p><strong>Recommended.</strong> Security → <strong>Bots</strong> → <strong>Bot Fight Mode</strong>. Issues a
+challenge to clients that match known bot patterns. It is included on
+the free plan.</p>
+<p>If a device you use cannot complete the challenge, turn Bot Fight Mode
+off. Access is the stronger control.</p>
+<p>On a paid plan with <strong>Super Bot Fight Mode</strong>, keep <strong>Definitely
+Automated</strong> set to <strong>Allow</strong>. Blocking that class can break the tunnel
+websocket handshake (<code>websocket: bad handshake</code>).</p>
+<hr>
+<h2 id="optional-waf-settings">Optional WAF settings</h2>
+<p><strong>Security level High</strong> (Security → <strong>Settings</strong>) challenges
+low-reputation IPs. Reasonable for an operator console.</p>
+<p>The <strong>WAF Free Managed Ruleset</strong> is already enabled on proxied
+hostnames. It helps against common probes, not a focused login spray.</p>
+<p><strong>Country or ASN custom rules</strong> are reasonable when every operator
+signs in from one region. Challenge or block the rest. Skip this if
+people travel without a VPN plan.</p>
+<hr>
+<h2 id="under-attack-mode">Under Attack Mode</h2>
+<p><strong>Incident only.</strong> Enables a JavaScript challenge on every request.
+Turn it on while the hostname is under a Layer 7 flood; turn it off
+afterward. It is a poor daily default, especially on phones.</p>
+<p>Volumetric attacks against the origin IP are what the tunnel already
+removes. This switch is for application-layer load on the hostname.</p>
+<hr>
+<h2 id="compose-and-bind">Compose and bind</h2>
+<p>Rate limits, challenges, and Access are dashboard settings. Extra
+<code>cloudflared</code> <code>command:</code> flags, retries, or image pins in
+<code>compose.cloudflare.yml</code> do not rate-limit clients. Keep
+<code>TUNNEL_TOKEN</code> as documented in <a href="install.html">install.md</a>.</p>
+<p>Use either <code>compose.cloudflare.yml</code> <strong>or</strong> <code>compose.nginx.yml</code>, not
+both.</p>
+<p>Do not forward 80/443 on the router or open a cloud firewall port “as
+a backup.” That path bypasses Cloudflare.</p>
+<hr>
+<h2 id="how-the-layers-combine">How the layers combine</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What it stops</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Tunnel</td>
+<td>Direct-to-IP floods and open WAN ports</td>
+</tr>
+<tr>
+<td>Access + Protect with Access</td>
+<td>Unauthenticated Internet traffic</td>
+</tr>
+<tr>
+<td>WAF rate limit on <code>POST /api/login</code></td>
+<td>Remaining login spray before origin hashing</td>
+</tr>
+<tr>
+<td>Bot Fight Mode / security level</td>
+<td>Scripted probes</td>
+</tr>
+<tr>
+<td>Gantree backoff</td>
+<td>Password guessing that still reaches the app</td>
+</tr>
+<tr>
+<td>Under Attack Mode</td>
+<td>An active Layer 7 incident</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="not-recommended">Not recommended</h2>
+<ul>
+<li>Treating compose flags as a WAF. There is no WAF in
+<code>compose.cloudflare.yml</code>.</li>
+<li>fail2ban on the origin for tunnel traffic. The host sees
+<code>cloudflared</code>, not the client IP. Limits belong at Cloudflare.</li>
+<li>nginx in front of the tunnel. The tunnel exists so the origin does
+not terminate public TLS.</li>
+<li>A Pro plan unless Super Bot Fight analytics are needed. Access and
+one rate-limit rule are the recommended personal setup.</li>
+<li>Hiding <code>/login</code> HTML. The page is public; the data is not
+(<a href="security.html">security.md</a>).</li>
+<li>Skipping first-boot <code>/setup</code> on the LAN because Access is enabled
+on the public hostname.</li>
+</ul>
+</article>
+  </main>
+  <footer class="foot">
+    <div class="wrap">
+      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
+    </div>
+  </footer>
+</body>
+</html>

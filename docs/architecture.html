@@ -31,6 +31,7 @@
         <a href="../docs/headless.html">Headless</a>
         <a href="../docs/architecture.html" aria-current="page">Architecture</a>
         <a href="../docs/security.html">Security</a>
+        <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html">Access</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
@@ -161,7 +162,7 @@ npm run dev        # vinext dev
 </tr>
 <tr>
 <td>Pendant mouth</td>
-<td><code>.env</code> (<code>CHANNEL=pendant</code>, mailbox URL, bearer present?, <code>PENDANT_ALLOWED_USERS</code>). Gantree writes the list; the Worker never sees the yard cookie.</td>
+<td><code>.env</code> (<code>CHANNEL=pendant</code>, mailbox URL, bearer present?, <code>PENDANT_ALLOWED_USERS</code>). Gantree writes the list and pushes Worker secrets (Google, session, <code>CRANE_BEARERS</code>) from Settings. The Worker never sees the yard cookie.</td>
 </tr>
 </tbody></table>
 <p>Files remain the source of truth. The UI is an editor of those files,

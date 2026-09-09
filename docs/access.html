@@ -31,6 +31,7 @@
         <a href="../docs/headless.html">Headless</a>
         <a href="../docs/architecture.html">Architecture</a>
         <a href="../docs/security.html">Security</a>
+        <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html" aria-current="page">Access</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
@@ -299,11 +300,11 @@ allowlist” true. The phone can also show the <code>sub</code> after sign-in.</
 <td><strong>Yes.</strong> <code>channels.google</code> is digits. Email already existed.</td>
 </tr>
 </tbody></table>
-<p>Gantree still never writes Cloudflare secrets, never chats, and never
-sends the yard cookie anywhere. <code>CRANE_BEARERS</code> stays a Cloudflare
-secret — one paste per <strong>crane</strong>, once, is the price of the Worker
-trusting the crane. The bearer already lets its holder run the whole
-room, so letting it also name who may enter that room adds no reach.</p>
+<p>Gantree still never chats, and never sends the yard cookie anywhere.
+<code>CRANE_BEARERS</code> is a Cloudflare secret the <strong>yard</strong> mints and pushes
+(Settings token, admin only). One bearer per crane. The bearer already
+lets its holder run the whole room, so letting it also name who may
+enter that room adds no reach.</p>
 <hr>
 <h2 id="should-the-yard-log-in-with-google">Should the yard log in with Google?</h2>
 <p>Asked directly: no, not as the door. Reasons that hold on a Mini:</p>
@@ -343,13 +344,15 @@ loopback and HTTPS origins only. Skip it while the pendant can show the
 <h2 id="end-to-end">End to end</h2>
 <h3 id="once-before-any-person">Once (before any person)</h3>
 <ol>
-<li>Deploy the Worker. GCP <strong>Web application</strong> client, scopes
-<code>openid email profile</code>, redirect <code>https://&lt;origin&gt;/api/auth/callback/google</code>.
-Worker secrets: <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>,
-<code>SESSION_SECRET</code>, <code>CRANE_BEARERS</code>. <code>ALLOWED_SUBS</code> optional.</li>
-<li>Per crane: mint a bearer (<code>npm run secret</code> in the pendant checkout),
-append <code>slug:&lt;bearer&gt;</code> to <code>CRANE_BEARERS</code>. This is the one Cloudflare
-paste per crane.</li>
+<li>Deploy the Worker (code: gantry-pendant CI). GCP <strong>Web application</strong>
+client, scopes <code>openid email profile</code>, redirect
+<code>https://&lt;origin&gt;/api/auth/callback/google</code>.
+Yard Settings → Pendant pushes <code>GOOGLE_*</code>, <code>SESSION_SECRET</code>, and
+per-crane bearers — <a href="manage_pendant_cf_todo.html">manage_pendant_cf_todo.md</a>.
+Code deploy stays gantry-pendant CI.</li>
+<li>Per crane: Build channel pendant (or Rotate bearer on the panel).
+The yard mints a bearer, merges <code>CRANE_BEARERS</code>, writes
+<code>PENDANT_BEARER</code>. Recreate.</li>
 <li>Yard: <code>/setup</code>, one admin. Passphrase. As today.</li>
 </ol>
 <h3 id="add-a-human-to-kit">Add a human to Kit</h3>
@@ -366,8 +369,8 @@ stores it and indexes the email.</li>
 <code>1182…</code> and suggests storing it on ada’s profile. Admin accepts;
 next push writes <code>sub:email</code>.</li>
 </ol>
-<p>No Cloudflare step after the first bearer. No JWT decoding. One
-recreate.</p>
+<p>No Cloudflare dashboard after Settings + first mint. No JWT decoding.
+One recreate.</p>
 <h3 id="yank">Yank</h3>
 <ol>
 <li>Untick / remove from Kit’s list. Recreate. Kit’s dial publishes the
@@ -425,8 +428,8 @@ cross-crane edit.</p>
 </tr>
 </tbody></table>
 <p>What does <strong>not</strong> move: no inbound port on the crane, no chat through
-Gantree, no yard cookie on the Worker, no Cloudflare API key in the
-yard, no MCP OAuth token doubling as a login.</p>
+Gantree, no yard cookie on the Worker, no Cloudflare API token on a
+crane, no MCP OAuth token doubling as a login.</p>
 <hr>
 <h2 id="not-this">Not this</h2>
 <table>
@@ -441,8 +444,8 @@ yard, no MCP OAuth token doubling as a login.</p>
 <td>Three products with one IdP dependency. The Mini must open when Google does not.</td>
 </tr>
 <tr>
-<td>Gantree pushes <code>ALLOWED_SUBS</code> via the Cloudflare API</td>
-<td>A Cloudflare token on the Mini, a second write path, and the Worker still cannot ask the crane who is real.</td>
+<td>Gantree pushes <code>ALLOWED_SUBS</code> as the human roster</td>
+<td>That list is break-glass only. The crane <code>.env</code> is still who may talk.</td>
 </tr>
 <tr>
 <td>Worker as IdP for the yard</td>
@@ -484,8 +487,10 @@ and a login on the Worker. Not a yard session, not an IdP hop the
 Mini needs to boot.</li>
 <li><strong>Isolation.</strong> Pushing a person onto Kit does not touch Ada’s
 crane. Kit’s bearer cannot name Ada’s humans.</li>
-<li><strong>Gantree writes files, not Cloudflare.</strong> No CF API token on the
-Mini. The Worker never accepts <code>gantree_session</code>.</li>
+<li><strong>Gantree writes files, and Worker secrets for this mouth only.</strong>
+Admin Settings holds a Cloudflare API token (Workers Edit) and
+pushes Google / session / per-crane bearers. Cranes never get that
+token. The Worker never accepts <code>gantree_session</code>.</li>
 </ol>
 <p>Stranger walks that still prove this loop, and leftover cleanup across
 the three repos:

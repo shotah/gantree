@@ -31,6 +31,7 @@
         <a href="../docs/headless.html">Headless</a>
         <a href="../docs/architecture.html">Architecture</a>
         <a href="../docs/security.html">Security</a>
+        <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html">Access</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
@@ -143,6 +144,10 @@ gantree <code>:3000</code>.</p>
 <p>Add / remove / change access are <strong>confirm-scary</strong> (checkbox), like a
 token push. You cannot delete the last operator, or the last admin, or
 demote the last admin.</p>
+<p>Admin also gets a <strong>Pendant</strong> fold: Cloudflare API token, account,
+Worker name, origin, and the Google Web client. <strong>Save and push</strong> puts
+those on the Worker (no wrangler). Build a pendant crane from there —
+the yard mints the bearer. <a href="manage_pendant_cf_todo.html">manage_pendant_cf_todo.md</a>.</p>
 <hr>
 <h2 id="stuck">Stuck?</h2>
 <table>
@@ -186,7 +191,8 @@ demote the last admin.</p>
 </tr>
 </tbody></table>
 <p>Bind (loopback vs LAN vs tunnel): <a href="install.html">install.md</a> ·
-<a href="headless.html">headless.md</a>. Hardening: <a href="security.html">security.md</a>.</p>
+<a href="headless.html">headless.md</a>. Hardening: <a href="security.html">security.md</a>.
+Cloudflare protections: <a href="protections.html">protections.md</a>.</p>
 </article>
   </main>
   <footer class="foot">

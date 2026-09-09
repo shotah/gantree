@@ -31,6 +31,7 @@
         <a href="../docs/headless.html">Headless</a>
         <a href="../docs/architecture.html">Architecture</a>
         <a href="../docs/security.html" aria-current="page">Security</a>
+        <a href="../docs/protections.html">Cloudflare</a>
         <a href="../docs/access.html">Access</a>
         <a href="../docs/custom-mcp.html">Custom MCP</a>
         <a href="https://github.com/shotah/gantree">GitHub</a>
@@ -46,6 +47,7 @@ still pins loopback + Tailscale / tunnel. Home compose may publish <code>:80</co
 on the LAN <em>behind</em> this door. Agents still open <strong>zero</strong> inbound ports.</p>
 <p>Walk: <a href="console.html">console.md</a>. Login, profile, settings:
 <a href="operators.html">operators.md</a>. Bind stories: <a href="install.html">install.md</a>.
+Cloudflare protections: <a href="protections.html">protections.md</a>.
 Stack: <a href="architecture.html">architecture.md</a>. Code: <code>lib/yard/door/</code>.
 How one person lines up with the pendant’s Google sign-in and the
 crane allowlist: <a href="access.html">access.md</a>.</p>
@@ -319,7 +321,7 @@ a real socket.</p>
 </tr>
 <tr>
 <td>yard <code>gantree.db</code> / <code>var/gantree.db</code></td>
-<td>Yes. Operator hashes, session hashes, samples, audit. Gitignored. Not a crane’s <code>data/gantry.db</code>.</td>
+<td>Yes. Operator hashes, session hashes, samples, audit, pendant Cloudflare token and Worker secrets map. Gitignored. Not a crane’s <code>data/gantry.db</code>.</td>
 </tr>
 <tr>
 <td>each crane <code>.env</code>, <code>data/</code>, OAuth files</td>
@@ -347,7 +349,8 @@ console does not become the IdP.</p>
 <h2 id="not-this">Not this</h2>
 <ul>
 <li>DDoS / slowloris / filling the disk. Login backoff is anti-guess, not
-anti-flood. In-memory; restart resets the counters.</li>
+anti-flood. In-memory; restart resets the counters. Edge limits for a
+public hostname: <a href="protections.html">Cloudflare protections</a>.</li>
 <li>A WAN-open console. Login does not make that a good idea.</li>
 <li>SSO, OIDC, email, invite links, “forgot password.”</li>
 <li>HaveIBeenPwned / zxcvbn. Offline denylist + structure checks.</li>
@@ -365,7 +368,7 @@ habit for anyone else on the network.</li>
 <code>GANTREE_LISTEN=127.0.0.1</code> + Tailscale or tunnel. No cloud firewall
 hole. Partner keys: <strong>user</strong> on that crane, not a shared admin login.
 Public hostname: <code>compose.cloudflare.yml</code> (recommended) or
-<code>compose.nginx.yml</code>.</li>
+<code>compose.nginx.yml</code>. Cloudflare protections: <a href="protections.html">protections.md</a>.</li>
 <li>Never set <code>GANTREE_DEV</code> in compose.</li>
 <li>Forgot passphrase → delete yard sqlite → setup. There is no other
 recovery.</li>
