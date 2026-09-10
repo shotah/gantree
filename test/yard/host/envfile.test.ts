@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadEnvFile, maskEnv, mergeEnv, parseEnvFile, stringifyEnvFile, writeEnvFile } from "@/lib/yard/host/envfile";
@@ -67,5 +67,31 @@ describe("envfile", () => {
       TELEGRAM_BOT_TOKEN: "t",
     });
     expect(dropInactiveMouthKeys({ TELEGRAM_BOT_TOKEN: "abc" }).TELEGRAM_BOT_TOKEN).toBe("abc");
+  });
+
+  it("drops prior search keys on load and write", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const path = join(root, ".env");
+    writeEnvFile(path, {
+      CHANNEL: "telegram",
+      BRAVE_SEARCH_API_KEY: "brave",
+      GEMINI_SEARCH_API_KEY: "old-gemini",
+      GEMINI_SEARCH_MODEL: "gemini-3.6-flash",
+      GOOGLE_PSE_API_KEY: "pse",
+      GOOGLE_PSE_ENGINE_ID: "cx",
+    });
+    expect(loadEnvFile(path)).toEqual({
+      CHANNEL: "telegram",
+      BRAVE_SEARCH_API_KEY: "brave",
+    });
+    expect(parseEnvFile(readFileSync(path, "utf8"))).toEqual({
+      CHANNEL: "telegram",
+      BRAVE_SEARCH_API_KEY: "brave",
+    });
+    writeFileSync(path, "CHANNEL=telegram\nGOOGLE_PSE_API_KEY=pse\nGEMINI_SEARCH_API_KEY=old\n");
+    expect(loadEnvFile(path)).toEqual({ CHANNEL: "telegram" });
+    writeEnvFile(path, loadEnvFile(path));
+    expect(parseEnvFile(readFileSync(path, "utf8"))).toEqual({ CHANNEL: "telegram" });
   });
 });

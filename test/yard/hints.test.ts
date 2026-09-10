@@ -34,12 +34,12 @@ describe("envHint", () => {
     expect(envHint("USER_GOOGLE_EMAIL").hint).toMatch(/workspace/i);
     expect(envHint("USER_GOOGLE_EMAIL").hint).toMatch(/not required for web_search/i);
     expect(envHint("USER_GOOGLE_EMAIL").example).toMatch(/@/);
-    expect(envHint("GOOGLE_PSE_API_KEY").hint).toMatch(/web_search/);
-    expect(envHint("GOOGLE_PSE_ENGINE_ID").hint).toMatch(/cx/i);
+    expect(envHint("BRAVE_SEARCH_API_KEY").hint).toMatch(/web_search/);
   });
 
-  it("names Custom Search keys for builtin web_search, not a second model", () => {
-    expect(envHint("GOOGLE_PSE_API_KEY").hint).toMatch(/not a second model/i);
-    expect(envHint("GOOGLE_PSE_ENGINE_ID").example).toMatch(/:/);
+  it("names Brave Search key for builtin web_search, not a second model", () => {
+    expect(envHint("BRAVE_SEARCH_API_KEY").hint).toMatch(/not a second model/i);
+    expect(envHint("BRAVE_SEARCH_API_KEY").hint).toMatch(/brave/i);
+    expect(envHint("BRAVE_SEARCH_API_KEY").example).toMatch(/dashboard/i);
   });
 });

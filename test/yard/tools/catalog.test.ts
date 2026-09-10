@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "@/lib/yard/tools/catalog";
-import { CRANE_ALWAYS_KEYS, CRANE_OPTIONAL_KEYS, PACKAGES, SLIM_GRANT, dropReplacedSearchServers, envKeysForServer, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { CRANE_ALWAYS_KEYS, CRANE_OPTIONAL_KEYS, PACKAGES, SLIM_GRANT, dropReplacedSearchKeys, dropReplacedSearchServers, envKeysForServer, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import type { CatalogEntry } from "@/lib/yard/types";
 
 const sample: CatalogEntry[] = [
@@ -126,13 +126,15 @@ describe("secretKeysForGrant", () => {
     expect(keys).not.toContain("GOOGLE_MAPS_API_KEY");
   });
 
-  it("lists USER_GOOGLE_EMAIL on google workspace, and PSE keys on the crane", () => {
+  it("lists USER_GOOGLE_EMAIL on google workspace, and Brave on the crane", () => {
     const catalog = loadCatalog();
     const google = catalog.filter((c) => c.name === "google");
-    expect(secretKeysForGrant([], [])).toEqual(expect.arrayContaining(["GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]));
+    expect(secretKeysForGrant([], [])).toEqual(expect.arrayContaining(["BRAVE_SEARCH_API_KEY"]));
+    expect(secretKeysForGrant([], [])).not.toContain("GOOGLE_PSE_API_KEY");
+    expect(secretKeysForGrant([], [])).not.toContain("GOOGLE_PSE_ENGINE_ID");
     expect(secretKeysForGrant(["google"], google)).toEqual(expect.arrayContaining(["USER_GOOGLE_EMAIL"]));
     expect(optionalKeysForGrant(["google"], google)).toEqual(
-      expect.arrayContaining(["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]),
+      expect.arrayContaining(["USER_GOOGLE_EMAIL", "BRAVE_SEARCH_API_KEY"]),
     );
     expect(envKeysForServer({ name: "google" }, google)).not.toContain("USER_GOOGLE_EMAIL");
   });
@@ -150,8 +152,7 @@ describe("secretKeysForGrant", () => {
     const secrets = secretKeysForGrant(["google"], google);
     expect(secrets).toEqual(expect.arrayContaining(["GOOGLE_OAUTH_CLIENT_SECRET", "USER_GOOGLE_EMAIL"]));
     expect(optionalKeysForGrant(["google"], google)).toEqual([
-      "GOOGLE_PSE_API_KEY",
-      "GOOGLE_PSE_ENGINE_ID",
+      "BRAVE_SEARCH_API_KEY",
       "USER_GOOGLE_EMAIL",
     ]);
     expect(envKeysForServer({ name: "google" }, google)).toEqual([
@@ -177,5 +178,18 @@ describe("dropReplacedSearchServers", () => {
       { name: "google-search", command: "mcp-gemini-google-search" },
       { name: "math", command: "mcp-go-math" },
     ]).map((s) => s.name)).toEqual(["math"]);
+  });
+});
+
+describe("dropReplacedSearchKeys", () => {
+  it("omits prior Gemini and Custom Search env", () => {
+    expect(dropReplacedSearchKeys({
+      CHANNEL: "telegram",
+      BRAVE_SEARCH_API_KEY: "keep",
+      GEMINI_SEARCH_API_KEY: "old",
+      GEMINI_SEARCH_MODEL: "gemini-3.6-flash",
+      GOOGLE_PSE_API_KEY: "pse",
+      GOOGLE_PSE_ENGINE_ID: "cx",
+    })).toEqual({ CHANNEL: "telegram", BRAVE_SEARCH_API_KEY: "keep" });
   });
 });

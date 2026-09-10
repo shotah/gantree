@@ -3,10 +3,9 @@ import type { AuthFlow, CatalogEntry, McpServer } from "../types";
 /** Completer + CHANNEL — always in Secrets. Mouth tokens follow CHANNEL. */
 export const CRANE_ALWAYS_KEYS = ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "CHANNEL"];
 
-/** Optional crane keys for builtin web_search (Google Custom Search). Not required to boot. */
+/** Optional crane keys for builtin web_search (Brave Search). Not required to boot. */
 export const CRANE_OPTIONAL_KEYS = [
-  "GOOGLE_PSE_API_KEY",
-  "GOOGLE_PSE_ENGINE_ID",
+  "BRAVE_SEARCH_API_KEY",
 ];
 
 /** Chat-mouth env. Telegram/Discord/Slack are dropped when CHANNEL is something else. Pendant keys stay. */
@@ -61,6 +60,22 @@ export function isGeminiSearchServer(server: Pick<McpServer, "name" | "command">
 /** Drop leftover google-search MCP grants — web_search is a crane builtin. */
 export function dropReplacedSearchServers(servers: McpServer[]): McpServer[] {
   return servers.filter((s) => !isGeminiSearchServer(s));
+}
+
+/** Prior search backends. Builtin web_search uses BRAVE_SEARCH_API_KEY. */
+const REPLACED_SEARCH_KEYS = [
+  "GEMINI_SEARCH_API_KEY",
+  "GEMINI_SEARCH_MODEL",
+  "GOOGLE_PSE_API_KEY",
+  "GOOGLE_PSE_ENGINE_ID",
+];
+
+export function dropReplacedSearchKeys(env: Record<string, string>): Record<string, string> {
+  const next = { ...env };
+  for (const k of REPLACED_SEARCH_KEYS) {
+    delete next[k];
+  }
+  return next;
 }
 
 /**

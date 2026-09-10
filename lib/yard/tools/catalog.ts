@@ -16,6 +16,7 @@ export {
   PACKAGES,
   SLIM_GRANT,
   dropInactiveMouthKeys,
+  dropReplacedSearchKeys,
   dropReplacedSearchServers,
   envKeysForServer,
   mouthKeysForChannel,

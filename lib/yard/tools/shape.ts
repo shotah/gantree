@@ -18,7 +18,7 @@ export const HOST_SHAPE: Record<string, HostShape> = {
     args: ["--preset", "everyday"],
     auth_args: ["auth"],
     authFlow: "pkce",
-    blurb: "Workspace. Client id/secret, then OAuth hop. Optional: USER_GOOGLE_EMAIL. Builtin web_search uses GOOGLE_PSE_API_KEY + GOOGLE_PSE_ENGINE_ID on the crane, not this grant.",
+    blurb: "Workspace. Client id/secret, then OAuth hop. Optional: USER_GOOGLE_EMAIL. Builtin web_search uses BRAVE_SEARCH_API_KEY on the crane, not this grant.",
   },
   ghealth: {
     envKeys: ["GOOGLE_HEALTH_CLIENT_ID", "GOOGLE_HEALTH_CLIENT_SECRET"],

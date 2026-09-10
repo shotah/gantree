@@ -1,10 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dropInactiveMouthKeys } from "../tools/packages";
+import { dropInactiveMouthKeys, dropReplacedSearchKeys } from "../tools/packages";
 import { writeText } from "./files";
 
 const SECRET_KEYS = new Set([
   "LLM_API_KEY",
-  "GEMINI_SEARCH_API_KEY",
   "TELEGRAM_BOT_TOKEN",
   "DISCORD_BOT_TOKEN",
   "SLACK_BOT_TOKEN",
@@ -36,7 +35,7 @@ export function loadEnvFile(path: string | null): Record<string, string> {
   if (!path || !existsSync(path)) {
     return {};
   }
-  return parseEnvFile(readFileSync(path, "utf8"));
+  return dropReplacedSearchKeys(parseEnvFile(readFileSync(path, "utf8")));
 }
 
 export function stringifyEnvFile(env: Record<string, string>): string {
@@ -49,7 +48,7 @@ export function stringifyEnvFile(env: Record<string, string>): string {
 }
 
 export function writeEnvFile(path: string, env: Record<string, string>): void {
-  writeText(path, stringifyEnvFile(dropInactiveMouthKeys(env)));
+  writeText(path, stringifyEnvFile(dropInactiveMouthKeys(dropReplacedSearchKeys(env))));
 }
 
 export function maskEnv(env: Record<string, string>): Record<string, { set: boolean; secret: boolean; value: string }> {

@@ -370,7 +370,7 @@ describe("AgentDashboard secrets", () => {
     expect(screen.getByRole("button", { name: /3 need a key/ })).toBeTruthy();
   });
 
-  it("lists optional GOOGLE_PSE_* for builtin web_search", async () => {
+  it("lists optional BRAVE_SEARCH_API_KEY for builtin web_search", async () => {
     mockCrane({
       persona: "# you\n",
       self: "# me\n",
@@ -382,8 +382,9 @@ describe("AgentDashboard secrets", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
     await waitFor(() => expect(screen.getByLabelText("LLM_API_KEY")).toBeTruthy());
-    expect(screen.getByLabelText("GOOGLE_PSE_API_KEY")).toBeTruthy();
-    expect(screen.getByLabelText("GOOGLE_PSE_ENGINE_ID")).toBeTruthy();
+    expect(screen.getByLabelText("BRAVE_SEARCH_API_KEY")).toBeTruthy();
+    expect(screen.queryByLabelText("GOOGLE_PSE_API_KEY")).toBeNull();
+    expect(screen.queryByLabelText("GOOGLE_PSE_ENGINE_ID")).toBeNull();
     expect(screen.queryByLabelText("GEMINI_SEARCH_API_KEY")).toBeNull();
     expect(screen.queryByLabelText("GEMINI_API_KEY")).toBeNull();
     expect(screen.getByRole("button", { name: /2 need a key/ })).toBeTruthy();

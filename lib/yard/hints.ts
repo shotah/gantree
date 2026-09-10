@@ -269,25 +269,13 @@ const ENV_HINTS: Record<string, HintCopy> = {
     hint: "Who may talk: email, Google sub, or sub:email. Email is enough. Empty fails boot. The crane does not rewrite this after they connect — recreate after you save.",
     example: "ada@example.com, 1182…:bob@example.com",
   },
-  GEMINI_SEARCH_API_KEY: {
-    hint: "Leftover. Builtin web_search uses GOOGLE_PSE_API_KEY now, not a Gemini key.",
-    example: "AIzaSy…",
-  },
-  GEMINI_SEARCH_MODEL: {
-    hint: "Leftover. Builtin web_search does not call a model.",
-    example: "gemini-3.6-flash",
-  },
   USER_GOOGLE_EMAIL: {
     hint: "Default Google account for workspace tools (Gmail, Calendar, Drive). Not required for web_search. Not a password, not the AI Studio key.",
     example: "you@gmail.com",
   },
-  GOOGLE_PSE_API_KEY: {
-    hint: "Custom Search JSON API key for builtin web_search. Plain Google results (titles, URLs, snippets) — not a second model. Pair with GOOGLE_PSE_ENGINE_ID.",
-    example: "AIzaSy…",
-  },
-  GOOGLE_PSE_ENGINE_ID: {
-    hint: "Programmable Search Engine cx id that pairs with GOOGLE_PSE_API_KEY for builtin web_search.",
-    example: "012345678901234567890:abcdefghijk",
+  BRAVE_SEARCH_API_KEY: {
+    hint: "Brave Search subscription token for builtin web_search. Titles, URLs, snippets — not a second model. Subscribe at api-dashboard.search.brave.com.",
+    example: "a long token from the dashboard",
   },
   GOOGLE_GENAI_USE_VERTEXAI: {
     hint: "Set true only if a granted tool still uses Vertex. Builtin web_search does not.",
