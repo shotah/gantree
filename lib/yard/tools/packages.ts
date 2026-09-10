@@ -1,17 +1,45 @@
 import type { AuthFlow, CatalogEntry, McpServer } from "../types";
 
-/** Crane mouth — always in scope. Not MCP. */
+/** Completer + CHANNEL — always in Secrets. Mouth tokens follow CHANNEL. */
+export const CRANE_ALWAYS_KEYS = ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "CHANNEL"];
+
+/** Chat-mouth env. Telegram/Discord/Slack are dropped when CHANNEL is something else. Pendant keys stay. */
+export const MOUTH_ENV_KEYS: Record<string, string[]> = {
+  telegram: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS"],
+  discord: ["DISCORD_BOT_TOKEN"],
+  slack: ["SLACK_BOT_TOKEN", "SLACK_APP_TOKEN"],
+  pendant: ["PENDANT_MAILBOX_URL", "PENDANT_BEARER", "PENDANT_ALLOWED_USERS"],
+};
+
+export function mouthKeysForChannel(channel: string | null | undefined): string[] {
+  const c = (channel ?? "").trim().toLowerCase();
+  return [...(MOUTH_ENV_KEYS[c] ?? [])];
+}
+
+/** Union of always + telegram + pendant — every core key the yard knows. */
 export const CRANE_CORE_KEYS = [
-  "LLM_BASE_URL",
-  "LLM_API_KEY",
-  "LLM_MODEL",
-  "CHANNEL",
-  "TELEGRAM_BOT_TOKEN",
-  "TELEGRAM_ALLOWED_USERS",
-  "PENDANT_MAILBOX_URL",
-  "PENDANT_BEARER",
-  "PENDANT_ALLOWED_USERS",
+  ...CRANE_ALWAYS_KEYS,
+  ...MOUTH_ENV_KEYS.telegram,
+  ...MOUTH_ENV_KEYS.pendant,
 ];
+
+/** Drop Telegram/Discord/Slack vars when CHANNEL is set and is not that mouth. Pendant mailbox keys stay. */
+export function dropInactiveMouthKeys(env: Record<string, string>): Record<string, string> {
+  const channel = (env.CHANNEL || "").trim().toLowerCase();
+  if (!channel) {
+    return env;
+  }
+  const next = { ...env };
+  for (const [mouth, keys] of Object.entries(MOUTH_ENV_KEYS)) {
+    if (mouth === "pendant" || mouth === channel) {
+      continue;
+    }
+    for (const k of keys) {
+      delete next[k];
+    }
+  }
+  return next;
+}
 
 /** Yard GitHub org — google-search must not fetch zchee/mcp-gemini-search. */
 const YARD_GITHUB = "shotah";
@@ -158,13 +186,14 @@ export function secretKeysForGrant(
   granted: string[],
   catalog: CatalogEntry[],
   servers: Pick<McpServer, "name" | "env_keys">[] = [],
+  channel: string | null = null,
 ): string[] {
   const extra = [
     ...catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.envKeys),
     ...catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.optionalEnvKeys ?? []),
     ...servers.filter((s) => granted.includes(s.name)).flatMap((s) => s.env_keys ?? []),
   ];
-  return uniqueKeys([...CRANE_CORE_KEYS, ...extra]);
+  return uniqueKeys([...CRANE_ALWAYS_KEYS, ...mouthKeysForChannel(channel), ...extra]);
 }
 
 /** Optional Secrets fields — missing values must not skip the server. */

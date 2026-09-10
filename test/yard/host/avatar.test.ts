@@ -8,6 +8,7 @@ import {
   copyAvatarTo,
   findAvatar,
   mailboxToAvatarUrl,
+  pushStoredAvatar,
   saveAvatar,
   setPendantProfilePhoto,
   setTelegramProfilePhoto,
@@ -299,5 +300,34 @@ describe("copyAvatarTo", () => {
     writeFileSync(join(persona, "avatar.jpg"), fakeJpeg());
     copyAvatarTo(persona, dest);
     expect(existsSync(join(dest, "avatar.jpg"))).toBe(true);
+  });
+});
+
+describe("pushStoredAvatar", () => {
+  it("re-pushes the on-disk jpeg to pendant", async () => {
+    const persona = join(tmp(), "persona");
+    mkdirSync(persona);
+    writeFileSync(join(persona, "avatar.jpg"), fakeJpeg());
+    let url = "";
+    const post: TelegramPoster = async (u) => {
+      url = u;
+      return { status: 200, body: JSON.stringify({ ok: true, rev: 3 }) };
+    };
+    const r = await pushStoredAvatar({
+      personaDir: persona,
+      channel: "pendant",
+      token: null,
+      mailboxUrl: "wss://example.workers.dev/ws/kit",
+      bearer: "tok",
+      post,
+    });
+    expect(r?.pendant).toBe("updated");
+    expect(url).toContain("/api/avatar?slug=kit");
+  });
+
+  it("returns null when there is no file", async () => {
+    const persona = join(tmp(), "persona");
+    mkdirSync(persona);
+    expect(await pushStoredAvatar({ personaDir: persona, channel: "pendant", token: null })).toBeNull();
   });
 });

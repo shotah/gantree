@@ -8,12 +8,15 @@ import { PACKAGES, fallbackEntry, parseHostManifest, uniqueKeys, type PackageRef
 import { HOST_SHAPE } from "./shape";
 
 export {
+  CRANE_ALWAYS_KEYS,
   CRANE_CORE_KEYS,
   LIFE_CAST_GRANT,
   LIFE_GRANT,
   PACKAGES,
   SLIM_GRANT,
+  dropInactiveMouthKeys,
   envKeysForServer,
+  mouthKeysForChannel,
   optionalKeysForGrant,
   parseHostManifest,
   secretKeysForGrant,

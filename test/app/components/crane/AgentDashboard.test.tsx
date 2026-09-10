@@ -61,12 +61,14 @@ function mockCrane(
     catalog?: { name: string; command: string; envKeys: string[]; optionalEnvKeys?: string[]; blurb: string }[];
     tags?: string[];
     tagColors?: Record<string, string>;
+    channel?: string;
+    avatarRev?: number | null;
   },
   canMutate = true,
   canBuild = false,
 ) {
   const puts: unknown[] = [];
-  const disk = { ...files, tags: files.tags ?? [], tagColors: files.tagColors ?? {} };
+  const disk = { ...files, tags: files.tags ?? [], tagColors: files.tagColors ?? {}, channel: files.channel ?? "telegram", avatarRev: files.avatarRev ?? null };
   vi.mocked(yardFetch).mockImplementation((input, init) => {
     const u = String(input);
     if (u.includes("/files") && init?.method === "PUT") {
@@ -149,7 +151,7 @@ function mockCrane(
     }
     if (u === "/api/gantries/noodles") {
       return json({
-        ...card({ slug: "noodles", channel: "stdio", canMutate, canBuild, personaDir: "/tmp/persona", tags: disk.tags }),
+        ...card({ slug: "noodles", channel: disk.channel, canMutate, canBuild, personaDir: "/tmp/persona", tags: disk.tags, avatarRev: disk.avatarRev }),
         tagColors: disk.tagColors,
       });
     }
@@ -457,6 +459,46 @@ describe("AgentDashboard secrets", () => {
 
     fireEvent.change(token, { target: { value: "123:abc" } });
     expect((screen.getByLabelText("TELEGRAM_BOT_TOKEN") as HTMLInputElement).type).toBe("password");
+  });
+
+  it("does not require telegram keys when CHANNEL is pendant", async () => {
+    mockCrane({
+      persona: "# you\n",
+      self: "# me\n",
+      writable: true,
+      channel: "pendant",
+      env: {
+        CHANNEL: { set: true, secret: false, value: "pendant" },
+        TELEGRAM_BOT_TOKEN: { set: true, secret: true, value: "" },
+        LLM_API_KEY: { set: true, secret: true, value: "" },
+        PENDANT_BEARER: { set: false, secret: true, value: "" },
+      },
+    });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
+    await waitFor(() => expect(screen.getByLabelText("PENDANT_BEARER")).toBeTruthy());
+    expect(screen.queryByLabelText("TELEGRAM_BOT_TOKEN")).toBeNull();
+    expect(screen.queryByLabelText("TELEGRAM_ALLOWED_USERS")).toBeNull();
+    expect(screen.getByRole("button", { name: /needs a key/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Photo/ }));
+    await waitFor(() => expect(screen.getByText(/Worker face/)).toBeTruthy());
+    expect(screen.queryByText(/Telegram bots/)).toBeNull();
+  });
+
+  it("offers Push to pendant when a pendant crane already has a photo", async () => {
+    mockCrane({
+      persona: "# you\n",
+      self: "# me\n",
+      writable: true,
+      channel: "pendant",
+      avatarRev: 9,
+      env: { CHANNEL: { set: true, secret: false, value: "pendant" } },
+    });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Photo/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Push to pendant" })).toBeTruthy());
   });
 
   it("shows the stored LLM_BASE_URL in the field and flags a non-URL", async () => {

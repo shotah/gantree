@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadEnvFile, maskEnv, mergeEnv, parseEnvFile, stringifyEnvFile, writeEnvFile } from "@/lib/yard/host/envfile";
+import { dropInactiveMouthKeys } from "@/lib/yard/tools/packages";
 
 const dirs: string[] = [];
 
@@ -42,5 +43,29 @@ describe("envfile", () => {
     writeEnvFile(path, { CHANNEL: "stdio" });
     expect(loadEnvFile(path)).toEqual({ CHANNEL: "stdio" });
     expect(parseEnvFile("# c\n\nNOEQ\n=bad\nOK=1\n")).toEqual({ OK: "1" });
+  });
+
+  it("drops telegram/discord/slack keys when CHANNEL is another mouth", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const path = join(root, ".env");
+    writeEnvFile(path, {
+      CHANNEL: "pendant",
+      TELEGRAM_BOT_TOKEN: "123:abc",
+      TELEGRAM_ALLOWED_USERS: "99",
+      DISCORD_BOT_TOKEN: "d",
+      PENDANT_BEARER: "keep-me",
+      LLM_API_KEY: "k",
+    });
+    expect(loadEnvFile(path)).toEqual({
+      CHANNEL: "pendant",
+      PENDANT_BEARER: "keep-me",
+      LLM_API_KEY: "k",
+    });
+    expect(dropInactiveMouthKeys({ CHANNEL: "telegram", TELEGRAM_BOT_TOKEN: "t", DISCORD_BOT_TOKEN: "d" })).toEqual({
+      CHANNEL: "telegram",
+      TELEGRAM_BOT_TOKEN: "t",
+    });
+    expect(dropInactiveMouthKeys({ TELEGRAM_BOT_TOKEN: "abc" }).TELEGRAM_BOT_TOKEN).toBe("abc");
   });
 });

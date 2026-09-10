@@ -237,8 +237,8 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "gemini-3.6-flash",
   },
   CHANNEL: {
-    hint: "Mouth: telegram, discord, slack, pendant, or stdio. Changing this does not mint a new bot — paste that channel's token too.",
-    example: "telegram",
+    hint: "Mouth: telegram, discord, slack, pendant, or stdio. Saving a different mouth drops that old chat token (Telegram / Discord / Slack). Pendant mailbox keys stay. Paste the new mouth's token, or mint a pendant bearer.",
+    example: "pendant",
   },
   TELEGRAM_BOT_TOKEN: HINTS.botToken,
   TELEGRAM_ALLOWED_USERS: {

@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   redactToken,
@@ -230,4 +230,14 @@ export async function applyAvatar(opts: {
   }
 
   return { detail: notes.join("; "), telegram, pendant, rev: saved.rev };
+}
+
+/** Re-push persona/avatar.jpg to the current mouth without a new upload. */
+export async function pushStoredAvatar(opts: Omit<Parameters<typeof applyAvatar>[0], "bytes">): Promise<AvatarApply | null> {
+  const hit = findAvatar(opts.personaDir);
+  if (!hit) {
+    return null;
+  }
+  const bytes = new Uint8Array(readFileSync(hit.path));
+  return applyAvatar({ ...opts, bytes });
 }

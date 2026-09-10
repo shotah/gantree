@@ -91,7 +91,9 @@ describe("files env write", () => {
     );
     expect(channel.status).toBe(200);
     expect(readFileSync(envFile, "utf8")).toContain("CHANNEL=stdio");
+    expect(readFileSync(envFile, "utf8")).not.toContain("TELEGRAM_BOT_TOKEN");
 
+    writeFileSync(envFile, "TELEGRAM_BOT_TOKEN=old-secret\nCHANNEL=telegram\n");
     const ok = await PUT(
       await authed(created.token, {
         method: "PUT",

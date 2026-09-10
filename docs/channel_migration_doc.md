@@ -22,9 +22,9 @@ Worker + Settings: [operators.md](operators.md) ·
 | Kit still on Telegram **and** a phone mouth | Two processes. [Clone](#keep-telegram-too) Kit, migrate the copy. Memories fork from that stamp. |
 | A brand-new pendant crane | Build, channel `pendant`. Not this page. |
 
-The bot token (Telegram / Discord / Slack) can stay in Secrets. It will
-not poll while `CHANNEL=pendant`. Paste it back if you ever switch the
-mouth the other way.
+The bot token (Telegram / Discord / Slack) is dropped from `.env` when
+you save `CHANNEL=pendant`. Paste it back if you ever switch the mouth
+the other way. Pendant mailbox keys stay.
 
 ---
 

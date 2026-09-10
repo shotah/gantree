@@ -10,6 +10,7 @@ import {
   stateOf,
   type ListedContainer,
 } from "../host/docker";
+import { loadEnvFile } from "../host/envfile";
 import { envKeyNames, loadGantreeToml, tomlPath, yardRoot } from "../host/files";
 import { coerceTagColors, coerceTags } from "./tags";
 import { decodeDockerLogs, parseLogText } from "../host/logs";
@@ -243,12 +244,11 @@ function cardFrom(opts: {
     dataDir: opts.dataDir,
   });
   const env = envKeyNames(opts.envFile);
+  const fileChannel = (loadEnvFile(opts.envFile).CHANNEL || "").trim() || null;
   if (!model) {
     model = env.valuesPresent.LLM_MODEL ? "set in .env" : null;
   }
-  if (!channel) {
-    channel = pickChannel(env.keys);
-  }
+  channel = fileChannel || channel || pickChannel(env.keys);
   return {
     slug: opts.slug,
     containerName: opts.containerName,

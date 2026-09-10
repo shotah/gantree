@@ -236,6 +236,22 @@ export function useAgentDashboard(slug: string) {
     refresh();
   }
 
+  async function pushPhoto() {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const body = new FormData();
+      body.append("push", "1");
+      const res = await yardFetch(`/api/gantries/${slug}/avatar`, { method: "POST", body });
+      const data = (await res.json()) as { detail?: string; error?: string };
+      setNotice(data.detail || data.error || res.statusText);
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : String(err));
+    }
+    setBusy(false);
+    refresh();
+  }
+
   async function loadTemplate(which: "persona" | "self") {
     setBusy(true);
     const res = await yardFetch(`/api/gantries/${slug}/files?templates=1`);
@@ -339,7 +355,9 @@ export function useAgentDashboard(slug: string) {
   }
 
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
-  const secretKeys = secretKeysForGrant([...granted], catalog, files?.servers ?? []);
+  const mouthChannel
+    = (secretDraft.CHANNEL ?? files?.env?.CHANNEL?.value ?? gantry?.channel ?? "").trim();
+  const secretKeys = secretKeysForGrant([...granted], catalog, files?.servers ?? [], mouthChannel);
   const optionalSecretKeys = new Set(optionalKeysForGrant([...granted], catalog));
   const missingSecrets = files
     ? secretKeys.filter((k) => {
@@ -354,15 +372,9 @@ export function useAgentDashboard(slug: string) {
   const admin = operator?.role === "admin";
   const mutate = Boolean(gantry?.canMutate || files?.writable);
   const canBuild = Boolean(gantry?.canBuild);
-  const telegramOn
-    = shouldPushTelegram(gantry?.channel ?? null)
-      || shouldPushTelegram(files?.env?.CHANNEL?.value ?? null)
-      || Boolean(files?.env?.TELEGRAM_BOT_TOKEN?.set);
-  const pendantOn
-    = shouldPushPendant(gantry?.channel ?? null)
-      || shouldPushPendant(files?.env?.CHANNEL?.value ?? null)
-      || Boolean(files?.env?.PENDANT_MAILBOX_URL?.set)
-      || Boolean(files?.env?.PENDANT_BEARER?.set);
+  const savedMouth = (files?.env?.CHANNEL?.value ?? gantry?.channel ?? "").trim();
+  const telegramOn = shouldPushTelegram(savedMouth);
+  const pendantOn = shouldPushPendant(savedMouth);
   const since = windowStart(spendWindow, now);
   const allowedBuckets = bucketsForWindow(spendWindow);
   const bucket = allowedBuckets.includes(spendBucket) ? spendBucket : "cumulative";
@@ -432,6 +444,7 @@ export function useAgentDashboard(slug: string) {
     toggleGrant,
     fetchBins,
     uploadPhoto,
+    pushPhoto,
     loadTemplate,
     saveMarkdown,
     saveEnv,

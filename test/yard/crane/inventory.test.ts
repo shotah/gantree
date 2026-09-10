@@ -195,6 +195,31 @@ env_file = "./.env"
     expect(slack?.channel).toBe("slack");
   });
 
+  it("prefers CHANNEL in .env over a leftover TELEGRAM_BOT_TOKEN", async () => {
+    const root = yard(`
+[[gantry]]
+slug = "kit"
+container = "kit"
+data_dir = "./d"
+persona_dir = "./p"
+mcp_manifest = "./mcp.toml"
+env_file = "./.env"
+`);
+    writeFileSync(join(root, "mcp.toml"), stringifyMcpToml([]));
+    writeFileSync(join(root, ".env"), "CHANNEL=pendant\nTELEGRAM_BOT_TOKEN=leftover\nPENDANT_BEARER=b\n");
+    vi.mocked(listGantryContainers).mockResolvedValue([listed({ name: "kit", labels: { "gantree.slug": "kit" } })]);
+    vi.mocked(inspectByName).mockResolvedValue({
+      listed: {} as never,
+      info: {
+        Config: { Image: DEFAULT_IMAGE, Env: ["CHANNEL="] },
+        State: { Status: "running", StartedAt: "2026-08-22T18:00:00.000Z" },
+        RestartCount: 0,
+      },
+    } as never);
+
+    expect((await listYard()).gantries[0]?.channel).toBe("pendant");
+  });
+
   it("discovers unlabeled toml by docker list and records docker errors", async () => {
     yard("yard = \"cloud\"\n");
     vi.mocked(listGantryContainers).mockResolvedValue([

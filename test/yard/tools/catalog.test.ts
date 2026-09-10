@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "@/lib/yard/tools/catalog";
-import { CRANE_CORE_KEYS, PACKAGES, envKeysForServer, isUpstreamGeminiSearchUrl, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { CRANE_ALWAYS_KEYS, PACKAGES, envKeysForServer, isUpstreamGeminiSearchUrl, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import type { CatalogEntry } from "@/lib/yard/types";
 
 const sample: CatalogEntry[] = [
@@ -101,8 +101,27 @@ describe("loadCatalog", () => {
 });
 
 describe("secretKeysForGrant", () => {
-  it("is just the crane mouth when nothing is granted", () => {
-    expect(secretKeysForGrant([], sample)).toEqual(CRANE_CORE_KEYS);
+  it("is just the completer when nothing is granted and CHANNEL is unset", () => {
+    expect(secretKeysForGrant([], sample)).toEqual(CRANE_ALWAYS_KEYS);
+  });
+
+  it("lists telegram mouth keys only for telegram", () => {
+    const keys = secretKeysForGrant([], sample, [], "telegram");
+    expect(keys).toEqual([...CRANE_ALWAYS_KEYS, ...["TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS"]]);
+    expect(keys).not.toContain("PENDANT_BEARER");
+  });
+
+  it("lists pendant mouth keys only for pendant", () => {
+    const keys = secretKeysForGrant([], sample, [], "pendant");
+    expect(keys).toContain("PENDANT_BEARER");
+    expect(keys).toContain("PENDANT_ALLOWED_USERS");
+    expect(keys).not.toContain("TELEGRAM_BOT_TOKEN");
+  });
+
+  it("lists discord token for discord, not telegram", () => {
+    const keys = secretKeysForGrant([], sample, [], "discord");
+    expect(keys).toContain("DISCORD_BOT_TOKEN");
+    expect(keys).not.toContain("TELEGRAM_BOT_TOKEN");
   });
 
   it("adds only the granted server's keys", () => {

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { dropInactiveMouthKeys } from "../tools/packages";
 import { writeText } from "./files";
 
 const SECRET_KEYS = new Set([
@@ -48,7 +49,7 @@ export function stringifyEnvFile(env: Record<string, string>): string {
 }
 
 export function writeEnvFile(path: string, env: Record<string, string>): void {
-  writeText(path, stringifyEnvFile(env));
+  writeText(path, stringifyEnvFile(dropInactiveMouthKeys(env)));
 }
 
 export function maskEnv(env: Record<string, string>): Record<string, { set: boolean; secret: boolean; value: string }> {

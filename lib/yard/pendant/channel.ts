@@ -1,6 +1,7 @@
-import { loadEnvFile, mergeEnv, writeEnvFile } from "../host/envfile";
 import { getGantry } from "../crane/inventory";
 import { shouldPushPendant } from "../crane/pendantShape";
+import { pushStoredAvatar } from "../host/avatar";
+import { loadEnvFile, mergeEnv, writeEnvFile } from "../host/envfile";
 import {
   dropCraneBearer,
   formatCraneBearers,
@@ -95,9 +96,24 @@ export async function rotatePendantBearer(
     return provisioned;
   }
   writeEnvFile(g.envFile, mergeEnv(file, provisioned.env));
+  let detail = "rotated bearer — recreate to apply (do not just restart)";
+  if (g.personaDir) {
+    const pushed = await pushStoredAvatar({
+      personaDir: g.personaDir,
+      channel: "pendant",
+      token: null,
+      mailboxUrl: provisioned.env.PENDANT_MAILBOX_URL,
+      bearer: provisioned.env.PENDANT_BEARER,
+    });
+    if (pushed?.pendant === "updated") {
+      detail = `${detail} Face pushed to pendant.`;
+    } else if (pushed?.pendant === "failed") {
+      detail = `${detail} Face: ${pushed.detail}`;
+    }
+  }
   return {
     ok: true,
-    detail: "rotated bearer — recreate to apply (do not just restart)",
+    detail,
   };
 }
 
