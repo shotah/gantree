@@ -107,7 +107,8 @@ export const SHOT_CRANES: ShotCrane[] = [
     env: {
       LLM_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/openai/",
       LLM_API_KEY: "shot-llm-kit",
-      GEMINI_SEARCH_API_KEY: "shot-search-kit",
+      GOOGLE_PSE_API_KEY: "shot-search-kit",
+      GOOGLE_PSE_ENGINE_ID: "shot-cx:kit",
       TELEGRAM_BOT_TOKEN: "410000001:AAHshotKitxxxxxxxxxxxxxxxxxxxxxxx",
       TELEGRAM_ALLOWED_USERS: TG(["bob", "mei", "sam"]),
     },
@@ -124,7 +125,8 @@ export const SHOT_CRANES: ShotCrane[] = [
     env: {
       LLM_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/openai/",
       LLM_API_KEY: "shot-llm-ada",
-      GEMINI_SEARCH_API_KEY: "shot-search-ada",
+      GOOGLE_PSE_API_KEY: "shot-search-ada",
+      GOOGLE_PSE_ENGINE_ID: "shot-cx:ada",
       GOOGLE_OAUTH_CLIENT_ID: "shot-google-id",
       GOOGLE_OAUTH_CLIENT_SECRET: "shot-google-secret",
       GOOGLE_MAPS_API_KEY: "shot-maps-ada",
@@ -144,7 +146,8 @@ export const SHOT_CRANES: ShotCrane[] = [
     env: {
       LLM_BASE_URL: "https://api.x.ai/v1",
       LLM_API_KEY: "shot-llm-jules",
-      GEMINI_SEARCH_API_KEY: "shot-search-jules",
+      GOOGLE_PSE_API_KEY: "shot-search-jules",
+      GOOGLE_PSE_ENGINE_ID: "shot-cx:jules",
       TELEGRAM_BOT_TOKEN: "410000003:AAHshotJulesxxxxxxxxxxxxxxxxxxxxx",
       TELEGRAM_ALLOWED_USERS: TG(["nia", "mei"]),
     },
@@ -161,7 +164,8 @@ export const SHOT_CRANES: ShotCrane[] = [
     env: {
       LLM_BASE_URL: "http://127.0.0.1:11434/v1",
       LLM_API_KEY: "ollama",
-      GEMINI_SEARCH_API_KEY: "shot-search-moss",
+      GOOGLE_PSE_API_KEY: "shot-search-moss",
+      GOOGLE_PSE_ENGINE_ID: "shot-cx:moss",
       GOOGLE_OAUTH_CLIENT_ID: "shot-google-id",
       GOOGLE_OAUTH_CLIENT_SECRET: "shot-google-secret",
       GOOGLE_MAPS_API_KEY: "shot-maps-moss",
@@ -183,7 +187,8 @@ export const SHOT_CRANES: ShotCrane[] = [
     env: {
       LLM_BASE_URL: "https://api.openai.com/v1",
       LLM_API_KEY: "shot-llm-piper",
-      GEMINI_SEARCH_API_KEY: "shot-search-piper",
+      GOOGLE_PSE_API_KEY: "shot-search-piper",
+      GOOGLE_PSE_ENGINE_ID: "shot-cx:piper",
       GOOGLE_OAUTH_CLIENT_ID: "shot-google-id",
       GOOGLE_OAUTH_CLIENT_SECRET: "shot-google-secret",
       GOOGLE_MAPS_API_KEY: "shot-maps-piper",

@@ -22,15 +22,6 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
       envKeys: [],
       blurb: "",
     },
-    {
-      name: "google-search",
-      command: "mcp-gemini-google-search",
-      download_url:
-        "https://github.com/shotah/mcp-gemini-search/releases/download/{tag}/mcp-gemini-google-search_{version}_{os}_{arch}.tar.gz",
-      download_tag: "latest",
-      envKeys: [],
-      blurb: "",
-    },
   ],
 }));
 
@@ -162,7 +153,7 @@ describe("kickAuth / exchangeAuth / waitAuth / toolsFetch", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  it("rewrites a zchee google-search URL before tools-fetch", async () => {
+  it("scrubs leftover google-search before tools-fetch", async () => {
     const root = mkdtempSync(join(process.cwd(), ".tmp-"));
     const dataDir = join(root, "data");
     mkdirSync(dataDir);
@@ -173,22 +164,20 @@ describe("kickAuth / exchangeAuth / waitAuth / toolsFetch", () => {
     );
     vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, dataDir }));
     vi.mocked(execGantry).mockResolvedValue({
-      text: "tools-fetch: done installed=1 skipped=0 total=1",
+      text: "tools-fetch: no download_url servers in manifest",
       exitCode: 0,
     });
     const out = await toolsFetch("kit");
     expect(out.ok).toBe(true);
+    expect(readFileSync(mcp, "utf8")).not.toContain("google-search");
     expect(vi.mocked(execGantry).mock.calls.at(-1)?.[1]).toEqual([
       "tools-fetch",
       "--outdir",
       "/data/bin",
       "--prune",
       "--manifest",
-      "/data/.gantree-fetch.toml",
+      "/etc/gantry/mcp.toml",
     ]);
-    const fetchToml = readFileSync(join(dataDir, ".gantree-fetch.toml"), "utf8");
-    expect(fetchToml).toContain("github.com/shotah/mcp-gemini-search");
-    expect(fetchToml).not.toMatch(/zchee/);
     rmSync(root, { recursive: true, force: true });
   });
 });

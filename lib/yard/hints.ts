@@ -270,35 +270,35 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "ada@example.com, 1182…:bob@example.com",
   },
   GEMINI_SEARCH_API_KEY: {
-    hint: "Google AI Studio key for google-search. Wins over the crane LLM_API_KEY. Set this when the mouth is a local model.",
+    hint: "Leftover. Builtin web_search uses GOOGLE_PSE_API_KEY now, not a Gemini key.",
     example: "AIzaSy…",
   },
   GEMINI_SEARCH_MODEL: {
-    hint: "Gemini model for google-search grounding. Wins over LLM_MODEL. Blank uses the crane mouth, then gemini-3.6-flash.",
+    hint: "Leftover. Builtin web_search does not call a model.",
     example: "gemini-3.6-flash",
   },
   USER_GOOGLE_EMAIL: {
-    hint: "Default Google account for workspace tools (Gmail, Calendar, Drive). Not required for google-search. Not a password, not the AI Studio key.",
+    hint: "Default Google account for workspace tools (Gmail, Calendar, Drive). Not required for web_search. Not a password, not the AI Studio key.",
     example: "you@gmail.com",
   },
   GOOGLE_PSE_API_KEY: {
-    hint: "Programmable Search Engine key for google__search_query. Not GEMINI_SEARCH_API_KEY. General web search uses google-search instead.",
+    hint: "Custom Search JSON API key for builtin web_search. Plain Google results (titles, URLs, snippets) — not a second model. Pair with GOOGLE_PSE_ENGINE_ID.",
     example: "AIzaSy…",
   },
   GOOGLE_PSE_ENGINE_ID: {
-    hint: "Programmable Search Engine cx id that pairs with GOOGLE_PSE_API_KEY.",
+    hint: "Programmable Search Engine cx id that pairs with GOOGLE_PSE_API_KEY for builtin web_search.",
     example: "012345678901234567890:abcdefghijk",
   },
   GOOGLE_GENAI_USE_VERTEXAI: {
-    hint: "Set true to send google-search through Vertex AI instead of AI Studio. Then GOOGLE_CLOUD_PROJECT is required.",
+    hint: "Set true only if a granted tool still uses Vertex. Builtin web_search does not.",
     example: "true",
   },
   GOOGLE_CLOUD_PROJECT: {
-    hint: "GCP project id for google-search on Vertex. Required when GOOGLE_GENAI_USE_VERTEXAI is on. Not an API key.",
+    hint: "GCP project id. Not used by builtin web_search.",
     example: "my-gcp-project",
   },
   GOOGLE_CLOUD_LOCATION: {
-    hint: "Vertex region for google-search. Blank defaults to global.",
+    hint: "Vertex region. Not used by builtin web_search. Blank defaults to global.",
     example: "global",
   },
   GOOGLE_MAPS_API_KEY: {

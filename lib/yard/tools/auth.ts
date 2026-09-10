@@ -5,6 +5,7 @@ import { parseMcpToml, readText, stringifyMcpToml, writeText } from "../host/fil
 import type { AuthFlow, GantryCard } from "../types";
 import { loadCatalog } from "./catalog";
 import { enrichDownloadUrls } from "./grant";
+import { dropReplacedSearchServers } from "./packages";
 
 export type AuthOp = "start" | "exchange" | "wait";
 
@@ -95,7 +96,11 @@ export function fetchNeedsReload(detail: string): boolean {
 const FETCH_MANIFEST = ".gantree-fetch.toml";
 
 function toolsFetchArgs(g: Pick<GantryCard, "mcpManifest" | "dataDir">): string[] {
-  const listed = parseMcpToml(readText(g.mcpManifest));
+  const raw = parseMcpToml(readText(g.mcpManifest));
+  const listed = dropReplacedSearchServers(raw);
+  if (listed.length !== raw.length && g.mcpManifest) {
+    writeText(g.mcpManifest, stringifyMcpToml(listed));
+  }
   const base = ["tools-fetch", "--outdir", "/data/bin", "--prune", "--manifest", "/etc/gantry/mcp.toml"];
   if (listed.length === 0) {
     return base;

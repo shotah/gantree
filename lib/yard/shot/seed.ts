@@ -291,7 +291,7 @@ function seedMetrics(now: number): void {
     dropCraneSamples(crane.slug);
     const rng = mulberry(hashSeed(crane.slug));
     const users = SHOT_CRANE_USERS[crane.slug] ?? ["41001001"];
-    const published = crane.oauth.length > 0 || crane.profile === "slim" ? (crane.profile === "slim" ? 2 : 3) : 2;
+    const published = crane.oauth.length > 0 || crane.profile === "slim" ? (crane.profile === "slim" ? 1 : 3) : 2;
     const skipped = crane.slug === "piper" ? 1 : 0;
 
     for (let i = points; i >= 0; i--) {

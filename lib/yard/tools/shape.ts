@@ -12,24 +12,13 @@ export type HostShape = Pick<CatalogEntry, "envKeys" | "blurb">
 
 export const HOST_SHAPE: Record<string, HostShape> = {
   math: { envKeys: [], blurb: "No secrets. Slim default." },
-  "google-search": {
-    envKeys: [],
-    optionalEnvKeys: [
-      "GEMINI_SEARCH_API_KEY",
-      "GEMINI_SEARCH_MODEL",
-      "GOOGLE_GENAI_USE_VERTEXAI",
-      "GOOGLE_CLOUD_PROJECT",
-      "GOOGLE_CLOUD_LOCATION",
-    ],
-    blurb: "Gemini grounding search. Optional GEMINI_SEARCH_API_KEY + GEMINI_SEARCH_MODEL win (local mouth). Else crane LLM_API_KEY / LLM_MODEL, else gemini-3.6-flash. Vertex: GOOGLE_GENAI_USE_VERTEXAI + GOOGLE_CLOUD_PROJECT.",
-  },
   google: {
     envKeys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
-    optionalEnvKeys: ["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"],
+    optionalEnvKeys: ["USER_GOOGLE_EMAIL"],
     args: ["--preset", "everyday"],
     auth_args: ["auth"],
     authFlow: "pkce",
-    blurb: "Workspace. Client id/secret, then OAuth hop. Optional: USER_GOOGLE_EMAIL. PSE search needs GOOGLE_PSE_API_KEY + GOOGLE_PSE_ENGINE_ID.",
+    blurb: "Workspace. Client id/secret, then OAuth hop. Optional: USER_GOOGLE_EMAIL. Builtin web_search uses GOOGLE_PSE_API_KEY + GOOGLE_PSE_ENGINE_ID on the crane, not this grant.",
   },
   ghealth: {
     envKeys: ["GOOGLE_HEALTH_CLIENT_ID", "GOOGLE_HEALTH_CLIENT_SECRET"],

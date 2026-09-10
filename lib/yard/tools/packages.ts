@@ -3,6 +3,12 @@ import type { AuthFlow, CatalogEntry, McpServer } from "../types";
 /** Completer + CHANNEL — always in Secrets. Mouth tokens follow CHANNEL. */
 export const CRANE_ALWAYS_KEYS = ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "CHANNEL"];
 
+/** Optional crane keys for builtin web_search (Google Custom Search). Not required to boot. */
+export const CRANE_OPTIONAL_KEYS = [
+  "GOOGLE_PSE_API_KEY",
+  "GOOGLE_PSE_ENGINE_ID",
+];
+
 /** Chat-mouth env. Telegram/Discord/Slack are dropped when CHANNEL is something else. Pendant keys stay. */
 export const MOUTH_ENV_KEYS: Record<string, string[]> = {
   telegram: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS"],
@@ -41,7 +47,7 @@ export function dropInactiveMouthKeys(env: Record<string, string>): Record<strin
   return next;
 }
 
-/** Yard GitHub org — google-search must not fetch zchee/mcp-gemini-search. */
+/** Yard GitHub org for MCP release URLs. */
 const YARD_GITHUB = "shotah";
 
 function ghRelease(repo: string, archive: string): string {
@@ -52,12 +58,9 @@ export function isGeminiSearchServer(server: Pick<McpServer, "name" | "command">
   return server.name === "google-search" || server.command === "mcp-gemini-google-search";
 }
 
-/** True when a download_url still points at the Python/upstream GitHub fork. */
-export function isUpstreamGeminiSearchUrl(url: string | undefined): boolean {
-  if (!url) {
-    return false;
-  }
-  return /https?:\/\/(www\.)?github\.com\/zchee\/mcp-gemini-(search|google-search)(\/|$)/i.test(url);
+/** Drop leftover google-search MCP grants — web_search is a crane builtin. */
+export function dropReplacedSearchServers(servers: McpServer[]): McpServer[] {
+  return servers.filter((s) => !isGeminiSearchServer(s));
 }
 
 /**
@@ -76,8 +79,6 @@ export type PackageRef = {
 
 export const PACKAGES: PackageRef[] = [
   { name: "math", command: "mcp-go-math", repo: "mcp-go-math", downloadTag: "latest", downloadUrl: ghRelease("mcp-go-math", "mcp-go-math") },
-  // shotah/mcp-gemini-search (Go). Do not use zchee/mcp-gemini-search.
-  { name: "google-search", command: "mcp-gemini-google-search", repo: "mcp-gemini-search", downloadTag: "latest", downloadUrl: ghRelease("mcp-gemini-search", "mcp-gemini-google-search") },
   { name: "google", command: "google-mcp", repo: "google-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-mcp", "google-mcp") },
   { name: "ghealth", command: "google-health-mcp", repo: "google-health-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-health-mcp", "google-health-mcp") },
   { name: "strava", command: "strava-mcp", repo: "go-strava-mcp", downloadTag: "latest", downloadUrl: ghRelease("go-strava-mcp", "strava-mcp") },
@@ -93,8 +94,8 @@ export const PACKAGES: PackageRef[] = [
   { name: "cars", command: "cars-search-mcp", repo: "cars-search-mcp", downloadTag: "latest", downloadUrl: ghRelease("cars-search-mcp", "cars-search-mcp") },
 ];
 
-export const SLIM_GRANT = ["google-search", "math"];
-export const LIFE_GRANT = ["google-search", "math", "google", "maps"];
+export const SLIM_GRANT = ["math"];
+export const LIFE_GRANT = ["math", "google", "maps"];
 export const LIFE_CAST_GRANT = [...LIFE_GRANT, "cast", "youtube"];
 
 /** Listed only — no guessed keys or auth. Used when host-manifest cannot run. */
@@ -193,10 +194,13 @@ export function secretKeysForGrant(
     ...catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.optionalEnvKeys ?? []),
     ...servers.filter((s) => granted.includes(s.name)).flatMap((s) => s.env_keys ?? []),
   ];
-  return uniqueKeys([...CRANE_ALWAYS_KEYS, ...mouthKeysForChannel(channel), ...extra]);
+  return uniqueKeys([...CRANE_ALWAYS_KEYS, ...CRANE_OPTIONAL_KEYS, ...mouthKeysForChannel(channel), ...extra]);
 }
 
 /** Optional Secrets fields — missing values must not skip the server. */
 export function optionalKeysForGrant(granted: string[], catalog: CatalogEntry[]): string[] {
-  return uniqueKeys(catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.optionalEnvKeys ?? []));
+  return uniqueKeys([
+    ...CRANE_OPTIONAL_KEYS,
+    ...catalog.filter((c) => granted.includes(c.name)).flatMap((c) => c.optionalEnvKeys ?? []),
+  ]);
 }

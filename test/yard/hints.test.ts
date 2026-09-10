@@ -30,19 +30,16 @@ describe("envHint", () => {
     expect(envHint("RENTCAST_API_KEY").hint).toMatch(/RentCast/);
   });
 
-  it("names USER_GOOGLE_EMAIL as the workspace account, not google-search", () => {
+  it("names USER_GOOGLE_EMAIL as the workspace account, not web_search", () => {
     expect(envHint("USER_GOOGLE_EMAIL").hint).toMatch(/workspace/i);
-    expect(envHint("USER_GOOGLE_EMAIL").hint).toMatch(/not required for google-search/i);
+    expect(envHint("USER_GOOGLE_EMAIL").hint).toMatch(/not required for web_search/i);
     expect(envHint("USER_GOOGLE_EMAIL").example).toMatch(/@/);
-    expect(envHint("GOOGLE_PSE_API_KEY").hint).toMatch(/search_query/);
+    expect(envHint("GOOGLE_PSE_API_KEY").hint).toMatch(/web_search/);
+    expect(envHint("GOOGLE_PSE_ENGINE_ID").hint).toMatch(/cx/i);
   });
 
-  it("names google-search Vertex and model params", () => {
-    expect(envHint("GEMINI_SEARCH_API_KEY").hint).toMatch(/LLM_API_KEY/);
-    expect(envHint("GEMINI_SEARCH_MODEL").hint).toMatch(/LLM_MODEL/);
-    expect(envHint("GEMINI_SEARCH_MODEL").example).toBe("gemini-3.6-flash");
-    expect(envHint("GOOGLE_GENAI_USE_VERTEXAI").hint).toMatch(/Vertex/);
-    expect(envHint("GOOGLE_CLOUD_PROJECT").hint).toMatch(/GOOGLE_GENAI_USE_VERTEXAI/);
-    expect(envHint("GOOGLE_CLOUD_LOCATION").hint).toMatch(/global/i);
+  it("names Custom Search keys for builtin web_search, not a second model", () => {
+    expect(envHint("GOOGLE_PSE_API_KEY").hint).toMatch(/not a second model/i);
+    expect(envHint("GOOGLE_PSE_ENGINE_ID").example).toMatch(/:/);
   });
 });

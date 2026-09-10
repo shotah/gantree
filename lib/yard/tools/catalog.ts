@@ -10,11 +10,13 @@ import { HOST_SHAPE } from "./shape";
 export {
   CRANE_ALWAYS_KEYS,
   CRANE_CORE_KEYS,
+  CRANE_OPTIONAL_KEYS,
   LIFE_CAST_GRANT,
   LIFE_GRANT,
   PACKAGES,
   SLIM_GRANT,
   dropInactiveMouthKeys,
+  dropReplacedSearchServers,
   envKeysForServer,
   mouthKeysForChannel,
   optionalKeysForGrant,
@@ -115,9 +117,7 @@ function withShape(pkg: PackageRef, live: CatalogEntry | null): CatalogEntry {
   return {
     ...merged,
     download_tag: merged.download_tag || pkg.downloadTag,
-    // Yard PACKAGES win for google-search so a leftover zchee binary cannot redirect tools-fetch.
-    download_url:
-      pkg.name === "google-search" ? pkg.downloadUrl || merged.download_url : merged.download_url || pkg.downloadUrl,
+    download_url: merged.download_url || pkg.downloadUrl,
   };
 }
 

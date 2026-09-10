@@ -370,38 +370,23 @@ describe("AgentDashboard secrets", () => {
     expect(screen.getByRole("button", { name: /3 need a key/ })).toBeTruthy();
   });
 
-  it("lists optional GEMINI_SEARCH_* for google-search, not leftover GEMINI_*", async () => {
+  it("lists optional GOOGLE_PSE_* for builtin web_search", async () => {
     mockCrane({
       persona: "# you\n",
       self: "# me\n",
       writable: true,
-      servers: [{ name: "google-search", command: "mcp-gemini-google-search" }],
-      catalog: [
-        {
-          name: "google-search",
-          command: "mcp-gemini-google-search",
-          envKeys: [],
-          optionalEnvKeys: [
-            "GEMINI_SEARCH_API_KEY",
-            "GEMINI_SEARCH_MODEL",
-            "GOOGLE_GENAI_USE_VERTEXAI",
-            "GOOGLE_CLOUD_PROJECT",
-            "GOOGLE_CLOUD_LOCATION",
-          ],
-          blurb: "Search.",
-        },
-      ],
+      servers: [],
+      catalog: [],
     });
     render(<AgentDashboard slug="noodles" />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
     await waitFor(() => expect(screen.getByLabelText("LLM_API_KEY")).toBeTruthy());
-    expect(screen.getByLabelText("GEMINI_SEARCH_API_KEY")).toBeTruthy();
-    expect(screen.getByLabelText("GEMINI_SEARCH_MODEL")).toBeTruthy();
+    expect(screen.getByLabelText("GOOGLE_PSE_API_KEY")).toBeTruthy();
+    expect(screen.getByLabelText("GOOGLE_PSE_ENGINE_ID")).toBeTruthy();
+    expect(screen.queryByLabelText("GEMINI_SEARCH_API_KEY")).toBeNull();
     expect(screen.queryByLabelText("GEMINI_API_KEY")).toBeNull();
-    expect(screen.queryByLabelText("GOOGLE_API_KEY")).toBeNull();
-    expect(screen.queryByLabelText("GEMINI_MODEL")).toBeNull();
-    expect(screen.getByLabelText("GOOGLE_CLOUD_PROJECT")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /2 need a key/ })).toBeTruthy();
   });
 
   it("lists optional catalog keys without nagging for them", async () => {

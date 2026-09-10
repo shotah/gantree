@@ -64,6 +64,16 @@ describe("grant", () => {
     expect(out.servers.map((s) => s.name)).toEqual(["math"]);
   });
 
+  it("refuses google-search because web_search is a crane builtin", async () => {
+    const mcp = mcpFile('[[server]]\nname = "google-search"\ncommand = "mcp-gemini-google-search"\n');
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp }));
+    const out = await grant("kit", "google-search");
+    expect(out.ok).toBe(false);
+    expect(out.detail).toMatch(/builtin/);
+    expect(out.servers).toEqual([]);
+    expect(readFileSync(mcp, "utf8")).not.toContain("google-search");
+  });
+
   it("appends a catalog server and an unknown command", async () => {
     const mcp = mcpFile(stringifyMcpToml([]));
     vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp }));
@@ -184,17 +194,7 @@ describe("enrichDownloadUrls", () => {
     expect(out[1]?.download_url).toBe("https://mine.example/x.tgz");
   });
 
-  it("rewrites a zchee google-search download_url to the yard catalog", () => {
-    const catalog = [
-      {
-        name: "google-search",
-        command: "mcp-gemini-google-search",
-        download_url: "https://github.com/shotah/mcp-gemini-search/releases/download/{tag}/mcp-gemini-google-search_{version}_{os}_{arch}.tar.gz",
-        download_tag: "latest",
-        envKeys: [],
-        blurb: "",
-      },
-    ];
+  it("drops leftover google-search grants instead of fetching them", () => {
     const out = enrichDownloadUrls(
       [
         {
@@ -202,10 +202,10 @@ describe("enrichDownloadUrls", () => {
           command: "mcp-gemini-google-search",
           download_url: "https://github.com/zchee/mcp-gemini-search/releases/download/latest/x.tgz",
         },
+        { name: "math", command: "mcp-go-math", download_url: "https://example.com/math.tgz" },
       ],
-      catalog,
+      [],
     );
-    expect(out[0]?.download_url).toContain("github.com/shotah/mcp-gemini-search");
-    expect(out[0]?.download_url).not.toMatch(/zchee/);
+    expect(out.map((s) => s.name)).toEqual(["math"]);
   });
 });

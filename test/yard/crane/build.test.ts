@@ -56,8 +56,9 @@ describe("writeCraneFiles", () => {
     expect(self).not.toMatch(/bullets only|stamps the header/i);
     expect(persona).not.toBe(self);
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("math");
-    expect(readFileSync(out.mcpManifest, "utf8")).toContain("github.com/shotah/mcp-gemini-search");
-    expect(readFileSync(out.mcpManifest, "utf8")).not.toMatch(/zchee/);
+    expect(readFileSync(out.mcpManifest, "utf8")).toContain("github.com/shotah/mcp-go-math");
+    expect(readFileSync(out.mcpManifest, "utf8")).not.toContain("google-search");
+    expect(readFileSync(out.mcpManifest, "utf8")).not.toContain("mcp-gemini-search");
     expect(readFileSync(out.envFile, "utf8")).toContain("CHANNEL=stdio");
     expect(readFileSync(out.envFile, "utf8")).toContain("BOARDS_AUTHOR=kit");
     expect(readFileSync(out.mcpManifest, "utf8")).not.toContain("boards");

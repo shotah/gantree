@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "@/lib/yard/tools/catalog";
-import { CRANE_ALWAYS_KEYS, PACKAGES, envKeysForServer, isUpstreamGeminiSearchUrl, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { CRANE_ALWAYS_KEYS, CRANE_OPTIONAL_KEYS, PACKAGES, SLIM_GRANT, dropReplacedSearchServers, envKeysForServer, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import type { CatalogEntry } from "@/lib/yard/types";
 
 const sample: CatalogEntry[] = [
@@ -59,9 +59,8 @@ describe("PACKAGES", () => {
     expect(byName.cars?.command).toBe("cars-search-mcp");
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.cast?.command).toBe("mcp-beam");
-    expect(byName["google-search"]?.command).toBe("mcp-gemini-google-search");
-    expect(byName["google-search"]?.downloadUrl).toContain("github.com/shotah/mcp-gemini-search");
-    expect(byName["google-search"]?.downloadUrl).not.toMatch(/zchee/);
+    expect(byName["google-search"]).toBeUndefined();
+    expect(SLIM_GRANT).toEqual(["math"]);
   });
 });
 
@@ -71,8 +70,7 @@ describe("loadCatalog", () => {
     expect(byName.maps?.command).toBe("google-maps-mcp");
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.cast?.download_url).toContain("mcp-beam");
-    expect(byName["google-search"]?.download_url).toContain("github.com/shotah/mcp-gemini-search");
-    expect(byName["google-search"]?.download_url).not.toMatch(/zchee/);
+    expect(byName["google-search"]).toBeUndefined();
   });
 
   it("fills env_keys and auth from last-known host-manifest when the binary cannot run", () => {
@@ -83,31 +81,23 @@ describe("loadCatalog", () => {
     expect(byName.boards?.optionalEnvKeys).toEqual(["BOARDS_ROLE", "BOARDS_PATH", "BOARDS_WRITES_PER_DAY"]);
     expect(byName.boards?.download_url).toContain("boards-mcp");
     expect(byName.google?.envKeys).toEqual(["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"]);
-    expect(byName.google?.optionalEnvKeys).toEqual(["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]);
+    expect(byName.google?.optionalEnvKeys).toEqual(["USER_GOOGLE_EMAIL"]);
     expect(byName.google?.auth_args).toEqual(["auth"]);
     expect(byName.garmin?.envKeys).toEqual(["GARMIN_EMAIL", "GARMIN_PASSWORD"]);
     expect(byName.flights?.envKeys).toEqual(["SERPAPI_API_KEY"]);
     expect(byName.math?.envKeys).toEqual([]);
-    expect(byName["google-search"]?.envKeys).toEqual([]);
-    expect(byName["google-search"]?.envKeys).not.toContain("USER_GOOGLE_EMAIL");
-    expect(byName["google-search"]?.optionalEnvKeys).toEqual([
-      "GEMINI_SEARCH_API_KEY",
-      "GEMINI_SEARCH_MODEL",
-      "GOOGLE_GENAI_USE_VERTEXAI",
-      "GOOGLE_CLOUD_PROJECT",
-      "GOOGLE_CLOUD_LOCATION",
-    ]);
+    expect(byName["google-search"]).toBeUndefined();
   });
 });
 
 describe("secretKeysForGrant", () => {
-  it("is just the completer when nothing is granted and CHANNEL is unset", () => {
-    expect(secretKeysForGrant([], sample)).toEqual(CRANE_ALWAYS_KEYS);
+  it("is the completer plus optional web_search keys when nothing is granted", () => {
+    expect(secretKeysForGrant([], sample)).toEqual([...CRANE_ALWAYS_KEYS, ...CRANE_OPTIONAL_KEYS]);
   });
 
   it("lists telegram mouth keys only for telegram", () => {
     const keys = secretKeysForGrant([], sample, [], "telegram");
-    expect(keys).toEqual([...CRANE_ALWAYS_KEYS, ...["TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS"]]);
+    expect(keys).toEqual([...CRANE_ALWAYS_KEYS, ...CRANE_OPTIONAL_KEYS, ...["TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS"]]);
     expect(keys).not.toContain("PENDANT_BEARER");
   });
 
@@ -136,12 +126,10 @@ describe("secretKeysForGrant", () => {
     expect(keys).not.toContain("GOOGLE_MAPS_API_KEY");
   });
 
-  it("lists USER_GOOGLE_EMAIL on google workspace, not google-search", () => {
+  it("lists USER_GOOGLE_EMAIL on google workspace, and PSE keys on the crane", () => {
     const catalog = loadCatalog();
-    const search = catalog.filter((c) => c.name === "google-search");
     const google = catalog.filter((c) => c.name === "google");
-    expect(secretKeysForGrant(["google-search"], search)).not.toContain("USER_GOOGLE_EMAIL");
-    expect(envKeysForServer({ name: "google-search" }, search)).toEqual([]);
+    expect(secretKeysForGrant([], [])).toEqual(expect.arrayContaining(["GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]));
     expect(secretKeysForGrant(["google"], google)).toEqual(expect.arrayContaining(["USER_GOOGLE_EMAIL"]));
     expect(optionalKeysForGrant(["google"], google)).toEqual(
       expect.arrayContaining(["USER_GOOGLE_EMAIL", "GOOGLE_PSE_API_KEY", "GOOGLE_PSE_ENGINE_ID"]),
@@ -161,7 +149,11 @@ describe("secretKeysForGrant", () => {
     ];
     const secrets = secretKeysForGrant(["google"], google);
     expect(secrets).toEqual(expect.arrayContaining(["GOOGLE_OAUTH_CLIENT_SECRET", "USER_GOOGLE_EMAIL"]));
-    expect(optionalKeysForGrant(["google"], google)).toEqual(["USER_GOOGLE_EMAIL"]);
+    expect(optionalKeysForGrant(["google"], google)).toEqual([
+      "GOOGLE_PSE_API_KEY",
+      "GOOGLE_PSE_ENGINE_ID",
+      "USER_GOOGLE_EMAIL",
+    ]);
     expect(envKeysForServer({ name: "google" }, google)).toEqual([
       "GOOGLE_OAUTH_CLIENT_ID",
       "GOOGLE_OAUTH_CLIENT_SECRET",
@@ -179,10 +171,11 @@ describe("envKeysForServer", () => {
   });
 });
 
-describe("isUpstreamGeminiSearchUrl", () => {
-  it("matches the zchee GitHub fork and ignores other zchee modules", () => {
-    expect(isUpstreamGeminiSearchUrl("https://github.com/zchee/mcp-gemini-search/releases/download/latest/x.tgz")).toBe(true);
-    expect(isUpstreamGeminiSearchUrl("https://github.com/shotah/mcp-gemini-search/releases/download/{tag}/x.tgz")).toBe(false);
-    expect(isUpstreamGeminiSearchUrl("https://github.com/zchee/dumper")).toBe(false);
+describe("dropReplacedSearchServers", () => {
+  it("omits leftover google-search MCP grants", () => {
+    expect(dropReplacedSearchServers([
+      { name: "google-search", command: "mcp-gemini-google-search" },
+      { name: "math", command: "mcp-go-math" },
+    ]).map((s) => s.name)).toEqual(["math"]);
   });
 });
