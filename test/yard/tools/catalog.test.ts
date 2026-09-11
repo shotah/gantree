@@ -58,6 +58,7 @@ describe("PACKAGES", () => {
     expect(byName.rentals?.command).toBe("rentals-search-mcp");
     expect(byName.cars?.command).toBe("cars-search-mcp");
     expect(byName.google?.command).toBe("google-mcp");
+    expect(byName.image?.command).toBe("image-generation-mcp");
     expect(byName.cast?.command).toBe("mcp-beam");
     expect(byName["google-search"]).toBeUndefined();
     expect(SLIM_GRANT).toEqual(["math"]);
@@ -68,6 +69,7 @@ describe("loadCatalog", () => {
   it("falls back to package commands without compiling nested MCP repos", () => {
     const byName = Object.fromEntries(loadCatalog().map((c) => [c.name, c]));
     expect(byName.maps?.command).toBe("google-maps-mcp");
+    expect(byName.image?.command).toBe("image-generation-mcp");
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.cast?.download_url).toContain("mcp-beam");
     expect(byName["google-search"]).toBeUndefined();
@@ -76,6 +78,17 @@ describe("loadCatalog", () => {
   it("fills env_keys and auth from last-known host-manifest when the binary cannot run", () => {
     const byName = Object.fromEntries(loadCatalog().map((c) => [c.name, c]));
     expect(byName.maps?.envKeys).toEqual(["GOOGLE_MAPS_API_KEY"]);
+    expect(byName.image?.command).toBe("image-generation-mcp");
+    expect(byName.image?.envKeys).toEqual([]);
+    expect(byName.image?.optionalEnvKeys).toEqual([
+      "IMAGE_API_KEY",
+      "IMAGE_MODEL",
+      "IMAGE_PROVIDER",
+      "IMAGE_OUTPUT_DIR",
+      "GOOGLE_GENAI_USE_VERTEXAI",
+      "GOOGLE_CLOUD_PROJECT",
+      "GOOGLE_CLOUD_LOCATION",
+    ]);
     expect(byName.boards?.command).toBe("boards-mcp");
     expect(byName.boards?.envKeys).toEqual(["BOARDS_AUTHOR"]);
     expect(byName.boards?.optionalEnvKeys).toEqual(["BOARDS_ROLE", "BOARDS_PATH", "BOARDS_WRITES_PER_DAY"]);

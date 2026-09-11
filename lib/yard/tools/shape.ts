@@ -47,6 +47,19 @@ export const HOST_SHAPE: Record<string, HostShape> = {
   },
   twitter: { envKeys: ["X_BEARER_TOKEN"], blurb: "One bearer token." },
   maps: { envKeys: ["GOOGLE_MAPS_API_KEY"], blurb: "Places / ETA. One Maps key." },
+  image: {
+    envKeys: [],
+    optionalEnvKeys: [
+      "IMAGE_API_KEY",
+      "IMAGE_MODEL",
+      "IMAGE_PROVIDER",
+      "IMAGE_OUTPUT_DIR",
+      "GOOGLE_GENAI_USE_VERTEXAI",
+      "GOOGLE_CLOUD_PROJECT",
+      "GOOGLE_CLOUD_LOCATION",
+    ],
+    blurb: "Image gen (Nano Banana default). IMAGE_API_KEY wins; else crane LLM_API_KEY. Optional IMAGE_MODEL / IMAGE_PROVIDER / IMAGE_OUTPUT_DIR.",
+  },
   youtube: {
     envKeys: ["YOUTUBE_OAUTH_CLIENT_ID", "YOUTUBE_OAUTH_CLIENT_SECRET"],
     auth_args: ["auth", "oauth"],
