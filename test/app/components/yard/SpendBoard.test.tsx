@@ -113,6 +113,22 @@ describe("SpendBoard", () => {
     render(<SpendBoard spend={yard} window="month" onWindow={vi.fn()} />);
     expect(screen.getByRole("button", { name: /Est\. token spend · this month/ })).toBeTruthy();
   });
+
+  it("explains unknown as empty slog source, not a missing pin", () => {
+    render(
+      <SpendBoard
+        spend={{
+          ...yard,
+          bySource: [{ id: "unknown", turns: 3, estTokens: 300 }],
+        }}
+        window="24h"
+        onWindow={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/empty slog source/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Est\. token spend · last 24h/ }));
+    expect(screen.getByText(/Telegram, pendant, Slack, Discord, and Google/)).toBeTruthy();
+  });
 });
 
 describe("SpendScope", () => {

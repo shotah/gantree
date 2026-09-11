@@ -6,7 +6,7 @@ import { shotDockerEnabled } from "../host/shotMode";
 import { mcpSnapshot } from "../tools/mcp";
 import type { McpSample, StatSample, TurnSample, UptimeSample, YardSpend } from "../types";
 import { dropCraneSamples, persistHost, persistMcp, persistTurn, persistUptime, recallSamples } from "./memory";
-import { combineSpend, filterSamples, rollupTurns } from "./spend";
+import { combineSpend, dedupeTurns, filterSamples, pickRicherTurn, rollupTurns, turnIdFromKey } from "./spend";
 import { clearMachineRing, rememberedCraneNames, sampleMachine } from "./machine";
 
 const HOST_MAX = 720;
@@ -77,7 +77,7 @@ function ensureHydrated(slug: string): void {
     }
   }
   if (!turnRing.has(slug) && mem.turns.length) {
-    turnRing.set(slug, mem.turns);
+    turnRing.set(slug, dedupeTurns(mem.turns));
   }
   if (!mcpRing.has(slug) && mem.mcp.length) {
     mcpRing.set(slug, mem.mcp);
@@ -158,7 +158,22 @@ export async function sampleTurns(slug: string): Promise<TurnSample[]> {
   try {
     const buf = await containerLogsBuffer(g.containerId, TURN_TAIL);
     const lines = parseLogText(decodeDockerLogs(buf));
-    const existing = new Set((turnRing.get(slug) ?? []).map((t) => t.key));
+    if (!turnRing.has(slug)) {
+      turnRing.set(slug, []);
+    }
+    const ring = turnRing.get(slug)!;
+    const existing = new Set(ring.map((t) => t.key));
+    const byId = new Map<string, number>();
+    for (let i = 0; i < ring.length; i++) {
+      const row = ring[i];
+      if (!row) {
+        continue;
+      }
+      const id = turnIdFromKey(row.key);
+      if (id) {
+        byId.set(id, i);
+      }
+    }
     for (const line of lines) {
       const t = turnFromLog(line);
       if (!t) {
@@ -168,12 +183,28 @@ export async function sampleTurns(slug: string): Promise<TurnSample[]> {
       if (!Number.isFinite(at)) {
         continue;
       }
-      const key = line.raw;
+      const turnId = line.turnId;
+      const key = turnId ? `turn:${turnId}` : line.raw;
+      const sample = { at, key, ...t };
+      const i = turnId ? byId.get(turnId) : undefined;
+      if (i != null) {
+        const cur = ring[i];
+        if (cur) {
+          const next = pickRicherTurn(cur, sample);
+          if (next !== cur) {
+            ring[i] = next;
+            persistTurn(slug, next);
+          }
+        }
+        continue;
+      }
       if (existing.has(key)) {
         continue;
       }
       existing.add(key);
-      const sample = { at, key, ...t };
+      if (turnId) {
+        byId.set(turnId, ring.length);
+      }
       push(turnRing, slug, sample, TURN_MAX);
       persistTurn(slug, sample);
     }

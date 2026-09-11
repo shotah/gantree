@@ -1,6 +1,6 @@
 import type { LastTurn, SpendRollup, SpendSlice, SpendTrajectory, TurnSample, YardSpend } from "../types";
 import { turnHasNative } from "./chart";
-import { SOURCE_ORDER, spendSource, windowStart, type SpendWindow } from "./windows";
+import { SOURCE_ORDER, spendSource, windowStart, daysInMonthAt, type SpendWindow } from "./windows";
 
 export type { SpendBucket, SpendRateBucket, SpendWindow } from "./windows";
 export {
@@ -9,6 +9,7 @@ export {
   SPEND_BUCKETS,
   SPEND_WINDOWS,
   bucketsForWindow,
+  daysInMonthAt,
   monthStart,
   parseSpendWindow,
   spendSource,
@@ -94,7 +95,119 @@ function addSlice(map: Map<string, { turns: number; estTokens: number }>, id: st
   map.set(id, cur);
 }
 
+export function turnIdFromKey(key: string): string | null {
+  if (key.startsWith("turn:")) {
+    const id = key.slice(5).trim();
+    return id || null;
+  }
+  if (!key.startsWith("{")) {
+    return null;
+  }
+  try {
+    const j = JSON.parse(key) as Record<string, unknown>;
+    for (const k of ["turn_id", "turnId", "request_id", "req_id"]) {
+      const v = j[k];
+      if (typeof v === "string" && v.trim() && v.length < 96) {
+        return v.trim();
+      }
+      if (typeof v === "number" && Number.isFinite(v)) {
+        return String(v);
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function turnDedupeKey(t: { key: string; at: number; userId: string | null; sessionId: string | null }): string {
+  const id = turnIdFromKey(t.key);
+  if (id) {
+    return `id:${id}`;
+  }
+  return `at:${t.at}:${t.userId ?? ""}:${t.sessionId ?? ""}`;
+}
+
+export function pickRicherTurn(a: TurnSample, b: TurnSample): TurnSample {
+  let prefer: TurnSample;
+  if (turnHasNative(b) !== turnHasNative(a)) {
+    prefer = turnHasNative(b) ? b : a;
+  } else if ((b.estTokens ?? 0) !== (a.estTokens ?? 0)) {
+    prefer = (b.estTokens ?? 0) > (a.estTokens ?? 0) ? b : a;
+  } else {
+    prefer = b.at >= a.at ? b : a;
+  }
+  const other = prefer === a ? b : a;
+  const id = turnIdFromKey(a.key) ?? turnIdFromKey(b.key);
+  const merged: TurnSample = {
+    ...prefer,
+    at: Math.max(a.at, b.at),
+    key: id ? `turn:${id}` : prefer.key,
+    rounds: prefer.rounds ?? other.rounds,
+    recoveries: prefer.recoveries ?? other.recoveries,
+    estTokens: prefer.estTokens ?? other.estTokens,
+    promptEstTokens: prefer.promptEstTokens ?? other.promptEstTokens,
+    genEstTokens: prefer.genEstTokens ?? other.genEstTokens,
+    promptTokens: prefer.promptTokens ?? other.promptTokens,
+    completionTokens: prefer.completionTokens ?? other.completionTokens,
+    totalTokens: prefer.totalTokens ?? other.totalTokens,
+    usageRounds: prefer.usageRounds ?? other.usageRounds,
+    cachedTokens: prefer.cachedTokens ?? other.cachedTokens,
+    cacheWriteTokens: prefer.cacheWriteTokens ?? other.cacheWriteTokens,
+    reasoningTokens: prefer.reasoningTokens ?? other.reasoningTokens,
+    promptAudioTokens: prefer.promptAudioTokens ?? other.promptAudioTokens,
+    completionAudioTokens: prefer.completionAudioTokens ?? other.completionAudioTokens,
+    acceptedPredictionTokens: prefer.acceptedPredictionTokens ?? other.acceptedPredictionTokens,
+    rejectedPredictionTokens: prefer.rejectedPredictionTokens ?? other.rejectedPredictionTokens,
+    model: prefer.model ?? other.model,
+    finishReason: prefer.finishReason ?? other.finishReason,
+    serviceTier: prefer.serviceTier ?? other.serviceTier,
+    source: prefer.source || other.source,
+    userId: prefer.userId ?? other.userId,
+    sessionId: prefer.sessionId ?? other.sessionId,
+    outcome: prefer.outcome ?? other.outcome,
+    durationMs: prefer.durationMs ?? other.durationMs,
+  };
+  return sameTurnPayload(merged, a) ? a : merged;
+}
+
+function sameTurnPayload(a: TurnSample, b: TurnSample): boolean {
+  return a.at === b.at
+    && a.key === b.key
+    && a.estTokens === b.estTokens
+    && a.promptEstTokens === b.promptEstTokens
+    && a.genEstTokens === b.genEstTokens
+    && (a.promptTokens ?? null) === (b.promptTokens ?? null)
+    && (a.completionTokens ?? null) === (b.completionTokens ?? null)
+    && (a.totalTokens ?? null) === (b.totalTokens ?? null)
+    && a.source === b.source
+    && a.userId === b.userId
+    && a.sessionId === b.sessionId
+    && a.outcome === b.outcome
+    && a.rounds === b.rounds
+    && (a.durationMs ?? null) === (b.durationMs ?? null)
+    && (a.model ?? null) === (b.model ?? null);
+}
+
+/** One row per slog turn — `turn done` + `turn perf` for the same turn_id must not double the counter. */
+export function dedupeTurns(turns: TurnSample[]): TurnSample[] {
+  const best = new Map<string, TurnSample>();
+  const order: string[] = [];
+  for (const t of turns) {
+    const k = turnDedupeKey(t);
+    const prev = best.get(k);
+    if (!prev) {
+      best.set(k, t);
+      order.push(k);
+      continue;
+    }
+    best.set(k, pickRicherTurn(prev, t));
+  }
+  return order.map((k) => best.get(k)!);
+}
+
 export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
+  const rows = dedupeTurns(turns);
   const byUser = new Map<string, { turns: number; estTokens: number }>();
   const bySource = new Map<string, { turns: number; estTokens: number }>();
   const byOutcome = new Map<string, { turns: number; estTokens: number }>();
@@ -113,9 +226,9 @@ export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
   let recoveries = 0;
   let userTurns = 0;
   let userEst = 0;
-  for (const t of turns) {
+  for (const t of rows) {
     const cost = t.estTokens ?? 0;
-    const src = spendSource(t.source);
+    const src = spendSource(t.source, t.sessionId);
     promptEst += t.promptEstTokens ?? 0;
     genEst += t.genEstTokens ?? 0;
     estTokens += cost;
@@ -148,7 +261,7 @@ export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
   }
   return {
     slug,
-    turns: turns.length,
+    turns: rows.length,
     promptEst,
     genEst,
     estTokens,
@@ -159,7 +272,7 @@ export function rollupTurns(slug: string, turns: TurnSample[]): SpendRollup {
     cachedTokens,
     reasoningTokens,
     lastAt,
-    lastTurn: lastTurnOf(turns),
+    lastTurn: lastTurnOf(rows),
     byUser: slices(byUser),
     bySource: slices(bySource),
     unattributedTurns,
@@ -330,11 +443,12 @@ export function spendPace(
   estTokens: number,
   window: SpendWindow,
   now = Date.now(),
+  timeZone?: string | null,
 ): { perDay: number; projected: number | null } | null {
   if (estTokens <= 0) {
     return null;
   }
-  const start = windowStart(window, now);
+  const start = windowStart(window, now, timeZone);
   if (start == null) {
     return null;
   }
@@ -343,9 +457,7 @@ export function spendPace(
   if (window !== "month") {
     return { perDay, projected: null };
   }
-  const d = new Date(start);
-  const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  return { perDay, projected: perDay * daysInMonth };
+  return { perDay, projected: perDay * daysInMonthAt(start, timeZone) };
 }
 
 /** USD calculator uses native prompt/completion when every turn in the window had usage. */

@@ -1,4 +1,5 @@
 import { denyUnlessCraneRead, listYardEvents, operatorFromRequest, withDoor } from "@/lib/yard/door";
+import { loadObservePrefs } from "@/lib/yard/observe/prefs";
 import { parseSpendWindow, windowStart } from "@/lib/yard/observe/spend";
 import type { YardEvent } from "@/lib/yard/types";
 
@@ -22,7 +23,7 @@ export const GET = withDoor(async (req: Request) => {
   const kind = url.searchParams.get("kind") || undefined;
   const format = url.searchParams.get("format");
   const windowRaw = url.searchParams.get("window");
-  const since = windowRaw ? windowStart(parseSpendWindow(windowRaw)) : null;
+  const since = windowRaw ? windowStart(parseSpendWindow(windowRaw), Date.now(), loadObservePrefs().timezone) : null;
   const limit = Number(url.searchParams.get("limit") || "40");
   const cap = Number.isFinite(limit) ? limit : 40;
   const includeSession = you?.role === "admin";

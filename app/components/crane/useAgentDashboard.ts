@@ -375,7 +375,7 @@ export function useAgentDashboard(slug: string) {
   const savedMouth = (files?.env?.CHANNEL?.value ?? gantry?.channel ?? "").trim();
   const telegramOn = shouldPushTelegram(savedMouth);
   const pendantOn = shouldPushPendant(savedMouth);
-  const since = windowStart(spendWindow, now);
+  const since = windowStart(spendWindow, now, observe?.timezone);
   const allowedBuckets = bucketsForWindow(spendWindow);
   const bucket = allowedBuckets.includes(spendBucket) ? spendBucket : "cumulative";
   const turnsInWindow = filterSamples(turns, since, now);

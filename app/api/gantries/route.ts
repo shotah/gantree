@@ -11,6 +11,7 @@ export const GET = withDoor(async (req: Request) => {
   try {
     const you = operatorFromRequest(req);
     const window = parseSpendWindow(new URL(req.url).searchParams.get("window"));
+    const observe = loadObservePrefs();
     const listed = await listYard({ waitDocker: false });
     const yard = you ? scopeYard(listed, you) : listed;
     const slugs = yard.gantries.map((g) => g.slug);
@@ -20,12 +21,12 @@ export const GET = withDoor(async (req: Request) => {
     return Response.json({
       ...yard,
       sparks: kickYardSamples(running),
-      spend: labelSpend(kickYardSpend(slugs, windowStart(window)), userNames),
+      spend: labelSpend(kickYardSpend(slugs, windowStart(window, Date.now(), observe.timezone)), userNames),
       host: kickMachine(craneNames),
       board: loadBoardSnapshot(),
       userNames,
       canBuild: Boolean(you && canBuildCrane(you)),
-      observe: loadObservePrefs(),
+      observe,
     });
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });

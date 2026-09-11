@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { fmtGantryBuild } from "@/lib/yard/crane/status";
 import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
-import { DEFAULT_SPEND_WINDOW, FAT_DATA_DIR_BYTES, fmtAgo, fmtBytes, fmtEstTokens, lastDiskBytes, type SpendWindow } from "@/lib/yard/observe/spend";
+import { combineSpend, DEFAULT_SPEND_WINDOW, FAT_DATA_DIR_BYTES, fmtAgo, fmtBytes, fmtEstTokens, lastDiskBytes, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BoardsCard } from "./BoardsCard";
 import { BuildCrane } from "./BuildCrane";
 import { CraneAvatar } from "../shared/CraneAvatar";
@@ -284,6 +284,11 @@ export function YardBoard() {
   const visibleIds = (shown ?? []).map((g) => g.slug);
   const bySlug = new Map((yard?.gantries ?? []).map((g) => [g.slug, g]));
   const laidOut = applyBoardOrder(allIds, order).filter((id) => visibleIds.includes(id));
+  const spend = yard?.spend
+    ? (tagFilter
+        ? combineSpend(yard.spend.cranes.filter((c) => visibleIds.includes(c.slug)))
+        : yard.spend)
+    : undefined;
 
   useEffect(() => {
     load();
@@ -322,7 +327,7 @@ export function YardBoard() {
           )
         : null}
 
-      {yard ? <SpendBoard spend={yard.spend} window={spendWindow} onWindow={setSpendWindow} observe={yard.observe} /> : null}
+      {yard ? <SpendBoard spend={spend} window={spendWindow} onWindow={setSpendWindow} observe={yard.observe} /> : null}
 
       {yard && yard.gantries.length === 0 && !yard.dockerPending
         ? (

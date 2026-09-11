@@ -102,7 +102,7 @@ export function HostDashboard() {
 
   const live = meta?.host?.live ?? null;
   const spark = meta?.host?.spark ?? [];
-  const since = windowStart(spendWindow, now);
+  const since = windowStart(spendWindow, now, meta?.observe?.timezone);
   const name = live?.hostname || "Host";
   const mutate = Boolean(meta?.canMutate);
   const runtime = meta?.runtime;

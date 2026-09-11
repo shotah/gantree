@@ -236,6 +236,49 @@ describe("YardBoard", () => {
     fireEvent.click(within(bar).getByRole("button", { name: "home" }));
     expect(screen.getByText("tryout")).toBeTruthy();
   });
+
+  it("scopes the headline token total to the tag filter", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            gantries: [
+              card({ slug: "kit", tags: ["home"] }),
+              card({ slug: "tryout", tags: ["guest"] }),
+            ],
+            tagColors: { home: "red", guest: "green" },
+            spend: {
+              turns: 2,
+              promptEst: 200,
+              genEst: 50,
+              estTokens: 250,
+              lastAt: Date.now(),
+              lastTurn: { at: Date.now(), source: "user", outcome: "ok", estTokens: 150, rounds: 1 },
+              bySource: [{ id: "user", turns: 2, estTokens: 250 }],
+              trajectory: emptyTrajectory(),
+              sampledAt: Date.now(),
+              cranes: [
+                crane({ slug: "kit", estTokens: 100, promptEst: 80, genEst: 20 }),
+                crane({ slug: "tryout", estTokens: 150, promptEst: 120, genEst: 30, turns: 1 }),
+              ],
+            },
+          }),
+      } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("tryout")).toBeTruthy());
+    expect(screen.getByText("250")).toBeTruthy();
+    expect(screen.getByText("2 cranes — expand for ranking")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "home" }));
+    expect(screen.getByText("100")).toBeTruthy();
+    expect(screen.getByText("1 crane — expand for ranking")).toBeTruthy();
+    expect(screen.queryByText("250")).toBeNull();
+  });
   it("fills the page column with as many card tracks as fit, not a fixed 3-col grid", async () => {
     vi.mocked(yardFetch).mockImplementation(async (input) => {
       const url = String(input);

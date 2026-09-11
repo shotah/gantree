@@ -119,6 +119,27 @@ describe("sampleTurns", () => {
     vi.mocked(containerLogsBuffer).mockRejectedValue(new Error("dead"));
     expect(await sampleTurns("turns-ok")).toHaveLength(1);
   });
+
+  it("keeps one ring row per turn_id when both turn done and turn perf land", async () => {
+    vi.mocked(getGantry).mockResolvedValue(card({ slug: "turns-dup" }));
+    vi.mocked(containerLogsBuffer).mockResolvedValue(
+      Buffer.from(
+        `${[
+          '{"time":"2026-08-22T18:00:00.000Z","msg":"turn done","turn_id":"t-9","source":"telegram","est_tokens":50}',
+          '{"time":"2026-08-22T18:00:01.000Z","msg":"turn perf","turn_id":"t-9","prompt_est_tokens":40,"gen_est_tokens":10,"prompt_tokens":80,"completion_tokens":5,"total_tokens":85}',
+        ].join("\n")}\n`,
+      ),
+    );
+    const rows = await sampleTurns("turns-dup");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.source).toBe("telegram");
+    expect(rows[0]?.totalTokens).toBe(85);
+    expect(rows[0]?.estTokens).toBe(50);
+    const spend = peekYardSpend(["turns-dup"]);
+    expect(spend.turns).toBe(1);
+    expect(spend.estTokens).toBe(50);
+    expect(spend.bySource.map((s) => s.id)).toEqual(["user"]);
+  });
 });
 
 describe("sampleMcp and sampleUptime", () => {

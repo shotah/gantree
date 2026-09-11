@@ -103,6 +103,47 @@ describe("rollupTurns", () => {
     expect(r.totalTokens).toBe(120);
     expect(r.unattributedTurns).toBe(0);
   });
+
+  it("counts turn done and turn perf with the same turn_id once, keeping native usage and the slog source", () => {
+    const done = '{"time":"2026-08-22T18:00:00Z","msg":"turn done","turn_id":"t-9","source":"telegram","est_tokens":50}';
+    const r = rollupTurns("ada", [
+      turn({
+        at: 1,
+        key: done,
+        source: "telegram",
+        sessionId: "telegram:9:9",
+        estTokens: 50,
+      }),
+      turn({
+        at: 2,
+        key: "turn:t-9",
+        promptEstTokens: 40,
+        genEstTokens: 10,
+        estTokens: 50,
+        promptTokens: 80,
+        completionTokens: 5,
+        totalTokens: 85,
+      }),
+    ]);
+    expect(r.turns).toBe(1);
+    expect(r.estTokens).toBe(50);
+    expect(r.nativeTurns).toBe(1);
+    expect(r.totalTokens).toBe(85);
+    expect(r.bySource.map((s) => s.id)).toEqual(["user"]);
+    expect(r.bySource.find((s) => s.id === "unknown")).toBeUndefined();
+  });
+
+  it("treats telegram/pendant/google slog as user, including session_id prefixes", () => {
+    const r = rollupTurns("ada", [
+      turn({ at: 1, key: "a", source: "telegram", estTokens: 10 }),
+      turn({ at: 2, key: "b", source: null, sessionId: "pendant:kit", estTokens: 4 }),
+      turn({ at: 3, key: "c", source: "google", userId: "1182", estTokens: 6 }),
+      turn({ at: 4, key: "d", source: null, sessionId: "telegram:-100:9:7", estTokens: 2 }),
+    ]);
+    expect(r.turns).toBe(4);
+    expect(r.bySource).toEqual([{ id: "user", turns: 4, estTokens: 22 }]);
+    expect(r.trajectory.userTurns).toBe(4);
+  });
 });
 
 describe("combineSpend", () => {
@@ -184,6 +225,15 @@ describe("spend window", () => {
     expect(pace).not.toBeNull();
     expect(pace?.perDay).toBeCloseTo(10, 5);
     expect(pace?.projected).toBeCloseTo(310, 5);
+  });
+
+  it("starts the month window on the 1st in the observe timezone", () => {
+    const now = Date.parse("2026-09-16T07:00:00.000Z");
+    expect(monthStart(now, "America/Los_Angeles")).toBe(Date.parse("2026-09-01T07:00:00.000Z"));
+    expect(windowStart("month", now, "America/Los_Angeles")).toBe(Date.parse("2026-09-01T07:00:00.000Z"));
+    const pace = spendPace(150, "month", now, "America/Los_Angeles");
+    expect(pace?.perDay).toBeCloseTo(10, 5);
+    expect(pace?.projected).toBeCloseTo(300, 5);
   });
 });
 
@@ -332,6 +382,15 @@ describe("sourceChartSeries", () => {
       { bucket: "cumulative", since: 8_000, now },
     );
     expect(series.at(-2)).toMatchObject({ unknown: 1, user: 0 });
+  });
+
+  it("charts telegram session_id as user", () => {
+    const now = 10_000;
+    const series = sourceChartSeries(
+      [turn({ at: 9_000, key: "a", source: null, sessionId: "telegram:9:9" })],
+      { bucket: "cumulative", since: 8_000, now },
+    );
+    expect(series.at(-2)).toMatchObject({ user: 1, unknown: 0 });
   });
 });
 

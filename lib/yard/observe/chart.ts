@@ -152,8 +152,8 @@ export function tokenChartSeries(
   return [...bins.values()].sort((a, b) => a.at - b.at);
 }
 
-function sourceKey(source: string | null): (typeof SOURCE_ORDER)[number] {
-  return spendSource(source);
+function sourceKey(t: TurnSample): (typeof SOURCE_ORDER)[number] {
+  return spendSource(t.source, t.sessionId);
 }
 
 function emptySources(at: number): SourceChartPoint {
@@ -178,7 +178,7 @@ export function sourceChartSeries(
       points.push({ ...run });
     }
     for (const t of inWindow) {
-      run[sourceKey(t.source)] += 1;
+      run[sourceKey(t)] += 1;
       points.push({ ...run, at: t.at });
     }
     const last = points[points.length - 1];
@@ -199,7 +199,7 @@ export function sourceChartSeries(
   for (const row of inWindow) {
     const key = alignBucket(row.at, bucket);
     const bin = bins.get(key) ?? emptySources(key);
-    bin[sourceKey(row.source)] += 1;
+    bin[sourceKey(row)] += 1;
     bins.set(key, bin);
   }
   return [...bins.values()].sort((a, b) => a.at - b.at);

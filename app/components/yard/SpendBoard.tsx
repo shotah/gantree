@@ -302,7 +302,7 @@ export function SpendBoard({
   const empty = !spend || spend.turns === 0;
   const scope = fmtSpendWindow(window);
   const now = Date.now();
-  const pace = spend && spend.estTokens > 0 ? spendPace(spend.estTokens, window, now) : null;
+  const pace = spend && spend.estTokens > 0 ? spendPace(spend.estTokens, window, now, observe?.timezone) : null;
   const last = lastTurnLine(spend?.lastTurn, now);
   const mix = spend?.bySource ?? [];
   const usdSides = spend
@@ -388,7 +388,7 @@ export function SpendBoard({
                   {unknownHeavy
                     ? (
                         <span className="mt-1 block text-warn">
-                          most turns have no contract source — pin/recreate onto the pinned image
+                          most turns have an empty slog source — telegram, pendant, and google count as user
                         </span>
                       )
                     : null}
@@ -445,18 +445,25 @@ export function SpendBoard({
                       </>
                     )}
                 {" "}
-                Each finished call adds; idle does not. Not billed dollars — a GCP usage pull is later.
+                One row per slog
+                {" "}
+                <code className="text-dim">turn_id</code>
+                {" "}
+                — <code className="text-dim">turn done</code>
+                {" "}
+                and
+                {" "}
+                <code className="text-dim">turn perf</code>
+                {" "}
+                are the same call. Idle does not add. Not billed dollars — a GCP usage pull is later.
               </p>
               {unknownHeavy
                 ? (
                     <p className="mt-1 text-[11px] text-warn">
-                      Most turns in this window have
+                      Most turns in this window have an empty or unrecognized slog
                       {" "}
                       <code>source</code>
-                      {" "}
-                      outside
-                      {" "}
-                      user/cron/watch/reaction (or empty on an old image). Pin and recreate the crane.
+                      . Telegram, pendant, Slack, Discord, and Google sessions count as user; cron/watch/reaction stay their own buckets.
                     </p>
                   )
                 : null}
@@ -591,7 +598,7 @@ export function CraneSpend({
           : null}
         {unknownShare(rollup) > 0.5
           ? (
-              <p className="mt-1 text-[11px] text-warn">most turns have no contract source — pin/recreate</p>
+              <p className="mt-1 text-[11px] text-warn">most turns have an empty slog source</p>
             )
           : null}
         {storeSub
