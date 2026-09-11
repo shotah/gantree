@@ -123,7 +123,13 @@ suggests <code>{slug}_bot</code> — paste the token it replies with. <strong>Up
 the board, and if the channel is Telegram the bot’s face updates too
 (<code>setMyProfilePhoto</code>). If the channel is pendant, the yard POSTs that
 same JPEG to the Worker mailbox (same gate: JPEG, 5MB, <code>avatar.jpg</code>).
-The phone user can replace the face from the pendant header. On a
+The phone user can replace the face from the pendant header. Grant
+<strong>image</strong> and <strong>pendant</strong>, then recreate, so the agent can draw a picture
+and wear it: <code>photo_generate</code> (1:1 face, 9:16 wallpaper) then
+<code>pendant__avatar_update</code> / <code>backdrop_update</code>, plus <code>theme_list</code> then
+<code>theme_update</code> (catalog id, no invented hex). Sending a PNG in the thread
+is the harness, not this board. The room blob can drift from
+<code>persona/avatar.jpg</code>. On a
 Telegram crane, <strong>Telegram</strong> (below the photo) can <code>getMe</code> the token, push
 name / about / the <code>/</code> command menu (including <code>/new</code>), ask an allowlisted
 chatter to tap <code>/new</code> (distill, then drop that thread — the yard cannot send
@@ -169,7 +175,7 @@ chat).</li>
 </tr>
 <tr>
 <td><code>persona/avatar.jpg</code></td>
-<td>You — face on the board; Telegram bots and the pendant mouth get the same picture</td>
+<td>You — face on the board and the Photo-fold push; the agent&#39;s pendant MCP paint is a separate room blob</td>
 </tr>
 <tr>
 <td><code>SELF.md</code></td>
