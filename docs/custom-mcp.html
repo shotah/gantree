@@ -68,6 +68,11 @@ speaks stdio, ships a static binary, and prints <strong>shape</strong>.</p>
 <td><code>host-manifest</code> + <code>GOOGLE_MAPS_API_KEY</code></td>
 </tr>
 <tr>
+<td>Image gen</td>
+<td><a href="https://github.com/shotah/image-generation-mcp">image-generation-mcp</a></td>
+<td><code>IMAGE_API_KEY</code> or crane <code>LLM_API_KEY</code>; grant prefix <code>image</code></td>
+</tr>
+<tr>
 <td>OAuth hop</td>
 <td><a href="https://github.com/shotah/go-strava-mcp">go-strava-mcp</a></td>
 <td><code>auth_args</code> + PKCE paste (<code>url</code> / <code>exchange</code>)</td>
@@ -81,7 +86,7 @@ speaks stdio, ships a static binary, and prints <strong>shape</strong>.</p>
 (<a href="https://github.com/shotah/ai-gantry/blob/main/docs/mcp-naming.md">ai-gantry naming</a>)</li>
 <li>GoReleaser archive: <code>{command}_{version}_{os}_{arch}.tar.gz</code></li>
 </ul>
-<p>Rename <code>name</code> / <code>command</code> / tool prefixes. Do not reuse <code>maps</code> or <code>math</code>.</p>
+<p>Do not reuse <code>maps</code>, <code>math</code>, or <code>image</code>.</p>
 <h3 id="host-manifest-required"><code>host-manifest</code> (required)</h3>
 <p>The binary must exit 0 and print one JSON object on stdout:</p>
 <pre><code class="language-bash">CGO_ENABLED=0 go run . host-manifest
