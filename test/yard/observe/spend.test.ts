@@ -25,6 +25,7 @@ import {
   sourceChartSeries,
   thinChartPoints,
   tokenChartSeries,
+  tokenUnitFor,
   windowStart,
 } from "@/lib/yard/observe/spend";
 import type { TurnSample } from "@/lib/yard/types";
@@ -264,6 +265,45 @@ describe("tokenChartSeries", () => {
       { at: 8_000, prompt: 0, gen: 0, tokens: 0, turns: 0 },
       { at: 10_000, prompt: 0, gen: 0, tokens: 0, turns: 0 },
     ]);
+  });
+
+  it("uses chars/4 when the window mixes native usage and estimates", () => {
+    const now = 10_000;
+    const mixed = [
+      turn({
+        at: 9_000,
+        key: "a",
+        estTokens: 100,
+        promptEstTokens: 80,
+        genEstTokens: 20,
+        promptTokens: 10,
+        completionTokens: 2,
+        totalTokens: 12,
+      }),
+      turn({ at: 9_500, key: "b", estTokens: 50, promptEstTokens: 40, genEstTokens: 10 }),
+    ];
+    expect(tokenUnitFor(mixed)).toBe("est");
+    const series = tokenChartSeries(mixed, { bucket: "cumulative", since: 8_000, now });
+    expect(series.at(-1)).toMatchObject({ tokens: 150, prompt: 120, gen: 30 });
+  });
+
+  it("uses native usage when every turn has it", () => {
+    const now = 10_000;
+    const native = [
+      turn({
+        at: 9_000,
+        key: "a",
+        estTokens: 100,
+        promptEstTokens: 80,
+        genEstTokens: 20,
+        promptTokens: 10,
+        completionTokens: 2,
+        totalTokens: 12,
+      }),
+    ];
+    expect(tokenUnitFor(native)).toBe("native");
+    const series = tokenChartSeries(native, { bucket: "cumulative", since: 8_000, now });
+    expect(series.at(-1)).toMatchObject({ tokens: 12, prompt: 10, gen: 2 });
   });
 });
 

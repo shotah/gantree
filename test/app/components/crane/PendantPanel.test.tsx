@@ -18,8 +18,8 @@ vi.mock("@/app/components/shared/DoorShell", () => ({
 import { yardFetch } from "@/app/lib/yardFetch";
 
 afterEach(() => {
-  cleanup();
   localStorage.clear();
+  cleanup();
 });
 
 describe("PendantPanel", () => {
@@ -82,10 +82,45 @@ describe("PendantPanel", () => {
     await waitFor(() => expect(screen.getByText("ada@example.com")).toBeTruthy());
     expect(screen.getByRole("button", { name: "Rotate bearer" })).toBeTruthy();
     fireEvent.click(screen.getByRole("checkbox", { name: /Ada/ }));
-    expect(screen.getByText("ada@example.com ×")).toBeTruthy();
-    expect(screen.getByText(/add 118212345678901234567/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "copy ada@example.com" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "remove ada@example.com" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "add 118212345678901234567" })).toBeTruthy();
+    expect(screen.getByText("118212345678901234567")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Save allowlist" }));
     await waitFor(() => expect(onEnvWritten).toHaveBeenCalledTimes(1));
+  });
+
+  it("copies an allowlist sub without removing it", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    vi.mocked(yardFetch).mockImplementation(async (url) => {
+      if (String(url).includes("/api/operators")) {
+        return { json: async () => ({ operators: [] }) } as Response;
+      }
+      return {
+        json: async () => ({
+          enabled: true,
+          mailboxUrl: "wss://example/ws/kit",
+          bearerSet: true,
+          allowlist: ["103068657459963188974"],
+          seen: [],
+          suggestion: null,
+          detail: "pendant",
+        }),
+      } as Response;
+    });
+    render(
+      <PendantPanel slug="kit" busy={false} setBusy={() => undefined} onNotice={() => undefined} onSaved={() => undefined} />,
+    );
+    await waitFor(() => expect(screen.getByText("1 on the list")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Pendant/ }));
+    fireEvent.click(await waitFor(() => screen.getByRole("button", { name: "copy 103068657459963188974" })));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("103068657459963188974"));
+    expect(screen.getByText("103068657459963188974")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "remove 103068657459963188974" })).toBeTruthy();
   });
 
   it("offers to store an unseen sub on the matching operator", async () => {
@@ -160,8 +195,11 @@ describe("PendantPanel", () => {
       />,
     );
     await waitFor(() => expect(screen.getByText("0 on the list")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: /Pendant/ }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /rotating this crane/ }));
+    const fold = screen.getByRole("button", { name: /Pendant/ });
+    if (fold.getAttribute("aria-expanded") !== "true") {
+      fireEvent.click(fold);
+    }
+    fireEvent.click(await waitFor(() => screen.getByRole("checkbox", { name: /rotating this crane/ })));
     fireEvent.click(screen.getByRole("button", { name: "Rotate bearer" }));
     await waitFor(() =>
       expect(calls.some((c) => c.url.includes("/pendant") && c.method === "POST" && c.body?.includes('"op":"rotate"') && c.body?.includes('"confirm":true'))).toBe(true),

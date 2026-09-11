@@ -242,8 +242,8 @@ export function turnFromLog(line: LogLine): {
     finishReason: str(line.json.finish_reason),
     serviceTier: str(line.json.service_tier),
     source: str(line.json.source),
-    userId: str(line.json.user_id ?? line.json.userId),
-    sessionId: str(line.json.session_id ?? line.json.sessionId),
+    userId: slogTextField(line.raw, line.json, ["user_id", "userId"]),
+    sessionId: slogTextField(line.raw, line.json, ["session_id", "sessionId"]),
     outcome: str(line.json.outcome),
     durationMs: num(
       line.json.duration_ms ?? line.json.total_ms ?? line.json.elapsed_ms ?? line.json.latency_ms ?? line.json.ms,
@@ -269,4 +269,39 @@ function str(v: unknown): string | null {
     return String(v);
   }
   return null;
+}
+
+/** Google subs are 21 digits — JSON.parse turns unquoted ones into imprecise floats. */
+export function slogTextField(raw: string, json: Record<string, unknown> | null, keys: string[]): string | null {
+  for (const key of keys) {
+    const fromRaw = textFieldFromJsonRaw(raw, key);
+    if (fromRaw) {
+      return fromRaw;
+    }
+  }
+  if (!json) {
+    return null;
+  }
+  for (const key of keys) {
+    const s = str(json[key]);
+    if (s) {
+      return s;
+    }
+  }
+  return null;
+}
+
+function textFieldFromJsonRaw(raw: string, key: string): string | null {
+  const safe = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const quoted = raw.match(new RegExp(`"${safe}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)"`));
+  if (quoted) {
+    try {
+      const v = JSON.parse(`"${quoted[1]}"`) as unknown;
+      return typeof v === "string" && v.trim() ? v.trim() : quoted[1];
+    } catch {
+      return quoted[1].trim() || null;
+    }
+  }
+  const num = raw.match(new RegExp(`"${safe}"\\s*:\\s*(-?\\d+)`));
+  return num?.[1] ?? null;
 }

@@ -191,7 +191,7 @@ describe("CraneSpend", () => {
       />,
     );
     expect(screen.getByText("Ada")).toBeTruthy();
-    expect(screen.getByTitle("42")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "copy 42" })).toBeTruthy();
   });
 
   it("shows source mix, trajectory, and per-human-turn cost", () => {

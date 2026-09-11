@@ -11,6 +11,7 @@ import {
 import { HINTS } from "@/lib/yard/hints";
 import { BotFatherHint } from "./BotFatherHint";
 import { craneLayoutKey, DashFold } from "../shared/DashFold";
+import { IdChip } from "../shared/IdChip";
 import { HintField } from "../shared/HintField";
 import { yardFetch } from "@/app/lib/yardFetch";
 
@@ -350,17 +351,11 @@ export function TelegramBot({
           {allow.length === 0 ? <li className="text-xs text-faint">none yet</li> : null}
           {allow.map((id) => (
             <li key={id}>
-              <button
-                type="button"
-                disabled={locked}
-                onClick={() => setAllow((cur) => cur.filter((x) => x !== id))}
-                className="rounded border border-edge px-2 py-0.5 text-xs text-fg hover:border-danger hover:text-danger disabled:opacity-50"
-                title="remove"
-              >
-                {id}
-                {" "}
-                ×
-              </button>
+              <IdChip
+                id={id}
+                onRemove={readOnly ? undefined : () => setAllow((cur) => cur.filter((x) => x !== id))}
+                removeDisabled={locked}
+              />
             </li>
           ))}
         </ul>
@@ -395,20 +390,16 @@ export function TelegramBot({
                 <p className="text-[10px] uppercase tracking-wide text-faint">seen talking</p>
                 <ul className="mt-1 flex flex-wrap gap-1.5">
                   {seenNew.map((s) => (
-                    <li key={s.id}>
+                    <li key={s.id} className="inline-flex max-w-full flex-wrap items-center gap-1">
+                      <IdChip id={s.id} extra={`${s.turns}t`} />
                       <button
                         type="button"
                         disabled={locked}
                         onClick={() => addNumeric(s.id)}
                         className="rounded border border-accent-line bg-accent-soft px-2 py-0.5 text-xs text-mark hover:border-accent disabled:opacity-50"
+                        aria-label={`add ${s.id}`}
                       >
                         add
-                        {" "}
-                        {s.id}
-                        <span className="ml-1 text-dim">
-                          {s.turns}
-                          t
-                        </span>
                       </button>
                     </li>
                   ))}

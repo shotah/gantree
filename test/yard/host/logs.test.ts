@@ -58,6 +58,16 @@ describe("parseLogLine", () => {
     expect(t?.estTokens).toBe(8400);
   });
 
+  it("keeps a 21-digit Google sub when slog left user_id unquoted", () => {
+    const sub = "103068657459963188974";
+    const line = parseLogLine(
+      `{"time":"2026-08-22T18:00:00.000Z","msg":"turn perf","user_id":${sub},"prompt_est_tokens":8,"gen_est_tokens":1}`,
+    );
+    const parsed = JSON.parse(`{"user_id":${sub}}`) as { user_id: number };
+    expect(String(parsed.user_id)).not.toBe(sub);
+    expect(turnFromLog(line)?.userId).toBe(sub);
+  });
+
   it("ignores boot schema est_tokens", () => {
     const line = parseLogLine('{"time":"2026-08-22T18:00:00Z","msg":"tools_published","est_tokens":16000}');
     expect(turnFromLog(line)).toBeNull();

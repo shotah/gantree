@@ -13,6 +13,7 @@ import { HINTS } from "@/lib/yard/hints";
 import type { StoreSubSuggestion } from "@/lib/yard/observe/spend";
 import { craneLayoutKey, DashFold } from "../shared/DashFold";
 import { useDoor } from "../shared/DoorShell";
+import { IdChip } from "../shared/IdChip";
 import { yardFetch } from "@/app/lib/yardFetch";
 
 type PendantOperator = {
@@ -274,11 +275,9 @@ export function PendantPanel({
       {suggestion
         ? (
             <div className="mb-4 rounded border border-accent-line bg-accent-soft px-3 py-2 text-xs text-mark">
-              <p>
+              <p className="flex flex-wrap items-center gap-1.5">
                 store
-                {" "}
-                <code className="text-fg">{suggestion.userId}</code>
-                {" "}
+                <IdChip id={suggestion.userId} />
                 on
                 {" "}
                 {suggestion.operatorName}
@@ -325,23 +324,17 @@ export function PendantPanel({
           {" "}
           <code className="text-dim">user_id</code>
           {" "}
-          from slog that match no entry show up below.
+          from slog that match no entry show up below. Copy a sub, then paste it on the operator's Google chat ids.
         </p>
         <ul className="mt-2 flex flex-wrap gap-1.5">
           {allow.length === 0 ? <li className="text-xs text-faint">none yet</li> : null}
           {allow.map((id) => (
             <li key={id}>
-              <button
-                type="button"
-                disabled={locked}
-                onClick={() => setAllow((cur) => cur.filter((x) => x !== id))}
-                className="rounded border border-edge px-2 py-0.5 text-xs text-fg hover:border-danger hover:text-danger disabled:opacity-50"
-                title="remove"
-              >
-                {id}
-                {" "}
-                ×
-              </button>
+              <IdChip
+                id={id}
+                onRemove={readOnly ? undefined : () => setAllow((cur) => cur.filter((x) => x !== id))}
+                removeDisabled={locked}
+              />
             </li>
           ))}
         </ul>
@@ -390,20 +383,16 @@ export function PendantPanel({
                 <p className="text-[10px] uppercase tracking-wide text-faint">seen talking</p>
                 <ul className="mt-1 flex flex-wrap gap-1.5">
                   {seenNew.map((s) => (
-                    <li key={s.id}>
+                    <li key={s.id} className="inline-flex max-w-full flex-wrap items-center gap-1">
+                      <IdChip id={s.id} extra={`${s.turns}t`} />
                       <button
                         type="button"
                         disabled={locked}
                         onClick={() => addEntry(s.id)}
                         className="rounded border border-accent-line bg-accent-soft px-2 py-0.5 text-xs text-mark hover:border-accent disabled:opacity-50"
+                        aria-label={`add ${s.id}`}
                       >
                         add
-                        {" "}
-                        {s.id}
-                        <span className="ml-1 text-dim">
-                          {s.turns}
-                          t
-                        </span>
                       </button>
                     </li>
                   ))}

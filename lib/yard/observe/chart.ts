@@ -81,8 +81,23 @@ export function turnCost(t: TurnSample): { prompt: number; gen: number; tokens: 
   return { prompt, gen, tokens: t.estTokens ?? prompt + gen, native: false };
 }
 
-function addCost(row: TokenChartPoint, t: TurnSample): void {
-  const cost = turnCost(t);
+/** Cards use native only when every turn has usage. Charts must use the same unit. */
+export function tokenUnitFor(turns: TurnSample[]): "native" | "est" {
+  return turns.length > 0 && turns.every(turnHasNative) ? "native" : "est";
+}
+
+function addCost(row: TokenChartPoint, t: TurnSample, unit: "native" | "est"): void {
+  const cost = unit === "native"
+    ? {
+        prompt: t.promptTokens ?? 0,
+        gen: t.completionTokens ?? 0,
+        tokens: t.totalTokens ?? (t.promptTokens ?? 0) + (t.completionTokens ?? 0),
+      }
+    : {
+        prompt: t.promptEstTokens ?? 0,
+        gen: t.genEstTokens ?? 0,
+        tokens: t.estTokens ?? (t.promptEstTokens ?? 0) + (t.genEstTokens ?? 0),
+      };
   row.prompt += cost.prompt;
   row.gen += cost.gen;
   row.tokens += cost.tokens;
@@ -100,6 +115,7 @@ export function tokenChartSeries(
     return [];
   }
   const inWindow = [...filterSamples(turns, since, now)].sort((a, b) => a.at - b.at);
+  const unit = tokenUnitFor(inWindow);
 
   if (bucket === "cumulative") {
     const points: TokenChartPoint[] = [];
@@ -109,7 +125,7 @@ export function tokenChartSeries(
     }
     const run: TokenChartPoint = { at: start, prompt: 0, gen: 0, tokens: 0, turns: 0 };
     for (const t of inWindow) {
-      addCost(run, t);
+      addCost(run, t, unit);
       points.push({ at: t.at, prompt: run.prompt, gen: run.gen, tokens: run.tokens, turns: run.turns });
     }
     const last = points[points.length - 1];
@@ -130,7 +146,7 @@ export function tokenChartSeries(
   for (const row of inWindow) {
     const key = alignBucket(row.at, bucket);
     const bin = bins.get(key) ?? { at: key, prompt: 0, gen: 0, tokens: 0, turns: 0 };
-    addCost(bin, row);
+    addCost(bin, row, unit);
     bins.set(key, bin);
   }
   return [...bins.values()].sort((a, b) => a.at - b.at);

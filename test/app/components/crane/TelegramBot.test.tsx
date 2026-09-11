@@ -48,7 +48,7 @@ describe("TelegramBot", () => {
     fireEvent.click(screen.getByRole("button", { name: /Telegram/ }));
     const phone = await waitFor(() => screen.getByRole("link", { name: /open on phone/ }));
     expect(phone.getAttribute("href")).toBe("https://t.me/kit_bot");
-    expect(screen.getByText(/add 9/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "add 9" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /ask 1 to tap \/new/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Put \/new in \/ menu/ })).toBeTruthy();
     expect((screen.getByPlaceholderText("numeric id") as HTMLInputElement).value).toBe("");
@@ -85,7 +85,8 @@ describe("TelegramBot", () => {
     await waitFor(() => expect(screen.getByText(/add Ada/)).toBeTruthy());
     expect(screen.getByText("99")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /add Ada/ }));
-    expect(screen.getByText("99 ×")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "copy 99" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "remove 99" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /ask Ada to tap \/new/ })).toBeTruthy();
   });
 

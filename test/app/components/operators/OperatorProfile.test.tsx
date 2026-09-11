@@ -107,7 +107,9 @@ describe("OperatorProfile", () => {
     render(<OperatorProfile operatorId="2" />);
     await waitFor(() => expect(screen.getByDisplayValue("ada@example.com")).toBeTruthy());
     expect(screen.getByDisplayValue("builds")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /42/ })).toBeTruthy();
+    expect(screen.getByText("42")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "copy 42" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "remove 42" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Update passphrase" })).toBeTruthy();
     expect(screen.queryByLabelText("current")).toBeNull();
     expect(screen.getByRole("link", { name: /settings/ })).toBeTruthy();

@@ -19,6 +19,7 @@ import {
 import type { LastTurn, ObservePrefs, SpendRollup, SpendSlice, YardSpend } from "@/lib/yard/types";
 import type { StoreSubSuggestion } from "@/lib/yard/observe/spend";
 import { useDoor } from "../shared/DoorShell";
+import { IdChip } from "../shared/IdChip";
 import { yardFetch } from "@/app/lib/yardFetch";
 
 const WINDOW_LABELS: Record<SpendWindow, string> = {
@@ -156,21 +157,39 @@ function lastTurnLine(turn: LastTurn | null | undefined, now: number): string | 
   return bits.join(" · ");
 }
 
-function SliceList({ slices, max }: { slices: SpendSlice[]; max: number }) {
+function SliceList({ slices, max, copyable = false }: { slices: SpendSlice[]; max: number; copyable?: boolean }) {
   if (slices.length === 0) {
     return null;
   }
   return (
-    <ul className="mt-1 space-y-1">
+    <ul className="mt-1 space-y-1.5">
       {slices.map((s) => (
-        <li key={s.id} className="grid grid-cols-[7rem_1fr_auto] items-center gap-2 text-[11px] text-muted max-sm:grid-cols-[1fr_auto] max-sm:gap-x-2 max-sm:gap-y-1">
-          <span className="truncate font-mono text-body max-sm:col-span-2" title={s.id}>
-            {s.label || s.id}
-          </span>
+        <li key={s.id} className="min-w-0 text-[11px] text-muted">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {copyable
+              ? (
+                  <>
+                    {s.label
+                      ? (
+                          <span className="text-body">{s.label}</span>
+                        )
+                      : null}
+                    <IdChip id={s.id} />
+                  </>
+                )
+              : (
+                  <span className="break-all font-mono text-body">{s.label || s.id}</span>
+                )}
+            <span className="ml-auto tabular-nums text-body">
+              {fmtEstTokens(s.estTokens)}
+              {" "}
+              ·
+              {" "}
+              {s.turns}
+              t
+            </span>
+          </div>
           <Bar share={max > 0 ? s.estTokens / max : 0} />
-          <span className="tabular-nums text-body">
-            {fmtEstTokens(s.estTokens)} · {s.turns}t
-          </span>
         </li>
       ))}
     </ul>
@@ -193,7 +212,7 @@ function ExtraUsers({ slices, max }: { slices: SpendSlice[]; max: number }) {
         {" "}
         users
       </button>
-      {open ? <SliceList slices={slices} max={max} /> : null}
+      {open ? <SliceList slices={slices} max={max} copyable /> : null}
     </>
   );
 }
@@ -241,7 +260,7 @@ function CraneRow({ crane, max }: { crane: SpendRollup; max: number }) {
                 ? (
                     <div className="mt-2 pl-1">
                       <p className="text-[10px] uppercase tracking-wide text-faint">by user</p>
-                      <SliceList slices={crane.byUser} max={crane.estTokens} />
+                      <SliceList slices={crane.byUser} max={crane.estTokens} copyable />
                     </div>
                   )
                 : crane.unattributedTurns > 0
@@ -549,10 +568,17 @@ export function CraneSpend({
         </p>
         {rollup.byUser[0]
           ? (
-              <p className="mt-1 truncate font-mono text-sm text-fg" title={rollup.byUser[0].id}>
-                {rollup.byUser[0].label || rollup.byUser[0].id}
-                <span className="ml-2 font-sans text-xs text-dim">{fmtEstTokens(rollup.byUser[0].estTokens)}</span>
-              </p>
+              <div className="mt-1 min-w-0">
+                {rollup.byUser[0].label
+                  ? (
+                      <p className="text-sm text-fg">{rollup.byUser[0].label}</p>
+                    )
+                  : null}
+                <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+                  <IdChip id={rollup.byUser[0].id} />
+                  <span className="font-sans text-xs text-dim">{fmtEstTokens(rollup.byUser[0].estTokens)}</span>
+                </div>
+              </div>
             )
           : (
               <p className="mt-1 text-sm text-body">{rollup.bySource[0]?.id ?? "—"}</p>
@@ -571,11 +597,9 @@ export function CraneSpend({
         {storeSub
           ? (
               <div className="mt-2 text-[11px] text-mark">
-                <p>
+                <p className="flex flex-wrap items-center gap-1.5">
                   store
-                  {" "}
-                  <code className="text-fg">{storeSub.userId}</code>
-                  {" "}
+                  <IdChip id={storeSub.userId} />
                   on
                   {" "}
                   {storeSub.operatorName}

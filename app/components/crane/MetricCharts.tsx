@@ -10,6 +10,7 @@ import {
   sourceChartSeries,
   thinChartPoints,
   tokenChartSeries,
+  tokenUnitFor,
   turnHasNative,
   type SpendBucket,
 } from "@/lib/yard/observe/spend";
@@ -88,7 +89,8 @@ export const MetricCharts = memo(function MetricCharts({
     restarts: s.restartCount,
   }));
   const hasSplit = tokenPts.some((r) => r.prompt > 0 || r.gen > 0);
-  const nativeUsage = turnsIn.some(turnHasNative);
+  const nativeUsage = tokenUnitFor(turnsIn) === "native";
+  const mixedUsage = !nativeUsage && turnsIn.some(turnHasNative);
   const tokenLine = bucket === "cumulative" ? "stepAfter" : "monotone";
   const hasNet = hostIn.some((s) => s.netRxBytes != null || s.netTxBytes != null);
   const hasBlk = hostIn.some((s) => s.blkReadBytes != null || s.blkWriteBytes != null);
@@ -196,9 +198,11 @@ export const MetricCharts = memo(function MetricCharts({
         empty={tokenRows.length === 0}
         hint="no turn perf in docker logs — send a chat, then refresh"
         caption={
-          bucket === "cumulative"
-            ? "running sum of each turn · idle holds the total"
-            : "tokens spent in each bucket · idle is 0"
+          mixedUsage
+            ? "window mixes billed usage and chars/4 — chart uses est like the cards"
+            : bucket === "cumulative"
+              ? "running sum of each turn · idle holds the total"
+              : "tokens spent in each bucket · idle is 0"
         }
       >
         <ResponsiveContainer>

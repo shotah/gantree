@@ -18,6 +18,7 @@ import { HINTS } from "@/lib/yard/hints";
 import { jpegFromFile } from "@/app/lib/jpegFromFile";
 import { yardFetch } from "@/app/lib/yardFetch";
 import { HintField, HintLegend } from "../shared/HintField";
+import { IdChip } from "../shared/IdChip";
 import { OperatorAvatar } from "../shared/OperatorAvatar";
 
 type OperatorRow = {
@@ -458,16 +459,7 @@ function IdList({
         {ids.length === 0 ? <li className="text-xs text-faint">none yet</li> : null}
         {ids.map((id) => (
           <li key={id}>
-            <button
-              type="button"
-              onClick={() => setIds(ids.filter((x) => x !== id))}
-              className="rounded border border-edge px-2 py-0.5 text-xs text-fg hover:border-danger hover:text-danger"
-              title="remove"
-            >
-              {id}
-              {" "}
-              ×
-            </button>
+            <IdChip id={id} onRemove={() => setIds(ids.filter((x) => x !== id))} />
           </li>
         ))}
       </ul>
