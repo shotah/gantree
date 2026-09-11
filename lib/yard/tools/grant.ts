@@ -5,6 +5,29 @@ import type { CatalogEntry, McpServer } from "../types";
 import { loadCatalog } from "./catalog";
 import { dropReplacedSearchServers, serverFromCatalog } from "./packages";
 
+/** Crane-local dir on the existing /data bind. photo_generate writes here; pendant avatar/backdrop read source_path from it. */
+export const IMAGE_OUTPUT_DIR_DEFAULT = "/data/images";
+
+function seedEnv(envFile: string | null, patch: Record<string, string>): string[] {
+  if (!envFile) {
+    return [];
+  }
+  const env = loadEnvFile(envFile);
+  const next = { ...env };
+  const wrote: string[] = [];
+  for (const [k, v] of Object.entries(patch)) {
+    if (env[k]?.trim()) {
+      continue;
+    }
+    next[k] = v;
+    wrote.push(`${k}=${v}`);
+  }
+  if (wrote.length) {
+    writeEnvFile(envFile, next);
+  }
+  return wrote;
+}
+
 /** Fill catalog download_* when an attached mcp.toml only has name/command. */
 export function enrichDownloadUrls(servers: McpServer[], catalog: CatalogEntry[]): McpServer[] {
   return dropReplacedSearchServers(servers).map((s) => {
@@ -44,14 +67,15 @@ export async function grant(slug: string, name: string): Promise<{ ok: boolean; 
   const cat = loadCatalog().find((c) => c.name === name);
   const next: McpServer[] = [...servers, cat ? serverFromCatalog(cat) : { name, command: name }];
   writeText(g.mcpManifest, stringifyMcpToml(next));
-  if (name === "boards" && g.envFile) {
-    const env = loadEnvFile(g.envFile);
-    if (!env.BOARDS_AUTHOR?.trim()) {
-      writeEnvFile(g.envFile, { ...env, BOARDS_AUTHOR: slug });
-    }
+  if (name === "boards") {
+    seedEnv(g.envFile, { BOARDS_AUTHOR: slug });
   }
+  const photoDir = name === "image" || name === "pendant"
+    ? seedEnv(g.envFile, { IMAGE_OUTPUT_DIR: IMAGE_OUTPUT_DIR_DEFAULT })
+    : [];
   const needs = cat?.envKeys?.length ? ` — add ${cat.envKeys.join(", ")} in Secrets` : "";
-  return { ok: true, detail: `granted ${name} — recreate to fetch bins and load it${needs}`, servers: next };
+  const photos = photoDir.length ? ` — ${photoDir.join(", ")} (photo_generate → pendant face/wallpaper)` : "";
+  return { ok: true, detail: `granted ${name} — recreate to fetch bins and load it${needs}${photos}`, servers: next };
 }
 
 export async function revoke(slug: string, name: string): Promise<{ ok: boolean; detail: string; servers: McpServer[] }> {

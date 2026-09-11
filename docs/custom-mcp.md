@@ -18,6 +18,7 @@ speaks stdio, ships a static binary, and prints **shape**.
 | No secrets | [mcp-go-math](https://github.com/shotah/mcp-go-math) | Smallest: evaluate + convert, empty `env_keys` |
 | One API key | [google-maps-mcp](https://github.com/shotah/google-maps-mcp) | `host-manifest` + `GOOGLE_MAPS_API_KEY` |
 | Image gen | [image-generation-mcp](https://github.com/shotah/image-generation-mcp) | `IMAGE_API_KEY` or crane `LLM_API_KEY`; grant prefix `image` |
+| Pendant face | [pendant-mcp](https://github.com/shotah/pendant-mcp) | Face / wallpaper / mood. Grant with `image`. Prefix `pendant` |
 | OAuth hop | [go-strava-mcp](https://github.com/shotah/go-strava-mcp) | `auth_args` + PKCE paste (`url` / `exchange`) |
 
 Keep:
@@ -28,7 +29,7 @@ Keep:
   ([ai-gantry naming](https://github.com/shotah/ai-gantry/blob/main/docs/mcp-naming.md))
 - GoReleaser archive: `{command}_{version}_{os}_{arch}.tar.gz`
 
-Do not reuse `maps`, `math`, or `image`.
+Do not reuse `maps`, `math`, `image`, or `pendant`.
 
 ### `host-manifest` (required)
 

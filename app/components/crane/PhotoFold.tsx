@@ -7,8 +7,8 @@ import type { AgentDash } from "./useAgentDashboard";
 function photoCopy(telegramOn: boolean, pendantOn: boolean): { hint: string; extra: string } {
   if (pendantOn) {
     return {
-      hint: "persona/avatar.jpg — the pendant mouth uses this picture",
-      extra: "Upload or Push to pendant sends it to the Worker face the phone shows.",
+      hint: "persona/avatar.jpg — operator face; the agent's MCP paint is the room blob",
+      extra: "Upload or Push to pendant posts this JPEG. Grant image + pendant so the agent can generate a face, wallpaper, and mood — a later push here overwrites that room face.",
     };
   }
   if (telegramOn) {

@@ -42,4 +42,11 @@ describe("envHint", () => {
     expect(envHint("BRAVE_SEARCH_API_KEY").hint).toMatch(/brave/i);
     expect(envHint("BRAVE_SEARCH_API_KEY").example).toMatch(/dashboard/i);
   });
+
+  it("describes the photo_generate → pendant face/wallpaper handoff dir", () => {
+    expect(envHint("IMAGE_OUTPUT_DIR").example).toBe("/data/images");
+    expect(envHint("IMAGE_OUTPUT_DIR").hint).toMatch(/source_path/);
+    expect(envHint("IMAGE_API_KEY").hint).toMatch(/LLM_API_KEY/);
+    expect(envHint("PENDANT_IMAGE_DIR").hint).toMatch(/source_path/);
+  });
 });

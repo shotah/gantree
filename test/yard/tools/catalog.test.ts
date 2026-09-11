@@ -59,6 +59,7 @@ describe("PACKAGES", () => {
     expect(byName.cars?.command).toBe("cars-search-mcp");
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.image?.command).toBe("image-generation-mcp");
+    expect(byName.pendant?.command).toBe("pendant-mcp");
     expect(byName.cast?.command).toBe("mcp-beam");
     expect(byName["google-search"]).toBeUndefined();
     expect(SLIM_GRANT).toEqual(["math"]);
@@ -70,6 +71,7 @@ describe("loadCatalog", () => {
     const byName = Object.fromEntries(loadCatalog().map((c) => [c.name, c]));
     expect(byName.maps?.command).toBe("google-maps-mcp");
     expect(byName.image?.command).toBe("image-generation-mcp");
+    expect(byName.pendant?.command).toBe("pendant-mcp");
     expect(byName.google?.command).toBe("google-mcp");
     expect(byName.cast?.download_url).toContain("mcp-beam");
     expect(byName["google-search"]).toBeUndefined();
@@ -88,6 +90,14 @@ describe("loadCatalog", () => {
       "GOOGLE_GENAI_USE_VERTEXAI",
       "GOOGLE_CLOUD_PROJECT",
       "GOOGLE_CLOUD_LOCATION",
+    ]);
+    expect(byName.pendant?.command).toBe("pendant-mcp");
+    expect(byName.pendant?.envKeys).toEqual([]);
+    expect(byName.pendant?.optionalEnvKeys).toEqual([
+      "PENDANT_MAILBOX_URL",
+      "PENDANT_BEARER",
+      "IMAGE_OUTPUT_DIR",
+      "PENDANT_IMAGE_DIR",
     ]);
     expect(byName.boards?.command).toBe("boards-mcp");
     expect(byName.boards?.envKeys).toEqual(["BOARDS_AUTHOR"]);
@@ -150,6 +160,18 @@ describe("secretKeysForGrant", () => {
       expect.arrayContaining(["USER_GOOGLE_EMAIL", "BRAVE_SEARCH_API_KEY"]),
     );
     expect(envKeysForServer({ name: "google" }, google)).not.toContain("USER_GOOGLE_EMAIL");
+  });
+
+  it("lists IMAGE_OUTPUT_DIR as optional on image and pendant, never required", () => {
+    const catalog = loadCatalog();
+    expect(envKeysForServer({ name: "image" }, catalog)).toEqual([]);
+    expect(envKeysForServer({ name: "pendant" }, catalog)).toEqual([]);
+    expect(optionalKeysForGrant(["image"], catalog)).toEqual(
+      expect.arrayContaining(["IMAGE_OUTPUT_DIR", "IMAGE_API_KEY", "BRAVE_SEARCH_API_KEY"]),
+    );
+    expect(optionalKeysForGrant(["pendant"], catalog)).toEqual(
+      expect.arrayContaining(["IMAGE_OUTPUT_DIR", "PENDANT_MAILBOX_URL", "PENDANT_BEARER"]),
+    );
   });
 
   it("includes optional catalog keys in Secrets but not skip/doctor", () => {

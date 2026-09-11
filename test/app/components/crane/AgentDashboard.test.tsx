@@ -468,7 +468,7 @@ describe("AgentDashboard secrets", () => {
     expect(screen.queryByLabelText("TELEGRAM_ALLOWED_USERS")).toBeNull();
     expect(screen.getByRole("button", { name: /needs a key/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Photo/ }));
-    await waitFor(() => expect(screen.getByText(/Worker face/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Grant image \+ pendant/)).toBeTruthy());
     expect(screen.queryByText(/Telegram bots/)).toBeNull();
   });
 

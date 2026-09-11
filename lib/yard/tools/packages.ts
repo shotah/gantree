@@ -103,6 +103,7 @@ export const PACKAGES: PackageRef[] = [
   { name: "twitter", command: "twitter-mcp", repo: "twitter-mcp", downloadTag: "latest", downloadUrl: ghRelease("twitter-mcp", "twitter-mcp") },
   { name: "maps", command: "google-maps-mcp", repo: "google-maps-mcp", downloadTag: "latest", downloadUrl: ghRelease("google-maps-mcp", "google-maps-mcp") },
   { name: "image", command: "image-generation-mcp", repo: "image-generation-mcp", downloadTag: "latest", downloadUrl: ghRelease("image-generation-mcp", "image-generation-mcp") },
+  { name: "pendant", command: "pendant-mcp", repo: "pendant-mcp", downloadTag: "latest", downloadUrl: ghRelease("pendant-mcp", "pendant-mcp") },
   { name: "youtube", command: "youtube-go-mcp", repo: "youtube-go-mcp", downloadTag: "latest", downloadUrl: ghRelease("youtube-go-mcp", "youtube-go-mcp") },
   { name: "cast", command: "mcp-beam", repo: "mcp-beam", downloadTag: "latest", downloadUrl: ghRelease("mcp-beam", "mcp-beam") },
   { name: "flights", command: "flights-search-mcp", repo: "flights-search-mcp", downloadTag: "latest", downloadUrl: ghRelease("flights-search-mcp", "flights-search-mcp") },

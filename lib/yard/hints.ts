@@ -277,8 +277,28 @@ const ENV_HINTS: Record<string, HintCopy> = {
     hint: "Brave Search subscription token for builtin web_search. Titles, URLs, snippets — not a second model. Subscribe at api-dashboard.search.brave.com.",
     example: "a long token from the dashboard",
   },
+  IMAGE_API_KEY: {
+    hint: "Gemini / Vertex key for image-generation-mcp. Blank uses the crane LLM_API_KEY. Not Workspace OAuth.",
+    example: "AIzaSy…",
+  },
+  IMAGE_MODEL: {
+    hint: "Image model id. Blank uses gemini-3.1-flash-image, else LLM_MODEL.",
+    example: "gemini-3.1-flash-image",
+  },
+  IMAGE_PROVIDER: {
+    hint: "Image backend. Default gemini (Nano Banana). Other values teach-in until implemented.",
+    example: "gemini",
+  },
+  IMAGE_OUTPUT_DIR: {
+    hint: "Where photo_generate writes PNGs. pendant avatar_update / backdrop_update need source_path inside this dir. Grant seeds /data/images (already on the crane data bind).",
+    example: "/data/images",
+  },
+  PENDANT_IMAGE_DIR: {
+    hint: "Optional second allowed root for pendant source_path. Blank is IMAGE_OUTPUT_DIR only.",
+    example: "/data/images",
+  },
   GOOGLE_GENAI_USE_VERTEXAI: {
-    hint: "Set true only if a granted tool still uses Vertex. Builtin web_search does not.",
+    hint: "Set true for Vertex image gen (needs GOOGLE_CLOUD_PROJECT). Builtin web_search does not use this.",
     example: "true",
   },
   GOOGLE_CLOUD_PROJECT: {

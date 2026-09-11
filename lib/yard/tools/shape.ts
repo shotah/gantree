@@ -58,7 +58,17 @@ export const HOST_SHAPE: Record<string, HostShape> = {
       "GOOGLE_CLOUD_PROJECT",
       "GOOGLE_CLOUD_LOCATION",
     ],
-    blurb: "Image gen (Nano Banana default). IMAGE_API_KEY wins; else crane LLM_API_KEY. Optional IMAGE_MODEL / IMAGE_PROVIDER / IMAGE_OUTPUT_DIR.",
+    blurb: "Image gen (Nano Banana default). IMAGE_API_KEY wins; else crane LLM_API_KEY. Grant with pendant: photo_generate writes IMAGE_OUTPUT_DIR, then pendant__avatar_update / backdrop_update. 1:1 face, 9:16 wallpaper.",
+  },
+  pendant: {
+    envKeys: [],
+    optionalEnvKeys: [
+      "PENDANT_MAILBOX_URL",
+      "PENDANT_BEARER",
+      "IMAGE_OUTPUT_DIR",
+      "PENDANT_IMAGE_DIR",
+    ],
+    blurb: "Pendant face / wallpaper / mood. Mailbox URL + bearer already on CHANNEL=pendant. Grant image too. avatar_update / backdrop_update need IMAGE_OUTPUT_DIR; theme_list then theme_update (no invented hex).",
   },
   youtube: {
     envKeys: ["YOUTUBE_OAUTH_CLIENT_ID", "YOUTUBE_OAUTH_CLIENT_SECRET"],

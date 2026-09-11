@@ -19,13 +19,15 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
     },
     { name: "maps", command: "google-maps-mcp", envKeys: ["GOOGLE_MAPS_API_KEY"], blurb: "Places." },
     { name: "boards", command: "boards-mcp", envKeys: ["BOARDS_AUTHOR"], blurb: "Corkboard." },
+    { name: "image", command: "image-generation-mcp", envKeys: [], blurb: "Photos." },
+    { name: "pendant", command: "pendant-mcp", envKeys: [], blurb: "Face." },
   ],
 }));
 
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { loadEnvFile } from "@/lib/yard/host/envfile";
 import { stringifyMcpToml } from "@/lib/yard/host/files";
-import { grant, revoke, enrichDownloadUrls } from "@/lib/yard/tools/grant";
+import { grant, revoke, enrichDownloadUrls, IMAGE_OUTPUT_DIR_DEFAULT } from "@/lib/yard/tools/grant";
 
 const dirs: string[] = [];
 
@@ -142,6 +144,49 @@ describe("grant", () => {
     vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, envFile }));
     await grant("kit", "boards");
     expect(loadEnvFile(envFile).BOARDS_AUTHOR).toBe("jules");
+  });
+
+  it("seeds IMAGE_OUTPUT_DIR when granting image so photo_generate can hand off a path", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const envFile = join(root, ".env");
+    writeFileSync(mcp, stringifyMcpToml([]));
+    writeFileSync(envFile, "CHANNEL=pendant\n");
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, envFile }));
+    const out = await grant("kit", "image");
+    expect(out.ok).toBe(true);
+    expect(out.servers[0]).toEqual(expect.objectContaining({ name: "image", command: "image-generation-mcp" }));
+    expect(out.detail).toContain(`IMAGE_OUTPUT_DIR=${IMAGE_OUTPUT_DIR_DEFAULT}`);
+    expect(loadEnvFile(envFile).IMAGE_OUTPUT_DIR).toBe(IMAGE_OUTPUT_DIR_DEFAULT);
+    expect(loadEnvFile(envFile).CHANNEL).toBe("pendant");
+  });
+
+  it("seeds IMAGE_OUTPUT_DIR when granting pendant", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const envFile = join(root, ".env");
+    writeFileSync(mcp, stringifyMcpToml([]));
+    writeFileSync(envFile, "CHANNEL=pendant\n");
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, envFile }));
+    const out = await grant("kit", "pendant");
+    expect(out.ok).toBe(true);
+    expect(out.servers[0]).toEqual(expect.objectContaining({ name: "pendant", command: "pendant-mcp" }));
+    expect(loadEnvFile(envFile).IMAGE_OUTPUT_DIR).toBe(IMAGE_OUTPUT_DIR_DEFAULT);
+  });
+
+  it("does not overwrite an existing IMAGE_OUTPUT_DIR on grant", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const envFile = join(root, ".env");
+    writeFileSync(mcp, stringifyMcpToml([]));
+    writeFileSync(envFile, "IMAGE_OUTPUT_DIR=/tmp/photos\n");
+    vi.mocked(getGantry).mockResolvedValue(card({ mcpManifest: mcp, envFile }));
+    const out = await grant("kit", "image");
+    expect(loadEnvFile(envFile).IMAGE_OUTPUT_DIR).toBe("/tmp/photos");
+    expect(out.detail).not.toContain("IMAGE_OUTPUT_DIR=");
   });
 });
 
