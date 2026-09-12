@@ -48,11 +48,13 @@ than one. Pitch and why the harness is worth operating live in the
 <a href="../index.html">root readme</a>. Install: <a href="install.html">install.md</a>. Headless
 host + attach: <a href="headless.html">headless.md</a>. Login, profile, settings:
 <a href="operators.html">operators.md</a>. Door: <a href="security.html">security.md</a>.</p>
-<p>Chat stays Telegram (or Discord / Slack). Nothing here sits in a chat turn.
-Gantree reads Docker and files after the fact. It writes the same files the
-harness already understands.</p>
+<p>Chat is the <strong>pendant</strong> (Telegram, Discord, Slack if you already have
+that bot). Nothing here sits in a chat turn. Gantree reads Docker and
+files after the fact. It writes the same files the harness already
+understands.</p>
 <pre><code class="language-text">browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
                                                          gantry  gantry  gantry
+phone    →  gantry-pendant (Google)  ←dials—  those same gantries
 </code></pre>
 <p>Agents open <strong>zero</strong> inbound ports. Bind <code>127.0.0.1</code> by default. If you
 expose the console, you expose it to yourself.</p>
@@ -118,28 +120,31 @@ Do not watch <code>notices_list</code>.</p>
   &nbsp;
   <img src="../assets/docs/boards-page.png" alt="Boards page — roster, ranked open scores, and pins" width="480">
 </p><p>Build a crane from the board (yard type first: home Mini or cloud VM).
-Telegram: <strong>Create with BotFather</strong> copies <code>/newbot</code>, opens the chat, and
-suggests <code>{slug}_bot</code> — paste the token it replies with. <strong>Upload a photo</strong> on the crane — it lands in <code>persona/avatar.jpg</code>, shows on
-the board, and if the channel is Telegram the bot’s face updates too
-(<code>setMyProfilePhoto</code>). If the channel is pendant, the yard POSTs that
-same JPEG to the Worker mailbox (same gate: JPEG, 5MB, <code>avatar.jpg</code>).
-The phone user can replace the face from the pendant header. Grant
-<strong>image</strong> and <strong>pendant</strong>, then recreate, so the agent can draw a picture
-and wear it: <code>photo_generate</code> (1:1 face, 9:16 wallpaper) then
+Default channel is <strong>pendant</strong>. Settings → Pendant must be ready
+(Google + Cloudflare token — <a href="access.html">access.md</a>); Build ticks
+operators (email is enough), the yard mints the bearer, recreate. The
+yard cookie never goes to that Worker. <strong>Upload a photo</strong> on the crane —
+it lands in <code>persona/avatar.jpg</code>, shows on the board, and the yard POSTs
+that same JPEG to the Worker mailbox (JPEG, 5MB, <code>avatar.jpg</code>). The phone
+user can replace the face from the pendant header. Grant <strong>image</strong> and
+<strong>pendant</strong>, then recreate, so the agent can draw a picture and wear it:
+<code>photo_generate</code> (1:1 face, 9:16 wallpaper) then
 <code>pendant__avatar_update</code> / <code>backdrop_update</code>, plus <code>theme_list</code> then
 <code>theme_update</code> (catalog id, no invented hex). Sending a PNG in the thread
 is the harness, not this board. The room blob can drift from
-<code>persona/avatar.jpg</code>. On a
-Telegram crane, <strong>Telegram</strong> (below the photo) can <code>getMe</code> the token, push
-name / about / the <code>/</code> command menu (including <code>/new</code>), ask an allowlisted
-chatter to tap <code>/new</code> (distill, then drop that thread — the yard cannot send
-as her), and edit <code>TELEGRAM_ALLOWED_USERS</code> from numeric ids (slog <code>user_id</code>
-after someone talks — not <code>@username</code>). On a pendant crane, <strong>Pendant</strong> ticks
-operators (email until the Google <code>sub</code> is learned) onto
-<code>PENDANT_ALLOWED_USERS</code>, nags recreate, and offers to store an unseen <code>sub</code>
-on the matching profile. Telegram crane → pendant (same memory):
-<a href="channel_migration_doc.html">channel_migration_doc.md</a>. Grant
-a tool, recreate, watch <em>that</em> crane’s doctor. Message it on Telegram.
+<code>persona/avatar.jpg</code>. <strong>Pendant</strong> ticks operators (email until the Google
+<code>sub</code> is learned) onto <code>PENDANT_ALLOWED_USERS</code>, nags recreate, and offers
+to store an unseen <code>sub</code> on the matching profile.</p>
+<p>Telegram is still a mouth: <strong>Create with BotFather</strong> copies <code>/newbot</code>,
+opens the chat, and suggests <code>{slug}_bot</code> — paste the token it replies
+with. On a Telegram crane the bot’s face updates too (<code>setMyProfilePhoto</code>).
+<strong>Telegram</strong> (below the photo) can <code>getMe</code> the token, push name / about /
+the <code>/</code> command menu (including <code>/new</code>), ask an allowlisted chatter to tap
+<code>/new</code> (distill, then drop that thread — the yard cannot send as her), and
+edit <code>TELEGRAM_ALLOWED_USERS</code> from numeric ids (slog <code>user_id</code> after
+someone talks — not <code>@username</code>). Telegram crane → pendant (same memory):
+<a href="channel_migration_doc.html">channel_migration_doc.md</a>. Grant a tool,
+recreate, watch <em>that</em> crane’s doctor. Message it on the pendant.
 <code>/tools</code> is the crane’s mouth; this page is the operator’s.</p>
 <p align="center">
   <img src="../assets/docs/yard-phone.png" alt="The yard on a phone" width="220">

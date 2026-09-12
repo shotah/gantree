@@ -57,15 +57,19 @@ true as the board grows.</p>
 <a href="https://github.com/shotah/gantree/blob/main/docs/todo.md">docs/todo.md</a>.</p>
 <hr>
 <h2 id="operator-plane">Operator plane</h2>
-<pre><code class="language-text">[ browser ]
+<p>The household picture (three repos, one file contract) lives in the
+<a href="../index.html#three-repos-one-household">root readme</a>. This page is the
+yard’s stack.</p>
+<pre><code class="language-text">[ browser ]                                 [ phone ]
+     |                                            |
+     |  localhost | Tailscale | Tunnel | nginx    |  Google
+     v                                            v
+[ gantree — Vinext on Node, on the Docker host ]  [ gantry-pendant Worker ]
+     |  Docker API + files on disk                      ^
+     v                                                  | dials bearer + allow
+[ gantry ] [ gantry ] [ gantry ]  ----------------------+
      |
-     |  localhost | Tailscale | Cloudflare Tunnel | nginx-proxy (console only)
-     v
-[ gantree  — Vinext on Node, on the Docker host ]
-     |
-     |  Docker API + files on disk
-     v
-[ gantry ] [ gantry ] [ gantry ]     Hub image, outbound chat
+     |  optional: Telegram / Discord / Slack
 </code></pre>
 <p>Agents open <strong>zero</strong> inbound ports. Only this UI is reachable, and only
 through a path you chose. Bind <code>127.0.0.1</code> by default. Never a public
@@ -160,12 +164,12 @@ npm run dev        # vinext dev
 <td><code>PERSONA.md</code>, <code>avatar.jpg</code>, <code>.env</code>, <code>data/</code> on disk</td>
 </tr>
 <tr>
-<td>Telegram bot</td>
-<td>Bot API <code>getMe</code> / <code>setMy*</code> after a token exists. Allowlist is <code>.env</code>. Never <code>getUpdates</code>.</td>
+<td>Pendant mouth (default)</td>
+<td><code>.env</code> (<code>CHANNEL=pendant</code>, mailbox URL, bearer present?, <code>PENDANT_ALLOWED_USERS</code>). Gantree writes the list and pushes Worker secrets (Google, session, <code>CRANE_BEARERS</code>) from Settings. The Worker never sees the yard cookie.</td>
 </tr>
 <tr>
-<td>Pendant mouth</td>
-<td><code>.env</code> (<code>CHANNEL=pendant</code>, mailbox URL, bearer present?, <code>PENDANT_ALLOWED_USERS</code>). Gantree writes the list and pushes Worker secrets (Google, session, <code>CRANE_BEARERS</code>) from Settings. The Worker never sees the yard cookie.</td>
+<td>Telegram bot</td>
+<td>Bot API <code>getMe</code> / <code>setMy*</code> after a token exists. Allowlist is <code>.env</code>. Never <code>getUpdates</code>.</td>
 </tr>
 </tbody></table>
 <p>Files remain the source of truth. The UI is an editor of those files,
@@ -206,13 +210,14 @@ you leave the box. Never a public load balancer.</li>
 <li><strong>Isolation.</strong> One human, one bot, one directory, one <code>data/</code>.
 Delete a tryout = delete that directory. Pushing a person onto Kit
 does not touch Ada’s crane.</li>
-<li><strong>Not chat.</strong> Telegram and the pendant are the mouths. No pairing
-the agent through the console. The yard never sits in a chat turn.</li>
+<li><strong>Not chat.</strong> The pendant is the default mouth; Telegram, Discord, and
+ Slack still work. No pairing the agent through the console. The yard
+ never sits in a chat turn.</li>
 <li><strong>Import over write.</strong> dockerode, compose, Vinext. Don’t invent a
 Docker client.</li>
 <li><strong>Meh yard, tight crane.</strong> Gantree is JS in a browser. That stack
 will never be as fast as the Go harness — and that is fine. The
-operator can wait 200ms for a chart. The human on Telegram cannot
+operator can wait 200ms for a chart. The human on the phone cannot
 wait for a serial tool loop. Never sit in the token path. Never
 add a listen port, a scrape, or a hook that taxes parallel tool
 calls, Completer rounds, or RSS. If a dashboard want would make
@@ -251,11 +256,11 @@ Hub image <code>shotah/gantree</code> with <code>docker.sock</code>. Two install
 </tr>
 <tr>
 <td>Agent dashboard</td>
-<td>Per instance: metric graphs + visual logs. Kit’s page is only Kit. Folds for Tools, persona, secrets, Telegram, pendant, run.</td>
+<td>Per instance: metric graphs + visual logs. Kit’s page is only Kit. Folds for Tools, persona, secrets, pendant, Telegram, run.</td>
 </tr>
 <tr>
 <td>Build crane</td>
-<td>Wizard: home vs cloud, slug, persona seed, model, channel + token + operator checkboxes for Telegram / pendant, <code>slim</code> / <code>life</code> / <code>life-cast</code></td>
+<td>Wizard: home vs cloud, slug, persona seed, model, channel (pendant default) + operator checkboxes, <code>slim</code> / <code>life</code> / <code>life-cast</code></td>
 </tr>
 <tr>
 <td>Tools</td>

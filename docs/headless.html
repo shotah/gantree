@@ -42,8 +42,8 @@
   <main id="content" class="wrap">
     <article class="prose"><h1 id="headless-host-first-boot-attach-existing-agents">Headless host — first boot + attach existing agents</h1>
 <p>Gantree is <strong>not</strong> a downloadable bin. Clone it onto the <strong>Docker host</strong>,
-<code>npm run build</code>, <code>npm start</code>. Default bind is <strong>127.0.0.1:3000</strong>. Chat stays
-Telegram.</p>
+<code>npm run build</code>, <code>npm start</code>. Default bind is <strong>127.0.0.1:3000</strong>. Chat is
+the pendant.</p>
 <p>This page is the operator walk (Node 22, attach existing dirs, SSH tunnel).
 Stranger hello: <a href="install.html">install.md</a>. Board walk: <a href="console.html">console.md</a>.
 Login, profile, settings: <a href="operators.html">operators.md</a>.</p>
@@ -221,7 +221,7 @@ SQLite cannot create WAL files. Docker restarts the crash.</p>
 <hr>
 <h2 id="8-console-in-docker">8. Console in Docker</h2>
 <p>Yes. Compose already mounts <code>docker.sock</code>, so Gantree can inspect / start /
-recreate <strong>sibling</strong> agent containers. Chat still stays Telegram. Agents still
+recreate <strong>sibling</strong> agent containers. Chat stays on a mouth. Agents still
 open zero ports.</p>
 <p>The console container is usually <strong>root</strong> (needs the socket). Crane uid is
 inferred from <code>data/</code> / <code>gantry.db</code>, then from the user who ran compose
