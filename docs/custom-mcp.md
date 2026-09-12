@@ -4,7 +4,7 @@ The Tools grid is the **yard catalog** (search, math, maps, …). A custom
 server is still a first-class grant: it is a `[[server]]` in that crane’s
 `mcp.toml`. There is no `/mcp/add?url=` route.
 
-Chat stays Telegram. Gantree only writes files and runs `gantry tools-fetch`.
+Chat stays on a mouth. Gantree only writes files and runs `gantry tools-fetch`.
 
 ---
 

@@ -5,7 +5,7 @@
 **Operate your own [ai-gantry](https://hub.docker.com/r/shotah/ai-gantry) agents.**
 The crane is the product (long-horizon Go harness, outbound chat, no ports).
 This image is the shipping yard around it — a localhost board. Spawn a crane,
-grant MCP, read logs, recreate. Chat stays Telegram. Agents open **zero inbound ports.**
+grant MCP, read logs, recreate. Default mouth is the pendant. Agents open **zero inbound ports.**
 
 ```text
 browser  →  gantree (localhost | Tailscale | compose.cloudflare.yml | compose.nginx.yml)
@@ -82,7 +82,7 @@ overview stays pull-first.
 3. **Monitoring & observability** *(board / logs / spend — not in the token path)*
 
 **Short description** is set by the same workflow (≤100 chars):
-`Shipping yard for ai-gantry. Operate personal agents. Chat stays Telegram.`
+`Shipping yard for ai-gantry. Operate personal agents. Never sit in the chat.`
 
 Banner must be **PNG** with an absolute `raw.githubusercontent.com` URL — Hub
 does not render our SVG reliably. After editing `assets/banner.svg`:

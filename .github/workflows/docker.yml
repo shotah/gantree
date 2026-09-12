@@ -105,5 +105,5 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
           repository: shotah/gantree
           readme-filepath: ./docs/dockerhub.md
-          short-description: Shipping yard for ai-gantry. Operate personal agents. Chat stays Telegram.
+          short-description: Shipping yard for ai-gantry. Operate personal agents. Never sit in the chat.
           enable-url-completion: true

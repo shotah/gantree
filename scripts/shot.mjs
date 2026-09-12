@@ -34,7 +34,7 @@ const SHOTS = {
     text: "jules",
     phone: true,
     waitMs: 2000,
-    collapse: true,
+    collapse: "keep-metrics",
   },
   "phone-preview": {
     path: "/?phone=1",

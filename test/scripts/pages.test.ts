@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error scripts/*.mjs sits outside the TS project
@@ -12,5 +12,16 @@ describe("DOC_PAGES", () => {
       expect(existsSync(join("docs", page.file))).toBe(true);
       expect(page.nav.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("site pitch", () => {
+  it("names the three-repo household", () => {
+    const home = readFileSync("site/home.html", "utf8");
+    expect(home).toContain("Three repos");
+    expect(home).toContain("ai-gantry");
+    expect(home).toContain("gantry-pendant");
+    expect(home).toContain("Default mouth is the pendant");
+    expect(home).toContain("never a hop");
   });
 });

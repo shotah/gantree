@@ -20,7 +20,7 @@ machine.
 
 ### Pitch
 
-- [ ] Telegram: one multi-step turn with tool trace — the mouth
+- [ ] Pendant: one multi-step turn with tool trace — the mouth
       (Garmin → sheet → Strava, or contacts + calendars → create).
       Capture from a real Kit. Do not invent a chat mock inside this
       UI. This is how a stranger believes the runner.
@@ -29,8 +29,9 @@ machine.
 
 - [ ] Recreate from the UI while Telegram still answers (stdio planted).
 - [ ] Live Google OAuth on Tools (needs real tokens).
-- [ ] **Home:** stranger clones this repo, `npm start`, builds one
-      crane in the UI, grants search, chats on Telegram.
+- [ ] **Home:** stranger clones this repo, `npm start`, Settings →
+      Pendant, builds one crane in the UI (channel defaults to pendant),
+      grants search, chats on the pendant.
 - [ ] The two install stories (home Mini / cloud VM) from a clean
       machine.
 

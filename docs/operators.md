@@ -4,7 +4,8 @@ The board walk is [console.md](console.md). This page is the **people**
 on the yard: first boot, your face, and who else can touch a crane.
 What the door actually checks: [security.md](security.md).
 
-Chat stays Telegram. Nothing here sits in a chat turn.
+Chat is the **pendant**. Telegram, Discord, and Slack still work. Nothing
+here sits in a chat turn.
 
 ---
 
@@ -117,8 +118,8 @@ demote the last admin.
 
 Admin also gets a **Pendant** fold: Cloudflare API token, account,
 Worker name, origin, and the Google Web client. **Save and push** puts
-those on the Worker (no wrangler). Build a pendant crane from there —
-the yard mints the bearer.
+those on the Worker (no wrangler). Build a crane from there — channel
+defaults to pendant; the yard mints the bearer.
 [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md).
 Move an existing Telegram crane:
 [channel_migration_doc.md](channel_migration_doc.md).

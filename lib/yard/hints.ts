@@ -18,8 +18,8 @@ export const HINTS = {
     example: "gemini-3.6-flash",
   },
   buildChannel: {
-    hint: "Mouth. Telegram is the usual walk. Pendant is the phone we own (Worker mailbox). Discord and Slack tokens go in Secrets after build. stdio is a terminal, not chat.",
-    example: "telegram",
+    hint: "Mouth. Pendant is the default — the phone we own (Worker mailbox). Telegram, Discord, and Slack if you already have that bot. stdio is a terminal, not chat.",
+    example: "pendant",
   },
   botToken: {
     hint: "Telegram Bot API token from @BotFather after /newbot — not your Telegram login, not an LLM key. Digits, a colon, then a long secret.",
@@ -237,7 +237,7 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "gemini-3.6-flash",
   },
   CHANNEL: {
-    hint: "Mouth: telegram, discord, slack, pendant, or stdio. Saving a different mouth drops that old chat token (Telegram / Discord / Slack). Pendant mailbox keys stay. Paste the new mouth's token, or mint a pendant bearer.",
+    hint: "Mouth: pendant (default), telegram, discord, slack, or stdio. Saving a different mouth drops that old chat token (Telegram / Discord / Slack). Pendant mailbox keys stay. Paste the new mouth's token, or mint a pendant bearer.",
     example: "pendant",
   },
   TELEGRAM_BOT_TOKEN: HINTS.botToken,

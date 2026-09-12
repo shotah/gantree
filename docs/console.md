@@ -8,13 +8,15 @@ than one. Pitch and why the harness is worth operating live in the
 host + attach: [headless.md](headless.md). Login, profile, settings:
 [operators.md](operators.md). Door: [security.md](security.md).
 
-Chat stays Telegram (or Discord / Slack). Nothing here sits in a chat turn.
-Gantree reads Docker and files after the fact. It writes the same files the
-harness already understands.
+Chat is the **pendant** (Telegram, Discord, Slack if you already have
+that bot). Nothing here sits in a chat turn. Gantree reads Docker and
+files after the fact. It writes the same files the harness already
+understands.
 
 ```text
 browser  →  gantree (localhost | Tailscale | tunnel)  →  Docker + files
                                                          gantry  gantry  gantry
+phone    →  gantry-pendant (Google)  ←dials—  those same gantries
 ```
 
 Agents open **zero** inbound ports. Bind `127.0.0.1` by default. If you
@@ -99,28 +101,32 @@ Do not watch `notices_list`.
 </p>
 
 Build a crane from the board (yard type first: home Mini or cloud VM).
-Telegram: **Create with BotFather** copies `/newbot`, opens the chat, and
-suggests `{slug}_bot` — paste the token it replies with. **Upload a photo** on the crane — it lands in `persona/avatar.jpg`, shows on
-the board, and if the channel is Telegram the bot’s face updates too
-(`setMyProfilePhoto`). If the channel is pendant, the yard POSTs that
-same JPEG to the Worker mailbox (same gate: JPEG, 5MB, `avatar.jpg`).
-The phone user can replace the face from the pendant header. Grant
-**image** and **pendant**, then recreate, so the agent can draw a picture
-and wear it: `photo_generate` (1:1 face, 9:16 wallpaper) then
+Default channel is **pendant**. Settings → Pendant must be ready
+(Google + Cloudflare token — [access.md](access.md)); Build ticks
+operators (email is enough), the yard mints the bearer, recreate. The
+yard cookie never goes to that Worker. **Upload a photo** on the crane —
+it lands in `persona/avatar.jpg`, shows on the board, and the yard POSTs
+that same JPEG to the Worker mailbox (JPEG, 5MB, `avatar.jpg`). The phone
+user can replace the face from the pendant header. Grant **image** and
+**pendant**, then recreate, so the agent can draw a picture and wear it:
+`photo_generate` (1:1 face, 9:16 wallpaper) then
 `pendant__avatar_update` / `backdrop_update`, plus `theme_list` then
 `theme_update` (catalog id, no invented hex). Sending a PNG in the thread
 is the harness, not this board. The room blob can drift from
-`persona/avatar.jpg`. On a
-Telegram crane, **Telegram** (below the photo) can `getMe` the token, push
-name / about / the `/` command menu (including `/new`), ask an allowlisted
-chatter to tap `/new` (distill, then drop that thread — the yard cannot send
-as her), and edit `TELEGRAM_ALLOWED_USERS` from numeric ids (slog `user_id`
-after someone talks — not `@username`). On a pendant crane, **Pendant** ticks
-operators (email until the Google `sub` is learned) onto
-`PENDANT_ALLOWED_USERS`, nags recreate, and offers to store an unseen `sub`
-on the matching profile. Telegram crane → pendant (same memory):
-[channel_migration_doc.md](channel_migration_doc.md). Grant
-a tool, recreate, watch *that* crane’s doctor. Message it on Telegram.
+`persona/avatar.jpg`. **Pendant** ticks operators (email until the Google
+`sub` is learned) onto `PENDANT_ALLOWED_USERS`, nags recreate, and offers
+to store an unseen `sub` on the matching profile.
+
+Telegram is still a mouth: **Create with BotFather** copies `/newbot`,
+opens the chat, and suggests `{slug}_bot` — paste the token it replies
+with. On a Telegram crane the bot’s face updates too (`setMyProfilePhoto`).
+**Telegram** (below the photo) can `getMe` the token, push name / about /
+the `/` command menu (including `/new`), ask an allowlisted chatter to tap
+`/new` (distill, then drop that thread — the yard cannot send as her), and
+edit `TELEGRAM_ALLOWED_USERS` from numeric ids (slog `user_id` after
+someone talks — not `@username`). Telegram crane → pendant (same memory):
+[channel_migration_doc.md](channel_migration_doc.md). Grant a tool,
+recreate, watch *that* crane’s doctor. Message it on the pendant.
 `/tools` is the crane’s mouth; this page is the operator’s.
 
 <p align="center">

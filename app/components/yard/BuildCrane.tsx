@@ -34,7 +34,7 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
   const [slug, setSlug] = useState("");
   const [profile, setProfile] = useState<"slim" | "life" | "life-cast">("slim");
   const [model, setModel] = useState("gemini-3.6-flash");
-  const [channel, setChannel] = useState("telegram");
+  const [channel, setChannel] = useState("pendant");
   const [token, setToken] = useState("");
   const [allow, setAllow] = useState("");
   const [pendant, setPendant] = useState<PendantSettingsBrief | null>(null);
@@ -182,10 +182,10 @@ export function BuildCrane({ onBuilt }: { onBuilt: () => void }) {
         </HintField>
         <HintField label="channel" {...HINTS.buildChannel}>
           <select className="rounded border border-edge bg-canvas px-2 py-1" value={channel} onChange={(e) => setChannel(e.target.value)}>
+            <option value="pendant">pendant</option>
             <option value="telegram">telegram</option>
             <option value="discord">discord</option>
             <option value="slack">slack</option>
-            <option value="pendant">pendant</option>
             <option value="stdio">stdio (dev)</option>
           </select>
         </HintField>

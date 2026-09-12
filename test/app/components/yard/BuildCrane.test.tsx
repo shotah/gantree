@@ -24,6 +24,14 @@ describe("BuildCrane", () => {
       return { ok: true, json: async () => ({ operators: [] }) } as Response;
     });
   });
+  it("defaults the mouth to pendant", async () => {
+    render(<BuildCrane onBuilt={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
+    expect(screen.getByDisplayValue("pendant")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/Settings → Pendant first/)).toBeTruthy());
+    expect((screen.getByRole("button", { name: "Build crane" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("disables life-cast when the yard is a cloud VM", () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
@@ -38,6 +46,7 @@ describe("BuildCrane", () => {
   it("describes bot token on the label so a hover can show what to paste", () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
+    fireEvent.change(screen.getByDisplayValue("pendant"), { target: { value: "telegram" } });
     const input = screen.getByLabelText("bot token");
     const tip = document.getElementById(input.getAttribute("aria-describedby") ?? "");
     expect(tip?.textContent).toMatch(/BotFather/);
@@ -47,7 +56,6 @@ describe("BuildCrane", () => {
   it("nags Settings when pendant is picked and Cloudflare is not ready", async () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
-    fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
     await waitFor(() => expect(screen.getByText(/Settings → Pendant first/)).toBeTruthy());
     expect(screen.queryByLabelText("mailbox URL")).toBeNull();
     expect(screen.queryByLabelText("mailbox bearer")).toBeNull();
@@ -82,7 +90,6 @@ describe("BuildCrane", () => {
     });
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
-    fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
     await waitFor(() => expect(screen.getByText(/minted here and pushed/)).toBeTruthy());
     expect(screen.queryByLabelText("mailbox bearer")).toBeNull();
     await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
@@ -93,6 +100,7 @@ describe("BuildCrane", () => {
   it("does not look pre-filled when the bot token is still blank", () => {
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
+    fireEvent.change(screen.getByDisplayValue("pendant"), { target: { value: "telegram" } });
     const input = screen.getByLabelText("bot token") as HTMLInputElement;
     expect(input.type).toBe("text");
     expect(input.placeholder).toBe("needs a token");
@@ -128,7 +136,6 @@ describe("BuildCrane", () => {
     });
     render(<BuildCrane onBuilt={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Build a crane" }));
-    fireEvent.change(screen.getByDisplayValue("telegram"), { target: { value: "pendant" } });
     await waitFor(() => expect(screen.getByText("Ada")).toBeTruthy());
     fireEvent.click(screen.getByRole("checkbox", { name: /Ada/ }));
     expect((screen.getByLabelText("pendant allowlist") as HTMLInputElement).value).toBe("ada@example.com");

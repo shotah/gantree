@@ -171,6 +171,7 @@ describe("cloneCrane", () => {
     expect(readFileSync(join(destDir, "persona", "SELF.md"), "utf8")).toBe("# distilled jules\n");
     expect(readFileSync(join(destDir, "persona", "avatar.jpg"), "utf8")).toBe("jpeg-bytes");
     expect(loadEnvFile(join(destDir, ".env")).LLM_API_KEY).toBeUndefined();
+    expect(loadEnvFile(join(destDir, ".env")).CHANNEL).toBe("pendant");
     expect(loadEnvFile(join(destDir, ".env")).BOARDS_AUTHOR).toBe("tryout");
     expect(readFileSync(join(destDir, "mcp.toml"), "utf8")).not.toContain("google-mcp");
     expect(existsSync(join(destDir, "data", "gantry.db"))).toBe(false);

@@ -89,6 +89,17 @@ describe("writeCraneFiles", () => {
     delete process.env.GANTREE_TOML;
   });
 
+  it("defaults CHANNEL to pendant when omitted", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    process.env.GANTREE_TOML = join(root, "gantree.toml");
+    const out = writeCraneFiles({ slug: "kit", profile: "slim", model: "dummy" });
+    expect(readFileSync(out.envFile, "utf8")).toContain("CHANNEL=pendant");
+    delete process.env.GANTREE_ROOT;
+    delete process.env.GANTREE_TOML;
+  });
+
   it("seeds a life-cast crane with a custom persona", () => {
     const root = mkdtempSync(join(process.cwd(), ".tmp-"));
     dirs.push(root);
@@ -172,6 +183,20 @@ describe("buildCrane", () => {
     expect(out.detail).toMatch(/lowercase/);
   });
 
+  it("defaults a new crane to pendant when channel is omitted", async () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    process.env.GANTREE_ROOT = root;
+    process.env.GANTREE_TOML = join(root, "gantree.toml");
+    process.env.GANTREE_DB = join(root, "gantree.db");
+    const out = await buildCrane({ slug: "kit" });
+    expect(out.ok).toBe(false);
+    expect(out.detail).toMatch(/Settings → Pendant/);
+    delete process.env.GANTREE_ROOT;
+    delete process.env.GANTREE_TOML;
+    delete process.env.GANTREE_DB;
+  });
+
   it("refuses a pendant crane when Cloudflare is not in Settings", async () => {
     const root = mkdtempSync(join(process.cwd(), ".tmp-"));
     dirs.push(root);
@@ -181,6 +206,9 @@ describe("buildCrane", () => {
     const out = await buildCrane({ slug: "kit", channel: "pendant" });
     expect(out.ok).toBe(false);
     expect(out.detail).toMatch(/Settings → Pendant/);
+    delete process.env.GANTREE_ROOT;
+    delete process.env.GANTREE_TOML;
+    delete process.env.GANTREE_DB;
   });
 
   it("refuses life-cast on a cloud yard", async () => {

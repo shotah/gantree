@@ -21,16 +21,21 @@ Open items live in the repo, not on the site:
 
 ## Operator plane
 
+The household picture (three repos, one file contract) lives in the
+[root readme](../README.md#three-repos-one-household). This page is the
+yard’s stack.
+
 ```text
-[ browser ]
+[ browser ]                                 [ phone ]
+     |                                            |
+     |  localhost | Tailscale | Tunnel | nginx    |  Google
+     v                                            v
+[ gantree — Vinext on Node, on the Docker host ]  [ gantry-pendant Worker ]
+     |  Docker API + files on disk                      ^
+     v                                                  | dials bearer + allow
+[ gantry ] [ gantry ] [ gantry ]  ----------------------+
      |
-     |  localhost | Tailscale | Cloudflare Tunnel | nginx-proxy (console only)
-     v
-[ gantree  — Vinext on Node, on the Docker host ]
-     |
-     |  Docker API + files on disk
-     v
-[ gantry ] [ gantry ] [ gantry ]     Hub image, outbound chat
+     |  optional: Telegram / Discord / Slack
 ```
 
 Agents open **zero** inbound ports. Only this UI is reachable, and only
@@ -97,8 +102,8 @@ The crane does not grow a `/metrics` port. Gantree **pulls**.
 | Turn / token graphs | JSON slog `turn perf` (`prompt_est_tokens`, `gen_est_tokens`, `iterations`, `user_id`, native `usage` when Completer sent it, `model` / `finish_reason` / `duration_ms` when present) — same sqlite so a bounce keeps this billing month (local 1st) |
 | Published vs skipped MCP | `mcp.toml` + `gantry status` JSON (`mcp.servers[].reason`: `no_binary` / `no_key` / `no_oauth`) |
 | Persona, secrets | `PERSONA.md`, `avatar.jpg`, `.env`, `data/` on disk |
+| Pendant mouth (default) | `.env` (`CHANNEL=pendant`, mailbox URL, bearer present?, `PENDANT_ALLOWED_USERS`). Gantree writes the list and pushes Worker secrets (Google, session, `CRANE_BEARERS`) from Settings. The Worker never sees the yard cookie. |
 | Telegram bot | Bot API `getMe` / `setMy*` after a token exists. Allowlist is `.env`. Never `getUpdates`. |
-| Pendant mouth | `.env` (`CHANNEL=pendant`, mailbox URL, bearer present?, `PENDANT_ALLOWED_USERS`). Gantree writes the list and pushes Worker secrets (Google, session, `CRANE_BEARERS`) from Settings. The Worker never sees the yard cookie. |
 
 Files remain the source of truth. The UI is an editor of those files,
 not a second inventory. Secrets never go in git. Console-in-Docker must
@@ -144,13 +149,14 @@ If a task fails one of these, it is later, or it belongs in `ai-gantry`.
 7. **Isolation.** One human, one bot, one directory, one `data/`.
    Delete a tryout = delete that directory. Pushing a person onto Kit
    does not touch Ada’s crane.
-8. **Not chat.** Telegram and the pendant are the mouths. No pairing
-   the agent through the console. The yard never sits in a chat turn.
+8. **Not chat.** The pendant is the default mouth; Telegram, Discord, and
+    Slack still work. No pairing the agent through the console. The yard
+    never sits in a chat turn.
 9. **Import over write.** dockerode, compose, Vinext. Don’t invent a
    Docker client.
 10. **Meh yard, tight crane.** Gantree is JS in a browser. That stack
     will never be as fast as the Go harness — and that is fine. The
-    operator can wait 200ms for a chart. The human on Telegram cannot
+    operator can wait 200ms for a chart. The human on the phone cannot
     wait for a serial tool loop. Never sit in the token path. Never
     add a listen port, a scrape, or a hook that taxes parallel tool
     calls, Completer rounds, or RSS. If a dashboard want would make
@@ -182,8 +188,8 @@ Hub image `shotah/gantree` with `docker.sock`. Two install stories
 | Surface | What it is |
 | --- | --- |
 | Yard home | Cards: name, alive, model, channel, published vs skipped MCP, last error, last turn, spend. Nags for skipped MCP / needs-auth. |
-| Agent dashboard | Per instance: metric graphs + visual logs. Kit’s page is only Kit. Folds for Tools, persona, secrets, Telegram, pendant, run. |
-| Build crane | Wizard: home vs cloud, slug, persona seed, model, channel + token + operator checkboxes for Telegram / pendant, `slim` / `life` / `life-cast` |
+| Agent dashboard | Per instance: metric graphs + visual logs. Kit’s page is only Kit. Folds for Tools, persona, secrets, pendant, Telegram, run. |
+| Build crane | Wizard: home vs cloud, slug, persona seed, model, channel (pendant default) + operator checkboxes, `slim` / `life` / `life-cast` |
 | Tools | Catalog + custom binary; toggle writes `[[server]]`, `tools-fetch`, recreate; “needs auth” is a button |
 | Persona + secrets | Markdown editor; `.env` form; token push explicit and scary; never copy `data/` by default |
 | Run | Start / stop / recreate; live visual log; image pin; backup button (`gantry.db` + `SELF.md`); destroy (optional files) |

@@ -1,8 +1,8 @@
 # Headless host — first boot + attach existing agents
 
 Gantree is **not** a downloadable bin. Clone it onto the **Docker host**,
-`npm run build`, `npm start`. Default bind is **127.0.0.1:3000**. Chat stays
-Telegram.
+`npm run build`, `npm start`. Default bind is **127.0.0.1:3000**. Chat is
+the pendant.
 
 This page is the operator walk (Node 22, attach existing dirs, SSH tunnel).
 Stranger hello: [install.md](install.md). Board walk: [console.md](console.md).
@@ -220,7 +220,7 @@ Still looping: `docker inspect <name> --format '{{.Config.User}}'` must match
 ## 8. Console in Docker
 
 Yes. Compose already mounts `docker.sock`, so Gantree can inspect / start /
-recreate **sibling** agent containers. Chat still stays Telegram. Agents still
+recreate **sibling** agent containers. Chat stays on a mouth. Agents still
 open zero ports.
 
 The console container is usually **root** (needs the socket). Crane uid is

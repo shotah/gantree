@@ -14,7 +14,9 @@
       runtime: one Distroless Go process, one persona, one OpenAI-compat model,
       memory you can <code>sqlite3</code>, chat that dials out. Gantree is the
       shipping yard those cranes live in — a board for an operator, never a hop
-      in a chat turn.
+      in a chat turn. The default mouth is
+      <a href="https://github.com/shotah/gantry-pendant">gantry-pendant</a>
+      (Telegram, Discord, and Slack still work).
     </p>
     <dl class="defs">
       <div>
@@ -35,6 +37,41 @@
 </div>
 
 <section>
+  <p class="kicker">The household</p>
+  <h2>Three repos. One file contract. No shared database.</h2>
+  <p>
+    The crane never learns the yard exists. The Worker never sees the yard
+    cookie. Gantree writes files (and pendant Worker secrets from Settings).
+    The crane’s <code>.env</code> is the one human allowlist.
+  </p>
+  <pre class="diagram">browser ──► gantree (this repo) ──files + Docker──► ai-gantry
+                                                      │
+                         default mouth               │  optional
+phone ──Google──► gantry-pendant ◄──dials allow───────┤  Telegram / Discord / Slack
+                   MCP children live inside the crane, if granted</pre>
+  <dl class="defs">
+    <div>
+      <dt>ai-gantry</dt>
+      <dd>The product. Distroless Go. Persona, memory, MCP. Outbound only. <strong>No open ports. Ever.</strong></dd>
+    </div>
+    <div>
+      <dt>gantree</dt>
+      <dd>This board. Named pets, grants, doctor, spend. Never a hop in a turn.</dd>
+    </div>
+    <div>
+      <dt>gantry-pendant</dt>
+      <dd>Default phone mouth. Cloudflare Worker. Google door. Room list from the crane’s <code>allow</code> frame.</dd>
+    </div>
+  </dl>
+  <p>
+    Access across the three:
+    <a href="docs/access.html">access</a>.
+    How the yard is put together:
+    <a href="docs/architecture.html">architecture</a>.
+  </p>
+</section>
+
+<section>
   <p class="kicker">The difference</p>
   <h2>A harness is a process. A marketplace is a costume.</h2>
   <div class="split">
@@ -44,7 +81,7 @@
         <li>A binary you run. Aims, personality, and work still exist on Thursday.</li>
         <li>The model is a socket — Ollama, Gemini, ChatGPT, Grok. Swap it. The loop stays.</li>
         <li>MCP listed in <code>mcp.toml</code> is the grant. Omit it and it does not exist.</li>
-        <li>Outbound chat (Telegram, Discord, Slack). <strong>No open ports. Ever.</strong></li>
+        <li>Outbound chat. Default mouth is the pendant; Telegram, Discord, and Slack still work. <strong>No open ports. Ever.</strong></li>
         <li>Independent lookups fan out in one round; the next round uses the results. Garmin → sheet → Strava is one thread.</li>
       </ul>
     </article>
@@ -65,15 +102,15 @@
   <p class="kicker">The crane</p>
   <h2>ai-gantry holds the person. The yard does not talk.</h2>
   <p>
-    One process. One persona. Chat stays Telegram. Health is an exit code, not a
+    One process. One persona. Chat is the pendant. Health is an exit code, not a
     port. Mid-chain does not die on a typo — the loop was hardened on the 7–12B
     class, then pointed at Flash when you want the trajectory now.
   </p>
   <pre class="diagram">static binary + persona + mcp.toml + any OpenAI-compat LLM  →  outbound chat</pre>
   <p>
-    Want a bot tonight? Stay here. Open the board, build a crane — this yard
-    pulls <code>shotah/ai-gantry</code>, writes the files, recreates. You do not
-    need the other checkout to stand one up.
+    Want a bot tonight? Stay here. Settings → Pendant, then build a crane — this yard
+    pulls <code>shotah/ai-gantry</code>, writes the files, recreates. Default channel is
+    pendant. You do not need the other checkout to stand one up.
   </p>
 </section>
 
@@ -86,21 +123,19 @@
     the chart is wrong. Agents open zero inbound ports. Only this UI is
     reachable, and only through a path you chose.
   </p>
-  <pre class="diagram">browser  →  gantree (localhost | Tailscale | tunnel)
-                                                 gantry  gantry  gantry</pre>
   <p>
-    <img class="wide" src="assets/docs/crane-metrics.png" width="960" alt="Ada’s dashboard — CPU, memory, MCP, uptime, logs, doctor">
+    <img class="wide" src="assets/docs/yard.png" width="960" alt="Yard board — host, boards, named cranes, spend, tags">
   </p>
   <p>
-    <img class="wide" src="assets/docs/yard.png" width="960" alt="Yard board with live cranes">
+    <img class="wide" src="assets/docs/crane-metrics.png" width="960" alt="Ada’s dashboard — spend, metrics, tags">
   </p>
   <p>
     <img class="wide" src="assets/docs/metrics.png" width="960" alt="Crane metric tiles — CPU, memory, tokens, completer, MCP, uptime">
   </p>
   <div class="phones">
     <img src="assets/docs/login-phone.png" width="220" alt="Log in — the door to the yard, not the chat">
-    <img src="assets/docs/yard-phone.png" width="220" alt="The yard on a phone — named cranes, not a fleet dump">
-    <img src="assets/docs/crane-phone.png" width="220" alt="A crane on a phone — start/stop and boxed folds">
+    <img src="assets/docs/yard-phone.png" width="220" alt="The yard on a phone — named cranes, spend, tags">
+    <img src="assets/docs/crane-phone.png" width="220" alt="A crane on a phone — run controls and metrics">
   </div>
 </section>
 
@@ -114,7 +149,7 @@ npm install
 npm run build
 npm start                 # http://127.0.0.1:3000</pre>
   <p>
-    Open the board. Build a crane. Grant a tool. Message it on your phone.
+    Open the board. Settings → Pendant. Build a crane. Grant a tool. Message it on your phone.
     The UI never sits in a chat turn. Home Mini vs cloud VM:
     <a href="docs/install.html">install</a>.
   </p>
@@ -125,12 +160,13 @@ npm start                 # http://127.0.0.1:3000</pre>
   <h2>The board, the door, the files.</h2>
   <div class="docs">
     <a href="docs/install.html"><strong>Install</strong><span>Home Mini or cloud VM. Same console. Zero inbound agent ports.</span></a>
-    <a href="docs/console.html"><strong>Console</strong><span>Board, grants, doctor, avatars. Chat stays Telegram.</span></a>
+    <a href="docs/console.html"><strong>Console</strong><span>Board, grants, doctor, avatars. Default mouth is the pendant.</span></a>
     <a href="docs/operators.html"><strong>Operators</strong><span>Setup, login, profile, roles on a handful of people.</span></a>
     <a href="docs/headless.html"><strong>Headless</strong><span>Attach existing dirs, tunnels, the gotchas.</span></a>
     <a href="docs/architecture.html"><strong>Architecture</strong><span>Why Vinext on the Docker host, and why the yard pulls.</span></a>
+    <a href="docs/access.html"><strong>Access</strong><span>One person across yard, pendant, and crane.</span></a>
     <a href="docs/security.html"><strong>Security</strong><span>The door: bind, passphrases, sessions. Not a reason to open WAN 3000.</span></a>
-    <a href="docs/custom-mcp.html"><strong>Custom MCP</strong><span>Your binary, still a [[server]] in that crane’s mcp.toml.</span></a>
+    <a href="https://github.com/shotah/gantry-pendant"><strong>gantry-pendant</strong><span>Default phone mouth — Worker, Google door, room per crane.</span></a>
     <a href="https://github.com/shotah/ai-gantry"><strong>ai-gantry</strong><span>Design, features, MCP — the harness repo.</span></a>
   </div>
 </section>

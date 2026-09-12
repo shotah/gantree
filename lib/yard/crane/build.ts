@@ -6,11 +6,11 @@ import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByN
 import { writeEnvFile } from "../host/envfile";
 import { ensureBoardsDir, stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
 import { seedPersonaFiles } from "./seed";
-import { DEFAULT_IMAGE, type McpServer } from "../types";
+import { DEFAULT_CHANNEL, DEFAULT_IMAGE, type McpServer } from "../types";
 import { loadObservePrefs } from "../observe/prefs";
 import { provisionPendantCrane } from "../pendant/channel";
 
-export { DEFAULT_IMAGE };
+export { DEFAULT_CHANNEL, DEFAULT_IMAGE };
 
 export type BuildInput = {
   slug: string;
@@ -70,7 +70,7 @@ export function writeCraneFiles(input: BuildInput): {
   seedPersonaFiles(personaDir, slug, { persona: input.persona });
   writeEnvFile(envFile, {
     LLM_MODEL: input.model || "gemini-3.6-flash",
-    CHANNEL: input.channel || "telegram",
+    CHANNEL: input.channel || DEFAULT_CHANNEL,
     BOARDS_AUTHOR: slug,
     ...(input.env ?? {}),
   });
@@ -197,7 +197,7 @@ export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; deta
     return { ok: false, detail: "life-cast is home only (host network / mDNS)", slug };
   }
   let envIn = { ...(input.env ?? {}) };
-  if ((input.channel || envIn.CHANNEL || "telegram").trim().toLowerCase() === "pendant") {
+  if ((input.channel || envIn.CHANNEL || DEFAULT_CHANNEL).trim().toLowerCase() === "pendant") {
     const provisioned = await provisionPendantCrane(slug, envIn.PENDANT_ALLOWED_USERS ?? "");
     if (!provisioned.ok) {
       return { ok: false, detail: provisioned.detail, slug };
@@ -214,7 +214,7 @@ export async function buildCrane(input: BuildInput): Promise<{ ok: boolean; deta
   }
   const env = {
     LLM_MODEL: input.model || "gemini-3.6-flash",
-    CHANNEL: input.channel || "telegram",
+    CHANNEL: input.channel || DEFAULT_CHANNEL,
     BOARDS_AUTHOR: slug,
     ...envIn,
   };

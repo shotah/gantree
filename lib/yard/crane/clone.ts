@@ -143,7 +143,7 @@ export async function cloneCrane(
   }
   writeEnvFile(files.envFile, { ...loadEnvFile(files.envFile), BOARDS_AUTHOR: dest });
   const destEnv = loadEnvFile(files.envFile);
-  if ((destEnv.CHANNEL || "").trim().toLowerCase() === "pendant") {
+  if (opts.settings && (destEnv.CHANNEL || "").trim().toLowerCase() === "pendant") {
     const provisioned = await provisionPendantCrane(dest, destEnv.PENDANT_ALLOWED_USERS ?? "");
     if (!provisioned.ok) {
       return { ok: false, detail: provisioned.detail, slug: dest };

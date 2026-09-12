@@ -29,19 +29,20 @@ docker compose up -d
 Open the board at `http://<pc-lan-ip>/` or
 `http://<headless-lan-ip>/` (compose). Create the first operator, then
 build a crane (yard = home). `npm start` stays `:3000`. Grant search.
-Chat is Telegram (or pendant) — not this UI. Pendant: deploy
-**gantry-pendant code** to Workers (that repo’s CI). Then this board:
-Settings → Pendant (Google + Cloudflare token — [access.md](access.md#cloudflare-api-token)), Build channel
-`pendant`, tick operators (email is enough), recreate. The yard mints
-the bearer — do not paste from wrangler. The yard cookie never goes to
-that Worker. The crane `.env` is the human list; Worker `ALLOWED_SUBS`
-is optional break-glass. GCP OAuth client is a **Web application**
-(JS origin + `/api/auth/callback/google`) — table:
+Default mouth is the **pendant**. Deploy **gantry-pendant code** to
+Workers (that repo’s CI). Then this board: Settings → Pendant (Google +
+Cloudflare token — [access.md](access.md#cloudflare-api-token)), Build
+(channel defaults to `pendant`), tick operators (email is enough),
+recreate. The yard mints the bearer — do not paste from wrangler. The
+yard cookie never goes to that Worker. The crane `.env` is the human
+list; Worker `ALLOWED_SUBS` is optional break-glass. GCP OAuth client is
+a **Web application** (JS origin + `/api/auth/callback/google`) — table:
 [access.md](access.md#google-oauth-client-gcp). Walk:
 [operators.md](operators.md) ·
 [manage_pendant_cf_todo.md](manage_pendant_cf_todo.md) ·
 [gantry-pendant setup](../repos/gantry-pendant/docs/setup.md).
-Existing Telegram crane → pendant (same `gantry.db`):
+Telegram is still a mouth if you already have a bot. Existing Telegram
+crane → pendant (same `gantry.db`):
 [channel_migration_doc.md](channel_migration_doc.md).
 
 Local screenshots / `npm run dev`: `GANTREE_DEV=1` plus operator + passphrase

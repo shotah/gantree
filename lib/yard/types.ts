@@ -7,6 +7,9 @@ export type CraneNag = { kind: CraneNagKind; detail: string };
 /** Hub image for new cranes. One pin: `:latest`. Do not sprinkle semver. */
 export const DEFAULT_IMAGE = "shotah/ai-gantry:latest";
 
+/** New cranes talk on the phone we own. Telegram / Discord / Slack are still mouths. */
+export const DEFAULT_CHANNEL = "pendant";
+
 export type GantryCard = {
   slug: string;
   containerName: string;

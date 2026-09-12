@@ -19,7 +19,7 @@ function photoCopy(telegramOn: boolean, pendantOn: boolean): { hint: string; ext
   }
   return {
     hint: "persona/avatar.jpg — stored with the persona",
-    extra: "The chat mouth gets it when you switch CHANNEL to telegram or pendant.",
+    extra: "The chat mouth gets it when you switch CHANNEL to pendant or telegram.",
   };
 }
 

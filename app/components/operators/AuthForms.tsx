@@ -57,7 +57,7 @@ function AuthForm({ kind }: { kind: "setup" | "login" }) {
           <p className="mt-1 text-sm text-dim max-sm:text-base">
             {setup
               ? "This yard has no door yet. Create the operator who owns the box. Passphrase ≥10 characters — not blank, not your name, not a common password. Forgot later: sqlite3 gantree.db, delete from operator."
-              : "Same yard. Same files. Chat still stays Telegram."}
+              : "Same yard. Same files. The board is not the chat."}
           </p>
         </div>
       </div>
