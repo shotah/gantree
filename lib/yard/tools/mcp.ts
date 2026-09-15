@@ -32,7 +32,7 @@ function dirHasFile(dir: string, depth = 2): boolean {
   return false;
 }
 
-/** Flat `{name}-oauth.json`, MCP token dirs under `data/.config/`, or google-mcp's `$DATA_DIR/.google_workspace_mcp`. */
+/** Flat `{name}-oauth.json`, MCP token dirs under `data/.config/`, google-mcp's `$DATA_DIR/.google_workspace_mcp`, or strava-mcp's `$DATA_DIR/.strava`. */
 export function oauthSessionPresent(dataDir: string | null | undefined, name: string, command?: string): boolean {
   if (!dataDir) {
     return false;
@@ -47,6 +47,9 @@ export function oauthSessionPresent(dataDir: string | null | undefined, name: st
   }
   if (name === "google" || command === "google-mcp") {
     roots.push(resolve(dataDir, ".google_workspace_mcp"));
+  }
+  if (name === "strava" || command === "strava-mcp") {
+    roots.push(resolve(dataDir, ".strava"));
   }
   for (const p of roots) {
     try {

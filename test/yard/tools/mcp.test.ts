@@ -7,6 +7,7 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
   loadCatalog: () => [
     { name: "math", command: "mcp-go-math", envKeys: [], blurb: "Math." },
     { name: "google", command: "google-mcp", auth_args: ["auth"], envKeys: [], blurb: "Gmail." },
+    { name: "strava", command: "strava-mcp", auth_args: ["auth"], envKeys: [], blurb: "Runs." },
     { name: "maps", command: "google-maps-mcp", envKeys: ["GOOGLE_MAPS_API_KEY"], blurb: "Places." },
   ],
 }));
@@ -80,6 +81,23 @@ describe("mcpSnapshot", () => {
     writeFileSync(join(data, ".google_workspace_mcp", "credentials", "ada@example.com.json"), "{}");
     const snap = mcpSnapshot({ mcpManifest: mcp, envFile: env, dataDir: data });
     expect(snap).toMatchObject({ listed: 2, published: 1, skipped: 1, skippedNames: ["strava"], authMissing: ["strava"] });
+  });
+
+  it("treats data/.strava tokens as an oauth session", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const env = join(root, ".env");
+    const data = join(root, "data");
+    mkdirSync(join(data, ".strava"), { recursive: true });
+    writeFileSync(
+      mcp,
+      stringifyMcpToml([{ name: "math", command: "mcp-go-math" }, { name: "strava", command: "strava-mcp", auth_args: ["auth"] }]),
+    );
+    writeFileSync(env, "CHANNEL=telegram\n");
+    writeFileSync(join(data, ".strava", "tokens.json"), "{}");
+    const snap = mcpSnapshot({ mcpManifest: mcp, envFile: env, dataDir: data });
+    expect(snap).toMatchObject({ listed: 2, published: 2, skipped: 0, authMissing: [] });
   });
 
   it("treats data/.config token dirs as an oauth session", () => {
