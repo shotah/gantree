@@ -81,6 +81,7 @@ function ensureOperator(spec: ShotOperator): string {
     description: spec.description,
     timezone: spec.timezone,
     location: spec.location,
+    languages: spec.languages,
     channels: { telegram: [spec.telegram], slack: [], discord: [], google: [] },
   });
   if (!profile.ok) {
@@ -131,6 +132,7 @@ function seedCrane(spec: (typeof SHOT_CRANES)[number]): void {
       description: about.description,
       timezone: about.timezone,
       location: about.location,
+      languages: about.languages,
       channels: { telegram: [about.telegram], slack: [], discord: [], google: [] },
     },
     defaultFieldSelection({
@@ -139,6 +141,7 @@ function seedCrane(spec: (typeof SHOT_CRANES)[number]): void {
       description: about.description,
       timezone: about.timezone,
       location: about.location,
+      languages: about.languages,
       channels: { telegram: [about.telegram], slack: [], discord: [], google: [] },
     }),
   );

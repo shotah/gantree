@@ -67,6 +67,8 @@ Here you can change:
 - display name (what the header shows)
 - login name (what `/login` asks for)
 - email (what the pendant matches — leave Google blank; not a reset path, not a mailbox)
+- location, timezone (IANA), languages (free text, your first choice first,
+  in your own script — `日本語, English`)
 - description
 - chat ids (Telegram numeric, Slack `U…`, Discord snowflake, Google `sub`) — stored on
   you. Google `sub` is optional: after they talk, spend offers to store the digits.
@@ -76,8 +78,10 @@ Here you can change:
 - passphrase (current + new + confirm, plus the confirm-scary checkbox)
 
 Those fields are what **Inject user** on a crane copies into `PERSONA.md`
-**About you** (name, email, timezone, location, notes, chat ids). The file
-starts from the ai-gantry seed
+**About you** (name, email, timezone, location, languages, notes, chat ids).
+A blank field leaves the seed's bullet alone — an operator with no languages
+set keeps the template's `English`, so speakers of anything else should fill
+it in before injecting. The file starts from the ai-gantry seed
 (`lib/yard/crane/templates/PERSONA.example.md`). Identity — the agent’s
 name — is not overwritten. Save on the crane still writes the file.
 

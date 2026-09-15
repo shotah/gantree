@@ -16,6 +16,7 @@ const ada: PersonaOperator = {
   description: "likes rye jokes",
   timezone: "America/New_York",
   location: "Brooklyn, New York",
+  languages: "日本語, English",
   channels: { telegram: ["99"], slack: ["U012ABCDEF"], discord: [], google: [] },
 };
 
@@ -26,8 +27,9 @@ describe("injectOperatorIntoPersona", () => {
     expect(seeded).toContain("- **Name:** Your Name");
 
     expect(seeded).toContain("- **Timezone:** America/Los_Angeles");
+    expect(seeded).toContain("- **Languages:** English");
 
-    const next = injectOperatorIntoPersona(seeded, ada, ["displayName", "email", "telegram", "timezone", "location"]);
+    const next = injectOperatorIntoPersona(seeded, ada, ["displayName", "email", "telegram", "timezone", "location", "languages"]);
     expect(next).toContain("- **Name:** Kit");
     expect(next).toContain("- **Name:** Ada");
     expect(next).not.toContain("- **Name:** Your Name");
@@ -36,8 +38,20 @@ describe("injectOperatorIntoPersona", () => {
     expect(next).not.toContain("- **Timezone:** America/Los_Angeles");
     expect(next).toContain("- **Location:** Brooklyn, New York");
     expect(next).toContain("- **Telegram id:** 99");
-    expect(next).toContain("- **Telegram pin:");
+    // A Japanese speaker is not told she speaks English by the template default.
+    expect(next).toContain("- **Languages:** 日本語, English");
+    expect(next).not.toMatch(/- \*\*Languages:\*\* English\n/);
     expect(next).toMatch(/## Identity[\s\S]*- \*\*Name:\*\* Kit[\s\S]*## About you[\s\S]*- \*\*Name:\*\* Ada/);
+  });
+
+  it("keeps the template's English when languages is not selected or blank", () => {
+    const seeded = personaMarkdown("kit");
+    const unselected = injectOperatorIntoPersona(seeded, ada, ["timezone"]);
+    expect(unselected).toContain("- **Languages:** English");
+    const blank = injectOperatorIntoPersona(seeded, { ...ada, languages: "  " }, ["languages", "timezone"]);
+    expect(blank).toContain("- **Languages:** English");
+    expect(blank).toContain("- **Timezone:** America/New_York");
+    expect(operatorFieldValue({ ...ada, languages: " Tiếng Việt " }, "languages")).toBe("Tiếng Việt");
   });
 
   it("appends About you when the file has none", () => {
@@ -48,11 +62,11 @@ describe("injectOperatorIntoPersona", () => {
     expect(next).toContain("- **Google / Workspace email (canonical):** ada@example.com");
   });
 
-  it("skips empty fields and does not invent Telegram pin", () => {
+  it("skips empty fields and leaves unselected bullets alone", () => {
     const next = injectOperatorIntoPersona(personaMarkdown("kit"), ada, ["discord", "description"]);
     expect(next).toContain("- **Notes:** likes rye jokes");
     expect(next).not.toContain("Telegram id");
-    expect(next).toContain("- **Telegram pin:");
+    expect(next).toContain("- **Languages:** English");
   });
 
   it("no-ops when nothing selected has a value", () => {
@@ -66,6 +80,7 @@ describe("injectOperatorIntoPersona", () => {
       "email",
       "location",
       "timezone",
+      "languages",
       "description",
       "telegram",
       "slack",
@@ -80,8 +95,10 @@ describe("injectOperatorIntoPersona", () => {
     );
     expect(example).toContain("## About you");
     expect(example).toContain("- **Google / Workspace email (canonical):** you@example.com");
-    const next = injectOperatorIntoPersona(example, ada, ["email"]);
+    expect(example).toContain("- **Languages:** English");
+    const next = injectOperatorIntoPersona(example, ada, ["email", "languages"]);
     expect(next).toContain("- **Google / Workspace email (canonical):** ada@example.com");
+    expect(next).toContain("- **Languages:** 日本語, English");
     expect(next).toContain("- **Name:** (pick one)");
   });
 });

@@ -6,6 +6,7 @@ import {
   MAX_DESCRIPTION,
   MAX_DISPLAY_NAME,
   MAX_EMAIL,
+  MAX_LANGUAGES,
   MAX_LOCATION,
   OPERATOR_CHANNEL_KINDS,
   emptyChannels,
@@ -29,6 +30,7 @@ type OperatorRow = {
   description: string;
   timezone: string;
   location: string;
+  languages: string;
   role: OperatorRole;
   cranes: string[];
   channels: OperatorChannels;
@@ -49,7 +51,7 @@ function pingDoor() {
 
 function fillRow(
   row: OperatorRow,
-): Pick<OperatorRow, "displayName" | "name" | "email" | "description" | "timezone" | "location" | "channels"> {
+): Pick<OperatorRow, "displayName" | "name" | "email" | "description" | "timezone" | "location" | "languages" | "channels"> {
   return {
     displayName: row.displayName,
     name: row.name,
@@ -57,6 +59,7 @@ function fillRow(
     description: row.description ?? "",
     timezone: row.timezone ?? "",
     location: row.location ?? "",
+    languages: row.languages ?? "",
     channels: { ...emptyChannels(), ...row.channels },
   };
 }
@@ -76,6 +79,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
   const [email, setEmail] = useState("");
   const [location, setLocation] = useState("");
   const [timezone, setTimezone] = useState("");
+  const [languages, setLanguages] = useState("");
   const [description, setDescription] = useState("");
   const [channels, setChannels] = useState<OperatorChannels>(emptyChannels());
 
@@ -109,6 +113,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
         setEmail(filled.email);
         setLocation(filled.location);
         setTimezone(filled.timezone);
+        setLanguages(filled.languages);
         setDescription(filled.description);
         setChannels(filled.channels);
       })
@@ -218,6 +223,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                       email,
                       location,
                       timezone,
+                      languages,
                       description,
                       channels,
                     })
@@ -236,7 +242,7 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                   {" "}
                   <code className="text-dim">{subject.id}</code>
                   {" "}
-                  — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram and the pendant Google sub. Email, timezone, location, and the description can be injected into a crane's PERSONA.md — they are not auto-copied. Email is what the pendant matches until the sub is learned, not a reset path.
+                  — stable. Display name and photo can change. Chat ids on this operator are how spend reporting labels telegram and the pendant Google sub. Email, timezone, location, languages, and the description can be injected into a crane's PERSONA.md — they are not auto-copied. Email is what the pendant matches until the sub is learned, not a reset path.
                 </p>
                 <div className="flex flex-wrap items-center gap-4">
                   <OperatorAvatar id={subject.id} rev={subject.avatarRev} name={displayName || subject.displayName} size="xl" />
@@ -306,6 +312,16 @@ export function OperatorProfile({ operatorId }: { operatorId?: string } = {}) {
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
                     placeholder="America/Los_Angeles"
+                    autoComplete="off"
+                  />
+                </HintField>
+                <HintField label="languages" {...HINTS.profileLanguages}>
+                  <input
+                    className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
+                    value={languages}
+                    onChange={(e) => setLanguages(e.target.value)}
+                    maxLength={MAX_LANGUAGES}
+                    placeholder="English"
                     autoComplete="off"
                   />
                 </HintField>

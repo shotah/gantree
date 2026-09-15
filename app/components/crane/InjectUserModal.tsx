@@ -22,6 +22,7 @@ type OperatorOption = {
   description?: string;
   timezone?: string;
   location?: string;
+  languages?: string;
   channels?: OperatorChannels;
 };
 
@@ -184,6 +185,7 @@ function asPersonaOperator(o: OperatorOption): PersonaOperator {
     description: o.description ?? "",
     timezone: o.timezone ?? "",
     location: o.location ?? "",
+    languages: o.languages ?? "",
     channels: { ...emptyChannels(), ...o.channels },
   };
 }

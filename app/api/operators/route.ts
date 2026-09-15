@@ -54,6 +54,7 @@ export const POST = withDoor(async (req: Request) => {
     description?: string;
     timezone?: string;
     location?: string;
+    languages?: string;
     role?: OperatorRole;
     crane?: string | null;
     cranes?: unknown;
@@ -72,6 +73,7 @@ export const POST = withDoor(async (req: Request) => {
       description: body.description,
       timezone: body.timezone,
       location: body.location,
+      languages: body.languages,
       channels: body.channels,
     });
     if (!result.ok) {

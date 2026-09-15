@@ -6,6 +6,7 @@ export type PersonaOperator = {
   description: string;
   timezone: string;
   location: string;
+  languages: string;
   channels: OperatorChannels;
 };
 
@@ -15,6 +16,7 @@ export const PERSONA_OPERATOR_FIELDS = [
   { key: "email", label: "email", personaLabel: "Google / Workspace email (canonical)" },
   { key: "location", label: "location", personaLabel: "Location" },
   { key: "timezone", label: "timezone", personaLabel: "Timezone" },
+  { key: "languages", label: "languages", personaLabel: "Languages" },
   { key: "description", label: "description", personaLabel: "Notes" },
   { key: "telegram", label: "Telegram id", personaLabel: "Telegram id" },
   { key: "slack", label: "Slack id", personaLabel: "Slack id" },
@@ -34,6 +36,8 @@ export function operatorFieldValue(op: PersonaOperator, key: PersonaOperatorFiel
       return op.location.trim();
     case "timezone":
       return op.timezone.trim();
+    case "languages":
+      return op.languages.trim();
     case "description":
       return op.description.trim().replace(/\s+/g, " ");
     case "telegram":

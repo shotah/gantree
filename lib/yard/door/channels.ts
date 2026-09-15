@@ -15,6 +15,7 @@ export const MAX_DISPLAY_NAME = 64;
 export const MAX_EMAIL = 254;
 export const MAX_DESCRIPTION = 280;
 export const MAX_LOCATION = 80;
+export const MAX_LANGUAGES = 80;
 
 const TELEGRAM_ID = /^-?\d+$/;
 const DISCORD_ID = /^\d{5,20}$/;
@@ -114,6 +115,21 @@ export function validateLocation(raw: string): string | null {
   }
   if (hasForbiddenControls(s)) {
     return "location cannot contain control characters";
+  }
+  return null;
+}
+
+/** Free text in the operator's own words and script ("English, 日本語"); blank is fine. */
+export function validateLanguages(raw: string): string | null {
+  if (typeof raw !== "string") {
+    return "languages required";
+  }
+  const s = raw.trim();
+  if (s.length > MAX_LANGUAGES) {
+    return `languages must be at most ${MAX_LANGUAGES} characters`;
+  }
+  if (hasForbiddenControls(s)) {
+    return "languages cannot contain control characters";
   }
   return null;
 }

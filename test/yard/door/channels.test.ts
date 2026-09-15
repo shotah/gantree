@@ -6,6 +6,7 @@ import {
   validateDescription,
   validateDisplayName,
   validateEmail,
+  validateLanguages,
   validateLocation,
   validateTimezone,
 } from "@/lib/yard/door/channels";
@@ -48,6 +49,13 @@ describe("operator channel ids", () => {
     expect(validateDescription("bell\u0007")).toBe("description cannot contain control characters");
     expect(validateLocation("Seattle, Washington")).toBeNull();
     expect(validateLocation("x".repeat(81))).toMatch(/at most/);
+    // Languages are free text in the operator's own script; blank means the template's English stays.
+    expect(validateLanguages("")).toBeNull();
+    expect(validateLanguages("中文, English")).toBeNull();
+    expect(validateLanguages("日本語")).toBeNull();
+    expect(validateLanguages("Tiếng Việt, English")).toBeNull();
+    expect(validateLanguages("x".repeat(81))).toMatch(/at most/);
+    expect(validateLanguages("English\u0000")).toBe("languages cannot contain control characters");
   });
 });
 

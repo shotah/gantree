@@ -730,6 +730,7 @@ describe("operator profile", () => {
       description: "owns the mini",
       timezone: "America/New_York",
       location: "Brooklyn, New York",
+      languages: " Tiếng Việt, English ",
       channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"], google: [] },
     });
     expect(updated.ok).toBe(true);
@@ -744,8 +745,15 @@ describe("operator profile", () => {
       description: "owns the mini",
       timezone: "America/New_York",
       location: "Brooklyn, New York",
+      languages: "Tiếng Việt, English",
       channels: { telegram: ["123456"], slack: ["U012ABCDEF"], discord: ["123456789012345678"], google: [] },
     });
+    const tooLong = updateOwnProfile(id, { languages: "x".repeat(81) });
+    expect(tooLong.ok).toBe(false);
+    if (!tooLong.ok) {
+      expect(tooLong.status).toBe(400);
+      expect(tooLong.error).toMatch(/languages must be at most/);
+    }
 
     const renamed = updateOwnProfile(id, { name: "robert" });
     expect(renamed.ok).toBe(true);
@@ -817,7 +825,7 @@ describe("operator profile", () => {
       .prepare("PRAGMA table_info(operator)")
       .all() as { name: string }[];
     expect(cols.map((c) => c.name)).toEqual(
-      expect.arrayContaining(["display_name", "email", "description", "timezone", "location", "role", "crane_slug", "channels"]),
+      expect.arrayContaining(["display_name", "email", "description", "timezone", "location", "languages", "role", "crane_slug", "channels"]),
     );
     expect(setupOperator("kit", pass).ok).toBe(true);
   });

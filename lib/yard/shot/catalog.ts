@@ -11,6 +11,7 @@ export type ShotOperator = {
   description: string;
   timezone: string;
   location: string;
+  languages: string;
   telegram: string;
 };
 
@@ -42,6 +43,7 @@ export const SHOT_OPERATORS: ShotOperator[] = [
     description: "Owns the Mini. Builds cranes, keeps the door, reads the spend bar on Thursdays.",
     timezone: "America/Los_Angeles",
     location: "Portland, OR",
+    languages: "English",
     telegram: "41001001",
   },
   {
@@ -54,6 +56,7 @@ export const SHOT_OPERATORS: ShotOperator[] = [
     description: "Night operator. Calendars, maps, the boring adulting nobody else will do.",
     timezone: "America/Los_Angeles",
     location: "Portland, OR",
+    languages: "中文, English",
     telegram: "41001002",
   },
   {
@@ -66,6 +69,7 @@ export const SHOT_OPERATORS: ShotOperator[] = [
     description: "Kit and Ada. Garmin days, spreadsheet nights, one thread that actually finishes.",
     timezone: "America/Chicago",
     location: "Austin, TX",
+    languages: "English, Español",
     telegram: "41001003",
   },
   {
@@ -78,6 +82,7 @@ export const SHOT_OPERATORS: ShotOperator[] = [
     description: "Jules and Moss. Cast the living room. Never the WAN.",
     timezone: "America/New_York",
     location: "Brooklyn, NY",
+    languages: "English",
     telegram: "41001004",
   },
   {
@@ -90,6 +95,7 @@ export const SHOT_OPERATORS: ShotOperator[] = [
     description: "Looks at Piper. Does not recreate. Asks Bob when a grant goes dark.",
     timezone: "America/Denver",
     location: "Boulder, CO",
+    languages: "English",
     telegram: "41001005",
   },
 ];

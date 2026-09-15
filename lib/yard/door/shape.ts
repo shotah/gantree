@@ -16,6 +16,8 @@ export type OperatorRow = Operator & {
   description: string;
   timezone: string;
   location: string;
+  /** Free text, operator's order of preference ("English, 日本語"). Injected as About you Languages. */
+  languages: string;
   channels: OperatorChannels;
   createdAt: string;
 };
@@ -27,6 +29,7 @@ export type OperatorProfilePatch = {
   description?: string;
   timezone?: string;
   location?: string;
+  languages?: string;
   role?: OperatorRole;
   cranes?: string[];
   channels?: OperatorChannels;
@@ -50,6 +53,7 @@ export type OperatorDb = {
   description: string | null;
   timezone: string | null;
   location: string | null;
+  languages: string | null;
   role: string | null;
   crane_slug: string | null;
   channels: string | null;
@@ -81,6 +85,7 @@ export function operatorRow(row: OperatorDb): OperatorRow {
     description: row.description ?? "",
     timezone: row.timezone ?? "",
     location: row.location ?? "",
+    languages: row.languages ?? "",
     channels: parseOperatorChannels(row.channels),
     createdAt: row.created_at,
   };

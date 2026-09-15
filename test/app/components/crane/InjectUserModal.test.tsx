@@ -37,6 +37,7 @@ describe("InjectUserModal", () => {
             description: "likes rye",
             timezone: "America/New_York",
             location: "Brooklyn, New York",
+            languages: "中文, English",
             channels: { telegram: ["99"], slack: [], discord: [], google: [] },
           },
         ],
@@ -60,6 +61,8 @@ describe("InjectUserModal", () => {
     expect(next).toContain("- **Timezone:** America/New_York");
     expect(next).not.toContain("- **Timezone:** America/Los_Angeles");
     expect(next).toContain("- **Location:** Brooklyn, New York");
+    expect(next).toContain("- **Languages:** 中文, English");
+    expect(next).not.toMatch(/- \*\*Languages:\*\* English\n/);
     expect(next).toContain("- **Telegram id:** 99");
     expect(next).not.toContain("- **Notes:** likes rye");
   });
@@ -82,6 +85,7 @@ describe("InjectUserModal", () => {
     render(<InjectUserModal persona="# x\n" onClose={() => undefined} onInject={() => undefined} />);
     await waitFor(() => expect(screen.getByRole("checkbox", { name: /email/ })).toBeTruthy());
     expect(screen.getByRole("checkbox", { name: /email/ })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("checkbox", { name: /languages/ })).toHaveProperty("disabled", true);
     expect(screen.getByRole("checkbox", { name: /display name/ })).toHaveProperty("disabled", false);
   });
 });

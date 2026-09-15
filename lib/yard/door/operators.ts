@@ -7,6 +7,7 @@ import {
   validateDescription,
   validateDisplayName,
   validateEmail,
+  validateLanguages,
   validateLocation,
   validateTimezone,
   type OperatorRole,
@@ -17,7 +18,7 @@ import { createSession, tokenHash } from "./session";
 import { operatorRow, type DoorFail, type Operator, type OperatorDb, type OperatorProfilePatch, type OperatorRow } from "./shape";
 import { yardDb } from "./store";
 
-const OPERATOR_COLS = "id, name, display_name, email, description, timezone, location, role, crane_slug, channels, created_at";
+const OPERATOR_COLS = "id, name, display_name, email, description, timezone, location, languages, role, crane_slug, channels, created_at";
 
 export function operatorCount(): number {
   const row = yardDb().prepare("SELECT COUNT(*) AS n FROM operator").get() as { n: number } | undefined;
@@ -327,6 +328,15 @@ export function updateOwnProfile(
     location = patch.location.trim();
   }
 
+  let languages = row.languages ?? "";
+  if (patch.languages !== undefined) {
+    const err = validateLanguages(patch.languages);
+    if (err) {
+      return { ok: false, error: err, status: 400 };
+    }
+    languages = patch.languages.trim();
+  }
+
   let channelsJson = row.channels ?? "{}";
   if (patch.channels !== undefined) {
     const parsed = parseChannelsPatch(patch.channels);
@@ -337,8 +347,8 @@ export function updateOwnProfile(
   }
 
   db.prepare(
-    "UPDATE operator SET name = ?, display_name = ?, email = ?, description = ?, timezone = ?, location = ?, channels = ? WHERE id = ?",
-  ).run(name, displayName, email, description, timezone, location, channelsJson, operatorId);
+    "UPDATE operator SET name = ?, display_name = ?, email = ?, description = ?, timezone = ?, location = ?, languages = ?, channels = ? WHERE id = ?",
+  ).run(name, displayName, email, description, timezone, location, languages, channelsJson, operatorId);
   const next = getOperator(operatorId);
   if (!next) {
     return { ok: false, error: "operator write vanished", status: 500 };
