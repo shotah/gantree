@@ -92,6 +92,8 @@ not the cog, and it is not the operator list.</p>
 <li>display name (what the header shows)</li>
 <li>login name (what <code>/login</code> asks for)</li>
 <li>email (what the pendant matches — leave Google blank; not a reset path, not a mailbox)</li>
+<li>location, timezone (IANA), languages (free text, your first choice first,
+in your own script — <code>日本語, English</code>)</li>
 <li>description</li>
 <li>chat ids (Telegram numeric, Slack <code>U…</code>, Discord snowflake, Google <code>sub</code>) — stored on
 you. Google <code>sub</code> is optional: after they talk, spend offers to store the digits.
@@ -101,8 +103,10 @@ pendant’s Google sign-in: <a href="access.html">access.md</a></li>
 <li>passphrase (current + new + confirm, plus the confirm-scary checkbox)</li>
 </ul>
 <p>Those fields are what <strong>Inject user</strong> on a crane copies into <code>PERSONA.md</code>
-<strong>About you</strong> (name, email, timezone, location, notes, chat ids). The file
-starts from the ai-gantry seed
+<strong>About you</strong> (name, email, timezone, location, languages, notes, chat ids).
+A blank field leaves the seed&#39;s bullet alone — an operator with no languages
+set keeps the template&#39;s <code>English</code>, so speakers of anything else should fill
+it in before injecting. The file starts from the ai-gantry seed
 (<code>lib/yard/crane/templates/PERSONA.example.md</code>). Identity — the agent’s
 name — is not overwritten. Save on the crane still writes the file.</p>
 <p>The row is a <strong>UUID</strong>. Renaming bob does not mint a new person. You cannot
