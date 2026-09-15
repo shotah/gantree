@@ -81,6 +81,12 @@ function migrate(d: DatabaseSync): void {
       updated_at           TEXT
     );
     INSERT OR IGNORE INTO pendant_settings (id) VALUES (1);
+    CREATE TABLE IF NOT EXISTS yard_settings (
+      id           INTEGER PRIMARY KEY CHECK (id = 1),
+      github_token TEXT NOT NULL DEFAULT '',
+      updated_at   TEXT
+    );
+    INSERT OR IGNORE INTO yard_settings (id) VALUES (1);
     CREATE TABLE IF NOT EXISTS yard_event (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       at          TEXT NOT NULL,

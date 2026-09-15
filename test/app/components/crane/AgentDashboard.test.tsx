@@ -383,6 +383,7 @@ describe("AgentDashboard secrets", () => {
     fireEvent.click(screen.getByRole("button", { name: /Secrets/ }));
     await waitFor(() => expect(screen.getByLabelText("LLM_API_KEY")).toBeTruthy());
     expect(screen.getByLabelText("BRAVE_SEARCH_API_KEY")).toBeTruthy();
+    expect(screen.queryByLabelText("GITHUB_TOKEN")).toBeNull();
     expect(screen.queryByLabelText("GOOGLE_PSE_API_KEY")).toBeNull();
     expect(screen.queryByLabelText("GOOGLE_PSE_ENGINE_ID")).toBeNull();
     expect(screen.queryByLabelText("GEMINI_SEARCH_API_KEY")).toBeNull();

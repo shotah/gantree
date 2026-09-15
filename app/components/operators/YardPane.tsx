@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { yardFetch } from "@/app/lib/yardFetch";
 import { HINTS } from "@/lib/yard/hints";
+import { secretLook } from "@/lib/yard/secretLook";
 import type { ObservePrefs } from "@/lib/yard/types";
 import { HintField } from "../shared/HintField";
 
@@ -14,6 +15,8 @@ export function YardPane({ admin }: { admin: boolean }) {
   const [image, setImage] = useState("");
   const [prompt, setPrompt] = useState("");
   const [gen, setGen] = useState("");
+  const [github, setGithub] = useState("");
+  const [githubSet, setGithubSet] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -22,7 +25,7 @@ export function YardPane({ admin }: { admin: boolean }) {
   useEffect(() => {
     yardFetch("/api/observe")
       .then((r) => r.json())
-      .then((d: { observe?: ObservePrefs; error?: string }) => {
+      .then((d: { observe?: ObservePrefs; githubTokenSet?: boolean; error?: string }) => {
         if (d.error || !d.observe) {
           setErr(d.error || "could not load observe prefs");
           return;
@@ -34,6 +37,7 @@ export function YardPane({ admin }: { admin: boolean }) {
         setImage(d.observe.defaultImage);
         setPrompt(d.observe.promptUsdPerMillion != null ? String(d.observe.promptUsdPerMillion) : "");
         setGen(d.observe.genUsdPerMillion != null ? String(d.observe.genUsdPerMillion) : "");
+        setGithubSet(Boolean(d.githubTokenSet));
       })
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : String(e)));
   }, []);
@@ -56,9 +60,14 @@ export function YardPane({ admin }: { admin: boolean }) {
         defaultImage: image.trim(),
         promptUsdPerMillion: prompt.trim() === "" ? null : Number(prompt),
         genUsdPerMillion: gen.trim() === "" ? null : Number(gen),
+        githubToken: github,
       }),
     });
-    const data = (await res.json().catch(() => ({}))) as { error?: string; observe?: ObservePrefs };
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      observe?: ObservePrefs;
+      githubTokenSet?: boolean;
+    };
     setBusy(false);
     if (!res.ok) {
       setErr(data.error || res.statusText);
@@ -67,13 +76,21 @@ export function YardPane({ admin }: { admin: boolean }) {
     if (data.observe) {
       setPrefs(data.observe);
     }
+    setGithubSet(Boolean(data.githubTokenSet));
+    setGithub("");
     setConfirm(false);
-    setNotice("yard prefs saved to gantree.toml");
+    setNotice("yard prefs saved");
   }
 
   if (!prefs) {
     return <p className="text-sm text-dim">{err || "loading yard prefs…"}</p>;
   }
+
+  const look = secretLook({ set: githubSet, secret: true }, github, "token");
+  const githubLook
+    = !githubSet && !github.trim()
+      ? { ...look, placeholder: "optional", status: "optional", missing: false }
+      : look;
 
   return (
     <form className="flex max-w-lg flex-col gap-3 rounded-lg border border-line bg-panel/60 p-4" onSubmit={save}>
@@ -139,8 +156,21 @@ export function YardPane({ admin }: { admin: boolean }) {
           onChange={(e) => setGen(e.target.value)}
         />
       </HintField>
+      <HintField label="GitHub PAT" {...HINTS.githubToken}>
+        <input
+          className="rounded border border-line bg-canvas px-3 py-2 text-sm text-fg"
+          type={githubLook.type}
+          name="gantree-github-token"
+          autoComplete="new-password"
+          spellCheck={false}
+          placeholder={githubLook.placeholder}
+          value={github}
+          disabled={!admin}
+          onChange={(e) => setGithub(e.target.value)}
+        />
+      </HintField>
       <p className="text-[11px] text-faint">
-        Session idle (7 days) and absolute (30 days) stay in the door code — not toml. See docs/security.md.
+        Session idle (7 days) and absolute (30 days) stay in the door code — not toml. GitHub PAT stays in sqlite. See docs/security.md.
       </p>
       {admin
         ? (

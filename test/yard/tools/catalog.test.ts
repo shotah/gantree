@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "@/lib/yard/tools/catalog";
-import { CRANE_ALWAYS_KEYS, CRANE_OPTIONAL_KEYS, PACKAGES, SLIM_GRANT, dropReplacedSearchKeys, dropReplacedSearchServers, envKeysForServer, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
+import { CRANE_ALWAYS_KEYS, CRANE_OPTIONAL_KEYS, PACKAGES, SLIM_GRANT, dropReplacedSearchKeys, dropReplacedSearchServers, envKeysForServer, githubApiToken, optionalKeysForGrant, parseHostManifest, secretKeysForGrant } from "@/lib/yard/tools/packages";
 import type { CatalogEntry } from "@/lib/yard/types";
 
 const sample: CatalogEntry[] = [
@@ -226,5 +226,15 @@ describe("dropReplacedSearchKeys", () => {
       GOOGLE_PSE_API_KEY: "pse",
       GOOGLE_PSE_ENGINE_ID: "cx",
     })).toEqual({ CHANNEL: "telegram", BRAVE_SEARCH_API_KEY: "keep" });
+  });
+});
+
+describe("githubApiToken", () => {
+  it("prefers crane .env, then yard sqlite, then GITHUB_TOKEN, then GH_TOKEN", () => {
+    expect(githubApiToken({ GITHUB_TOKEN: "crane" }, { GITHUB_TOKEN: "host" }, "yard")).toBe("crane");
+    expect(githubApiToken({}, { GITHUB_TOKEN: "host", GH_TOKEN: "cli" }, "yard")).toBe("yard");
+    expect(githubApiToken({}, { GITHUB_TOKEN: "host", GH_TOKEN: "cli" })).toBe("host");
+    expect(githubApiToken({}, { GH_TOKEN: "cli" })).toBe("cli");
+    expect(githubApiToken({}, { GITHUB_TOKEN: "  " })).toBe("");
   });
 });

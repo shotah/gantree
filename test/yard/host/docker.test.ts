@@ -9,6 +9,7 @@ import {
   looksLikeConsole,
   looksLikeGantry,
   mergeBinds,
+  mergeExecEnv,
   cranePath,
   normalizeName,
   ownerUserSpec,
@@ -255,5 +256,18 @@ describe("hostBindPath", () => {
     expect(hostBindPath("./gantries/kit/data")).toBe("/app/gantries/kit/data");
     process.env.GANTREE_HOST_ROOT = "/opt/gantree";
     expect(hostBindPath("./gantries/kit/mcp.toml")).toBe("/opt/gantree/gantries/kit/mcp.toml");
+  });
+});
+
+describe("mergeExecEnv", () => {
+  it("overlays extras onto the container env without dropping the rest", () => {
+    expect(mergeExecEnv(
+      ["HOME=/data", "PATH=/usr/bin", "GITHUB_TOKEN=old"],
+      { GITHUB_TOKEN: "ghp_new", EMPTY: "  " },
+    )).toEqual(["HOME=/data", "PATH=/usr/bin", "GITHUB_TOKEN=ghp_new"]);
+    expect(mergeExecEnv(["HOME=/data"], { GITHUB_TOKEN: "ghp_x" })).toEqual([
+      "HOME=/data",
+      "GITHUB_TOKEN=ghp_x",
+    ]);
   });
 });

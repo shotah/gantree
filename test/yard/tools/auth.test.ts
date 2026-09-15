@@ -12,6 +12,10 @@ vi.mock("@/lib/yard/host/docker", async (importOriginal) => {
   return { ...actual, execGantry: vi.fn() };
 });
 
+vi.mock("@/lib/yard/host/github", () => ({
+  loadYardGithubToken: vi.fn(() => ""),
+}));
+
 vi.mock("@/lib/yard/tools/catalog", () => ({
   loadCatalog: () => [
     {
@@ -27,11 +31,14 @@ vi.mock("@/lib/yard/tools/catalog", () => ({
 
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { execGantry } from "@/lib/yard/host/docker";
+import { loadYardGithubToken } from "@/lib/yard/host/github";
 import { authCmd, exchangeAuth, extractAuthUrl, fetchNeedsReload, kickAuth, toolsFetch, waitAuth } from "@/lib/yard/tools/auth";
 
 beforeEach(() => {
   vi.mocked(getGantry).mockReset();
   vi.mocked(execGantry).mockReset();
+  vi.mocked(loadYardGithubToken).mockReset();
+  vi.mocked(loadYardGithubToken).mockReturnValue("");
 });
 
 describe("authCmd", () => {
@@ -179,6 +186,83 @@ describe("kickAuth / exchangeAuth / waitAuth / toolsFetch", () => {
       "/etc/gantry/mcp.toml",
     ]);
     rmSync(root, { recursive: true, force: true });
+  });
+
+  it("passes a yard GitHub PAT into tools-fetch exec", async () => {
+    const prev = process.env.GITHUB_TOKEN;
+    const prevGh = process.env.GH_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+    delete process.env.GH_TOKEN;
+    vi.mocked(loadYardGithubToken).mockReturnValue("ghp_yard");
+    try {
+      vi.mocked(getGantry).mockResolvedValue(card());
+      vi.mocked(execGantry).mockResolvedValue({ text: "", exitCode: 0 });
+      await toolsFetch("kit");
+      expect(vi.mocked(execGantry).mock.calls.at(-1)?.[2]).toEqual({ GITHUB_TOKEN: "ghp_yard" });
+    } finally {
+      if (prev === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = prev;
+      }
+      if (prevGh === undefined) {
+        delete process.env.GH_TOKEN;
+      } else {
+        process.env.GH_TOKEN = prevGh;
+      }
+    }
+  });
+
+  it("falls back to a host GITHUB_TOKEN when the yard has none", async () => {
+    const prev = process.env.GITHUB_TOKEN;
+    const prevGh = process.env.GH_TOKEN;
+    delete process.env.GH_TOKEN;
+    process.env.GITHUB_TOKEN = "ghp_host";
+    try {
+      vi.mocked(getGantry).mockResolvedValue(card());
+      vi.mocked(execGantry).mockResolvedValue({ text: "", exitCode: 0 });
+      await toolsFetch("kit");
+      expect(vi.mocked(execGantry).mock.calls.at(-1)?.[2]).toEqual({ GITHUB_TOKEN: "ghp_host" });
+    } finally {
+      if (prev === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = prev;
+      }
+      if (prevGh === undefined) {
+        delete process.env.GH_TOKEN;
+      } else {
+        process.env.GH_TOKEN = prevGh;
+      }
+    }
+  });
+
+  it("prefers the crane GITHUB_TOKEN over the host", async () => {
+    const prev = process.env.GITHUB_TOKEN;
+    const prevGh = process.env.GH_TOKEN;
+    delete process.env.GH_TOKEN;
+    process.env.GITHUB_TOKEN = "host";
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    const envFile = join(root, ".env");
+    writeFileSync(envFile, "GITHUB_TOKEN=crane\n");
+    try {
+      vi.mocked(getGantry).mockResolvedValue(card({ envFile }));
+      vi.mocked(execGantry).mockResolvedValue({ text: "", exitCode: 0 });
+      await toolsFetch("kit");
+      expect(vi.mocked(execGantry).mock.calls.at(-1)?.[2]).toEqual({ GITHUB_TOKEN: "crane" });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      if (prev === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = prev;
+      }
+      if (prevGh === undefined) {
+        delete process.env.GH_TOKEN;
+      } else {
+        process.env.GH_TOKEN = prevGh;
+      }
+    }
   });
 });
 

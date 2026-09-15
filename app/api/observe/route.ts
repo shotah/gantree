@@ -1,4 +1,5 @@
 import { denyUnlessAdmin, operatorFromRequest, recordFromRequest, withDoor } from "@/lib/yard/door";
+import { githubTokenIsSet, saveYardGithubToken } from "@/lib/yard/host/github";
 import { pruneByObservePrefs } from "@/lib/yard/observe/memory";
 import { loadObservePrefs, saveObservePrefs } from "@/lib/yard/observe/prefs";
 
@@ -7,7 +8,7 @@ export const GET = withDoor(async (req: Request) => {
   if (!you) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  return Response.json({ observe: loadObservePrefs() });
+  return Response.json({ observe: loadObservePrefs(), githubTokenSet: githubTokenIsSet() });
 });
 
 export const PUT = withDoor(async (req: Request) => {
@@ -23,7 +24,10 @@ export const PUT = withDoor(async (req: Request) => {
   if (!saved.ok) {
     return Response.json({ error: saved.error }, { status: 400 });
   }
+  if (typeof body.githubToken === "string") {
+    saveYardGithubToken(body.githubToken);
+  }
   pruneByObservePrefs();
   recordFromRequest(req, "inventory", null, "observe");
-  return Response.json({ ok: true, observe: saved.prefs });
+  return Response.json({ ok: true, observe: saved.prefs, githubTokenSet: githubTokenIsSet() });
 });

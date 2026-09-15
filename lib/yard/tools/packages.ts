@@ -8,6 +8,15 @@ export const CRANE_OPTIONAL_KEYS = [
   "BRAVE_SEARCH_API_KEY",
 ];
 
+/** PAT for `gantry tools-fetch` (`download_tag=latest`). Crane `.env` (legacy), then yard sqlite, then the gantree process. */
+export function githubApiToken(
+  craneEnv: Record<string, string> = {},
+  hostEnv: Record<string, string | undefined> = process.env,
+  yardToken = "",
+): string {
+  return (craneEnv.GITHUB_TOKEN || yardToken || hostEnv.GITHUB_TOKEN || hostEnv.GH_TOKEN || "").trim();
+}
+
 /** Chat-mouth env. Telegram/Discord/Slack are dropped when CHANNEL is something else. Pendant keys stay. */
 export const MOUTH_ENV_KEYS: Record<string, string[]> = {
   telegram: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS"],

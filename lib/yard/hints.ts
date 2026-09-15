@@ -65,6 +65,10 @@ export const HINTS = {
     hint: "Optional $/1M for generated tokens. Same calculator, not a provider invoice.",
     example: "0.60",
   },
+  githubToken: {
+    hint: "Yard-wide GitHub PAT so tools-fetch can resolve download_tag=latest on every crane. Unauthenticated GitHub is 60 calls/hour per IP. Fine-grained Contents: read on the MCP repos, or classic public_repo. Stored in yard sqlite, not gantree.toml, not each crane .env. Blank leaves an existing token. Not a model key.",
+    example: "ghp_… or github_pat_…",
+  },
   operatorName: {
     hint: "Login name for /login. 2–32 letters, digits, `.` `_` `-`.",
     example: "ada",
@@ -277,6 +281,7 @@ const ENV_HINTS: Record<string, HintCopy> = {
     hint: "Brave Search subscription token for builtin web_search. Titles, URLs, snippets — not a second model. Subscribe at api-dashboard.search.brave.com.",
     example: "a long token from the dashboard",
   },
+  GITHUB_TOKEN: HINTS.githubToken,
   IMAGE_API_KEY: {
     hint: "Gemini / Vertex key for image-generation-mcp. Blank uses the crane LLM_API_KEY. Not Workspace OAuth.",
     example: "AIzaSy…",

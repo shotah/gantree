@@ -8,7 +8,9 @@ vi.mock("@/lib/yard/host/docker", async (importOriginal) => {
 });
 
 import { createOrReplaceContainer } from "@/lib/yard/crane/build";
+import { closeYardDb } from "@/lib/yard/door/store";
 import { docker, inspectByName } from "@/lib/yard/host/docker";
+import { saveYardGithubToken } from "@/lib/yard/host/github";
 import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
 const dirs: string[] = [];
@@ -19,14 +21,17 @@ beforeEach(() => {
   const root = mkdtempSync(join(process.cwd(), ".tmp-"));
   dirs.push(root);
   process.env.GANTREE_ROOT = root;
+  process.env.GANTREE_DB = join(root, "gantree.db");
   delete process.env.GANTREE_HOST_ROOT;
 });
 
 afterEach(() => {
+  closeYardDb();
   for (const d of dirs.splice(0)) {
     rmSync(d, { recursive: true, force: true });
   }
   delete process.env.GANTREE_ROOT;
+  delete process.env.GANTREE_DB;
 });
 
 function dockerStub(opts: {
@@ -159,5 +164,96 @@ describe("createOrReplaceContainer", () => {
     expect(env).toContain("PATH=/data/bin:/usr/local/bin:/tools");
     const host = created?.HostConfig as Record<string, unknown>;
     expect(host.Binds).toEqual(expect.arrayContaining(["/opt/agents/kit/bin:/tools:ro"]));
+  });
+
+  it("inherits a yard GitHub PAT when the crane .env has none", async () => {
+    const prev = process.env.GITHUB_TOKEN;
+    const prevGh = process.env.GH_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+    delete process.env.GH_TOKEN;
+    saveYardGithubToken("ghp_yard");
+    try {
+      vi.mocked(inspectByName).mockResolvedValue(null);
+      let created: Record<string, unknown> | undefined;
+      dockerStub({ onCreate: (body) => (created = body) });
+      await createOrReplaceContainer({
+        slug: "kit",
+        image: DEFAULT_IMAGE,
+        env: { CHANNEL: "telegram" },
+        personaDir: "/p",
+        dataDir: "/d",
+        mcpManifest: "/m.toml",
+      });
+      expect(created?.Env as string[]).toContain("GITHUB_TOKEN=ghp_yard");
+    } finally {
+      if (prev === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = prev;
+      }
+      if (prevGh === undefined) {
+        delete process.env.GH_TOKEN;
+      } else {
+        process.env.GH_TOKEN = prevGh;
+      }
+    }
+  });
+
+  it("falls back to a host GITHUB_TOKEN when the yard has none", async () => {
+    const prev = process.env.GITHUB_TOKEN;
+    const prevGh = process.env.GH_TOKEN;
+    delete process.env.GH_TOKEN;
+    process.env.GITHUB_TOKEN = "ghp_host";
+    try {
+      vi.mocked(inspectByName).mockResolvedValue(null);
+      let created: Record<string, unknown> | undefined;
+      dockerStub({ onCreate: (body) => (created = body) });
+      await createOrReplaceContainer({
+        slug: "kit",
+        image: DEFAULT_IMAGE,
+        env: { CHANNEL: "telegram" },
+        personaDir: "/p",
+        dataDir: "/d",
+        mcpManifest: "/m.toml",
+      });
+      expect(created?.Env as string[]).toContain("GITHUB_TOKEN=ghp_host");
+    } finally {
+      if (prev === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = prev;
+      }
+      if (prevGh === undefined) {
+        delete process.env.GH_TOKEN;
+      } else {
+        process.env.GH_TOKEN = prevGh;
+      }
+    }
+  });
+
+  it("keeps the crane GITHUB_TOKEN over the host", async () => {
+    const prev = process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN = "host";
+    try {
+      vi.mocked(inspectByName).mockResolvedValue(null);
+      let created: Record<string, unknown> | undefined;
+      dockerStub({ onCreate: (body) => (created = body) });
+      await createOrReplaceContainer({
+        slug: "kit",
+        image: DEFAULT_IMAGE,
+        env: { CHANNEL: "telegram", GITHUB_TOKEN: "crane" },
+        personaDir: "/p",
+        dataDir: "/d",
+        mcpManifest: "/m.toml",
+      });
+      expect(created?.Env as string[]).toContain("GITHUB_TOKEN=crane");
+      expect(created?.Env as string[]).not.toContain("GITHUB_TOKEN=host");
+    } finally {
+      if (prev === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = prev;
+      }
+    }
   });
 });

@@ -223,9 +223,31 @@ export async function containerStatsOnce(id: string) {
   return docker().getContainer(id).stats({ stream: false });
 }
 
+/** Docker exec Env replaces the container env — merge extras onto inspect Config.Env. */
+export function mergeExecEnv(containerEnv: string[], extra: Record<string, string>): string[] {
+  const env = [...containerEnv];
+  for (const [k, v] of Object.entries(extra)) {
+    const key = k.trim();
+    const val = v.trim();
+    if (!key || val === "") {
+      continue;
+    }
+    const prefix = `${key}=`;
+    const pair = `${key}=${val}`;
+    const i = env.findIndex((e) => e.startsWith(prefix));
+    if (i >= 0) {
+      env[i] = pair;
+    } else {
+      env.push(pair);
+    }
+  }
+  return env;
+}
+
 export async function execGantry(
   id: string,
   args: string[],
+  extraEnv?: Record<string, string>,
 ): Promise<{ text: string; exitCode: number } | null> {
   if (shotDockerEnabled()) {
     if (args[0] === "status") {
@@ -234,11 +256,23 @@ export async function execGantry(
     return { text: "", exitCode: 0 };
   }
   try {
-    const exec = await docker().getContainer(id).exec({
+    const inject = extraEnv
+      ? Object.fromEntries(Object.entries(extraEnv).filter(([, v]) => v.trim() !== ""))
+      : {};
+    const spec: { Cmd: string[]; AttachStdout: boolean; AttachStderr: boolean; Env?: string[] } = {
       Cmd: ["/usr/local/bin/gantry", ...args],
       AttachStdout: true,
       AttachStderr: true,
-    });
+    };
+    if (Object.keys(inject).length > 0) {
+      try {
+        const inspect = await docker().getContainer(id).inspect();
+        spec.Env = mergeExecEnv(inspect.Config?.Env ?? [], inject);
+      } catch {
+        /* keep the container env; tools-fetch still runs */
+      }
+    }
+    const exec = await docker().getContainer(id).exec(spec);
     const stream = await exec.start({ hijack: true, stdin: false });
     const chunks: Buffer[] = [];
     await new Promise<void>((resolve, reject) => {

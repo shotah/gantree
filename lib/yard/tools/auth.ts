@@ -1,11 +1,13 @@
 import { resolve } from "node:path";
 import { getGantry } from "../crane/inventory";
 import { execGantry } from "../host/docker";
+import { loadEnvFile } from "../host/envfile";
 import { parseMcpToml, readText, stringifyMcpToml, writeText } from "../host/files";
+import { loadYardGithubToken } from "../host/github";
 import type { AuthFlow, GantryCard } from "../types";
 import { loadCatalog } from "./catalog";
 import { enrichDownloadUrls } from "./grant";
-import { dropReplacedSearchServers } from "./packages";
+import { dropReplacedSearchServers, githubApiToken } from "./packages";
 
 export type AuthOp = "start" | "exchange" | "wait";
 
@@ -122,7 +124,12 @@ export async function toolsFetch(slug: string): Promise<{ ok: boolean; detail: s
   if (!g?.containerId || g.state !== "running") {
     return { ok: false, detail: "container must be running for tools-fetch" };
   }
-  const result = await execGantry(g.containerId, toolsFetchArgs(g));
+  const token = githubApiToken(g.envFile ? loadEnvFile(g.envFile) : {}, process.env, loadYardGithubToken());
+  const result = await execGantry(
+    g.containerId,
+    toolsFetchArgs(g),
+    token ? { GITHUB_TOKEN: token } : undefined,
+  );
   if (!result) {
     return { ok: false, detail: "could not exec gantry tools-fetch" };
   }

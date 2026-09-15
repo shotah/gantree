@@ -43,6 +43,14 @@ describe("envHint", () => {
     expect(envHint("BRAVE_SEARCH_API_KEY").example).toMatch(/dashboard/i);
   });
 
+  it("names GITHUB_TOKEN as the yard-wide tools-fetch PAT, not a model key", () => {
+    expect(envHint("GITHUB_TOKEN")).toEqual(HINTS.githubToken);
+    expect(HINTS.githubToken.hint).toMatch(/tools-fetch/i);
+    expect(HINTS.githubToken.hint).toMatch(/sqlite/i);
+    expect(HINTS.githubToken.hint).toMatch(/not a model key/i);
+    expect(HINTS.githubToken.example).toMatch(/ghp_/);
+  });
+
   it("describes the photo_generate → pendant face/wallpaper handoff dir", () => {
     expect(envHint("IMAGE_OUTPUT_DIR").example).toBe("/data/images");
     expect(envHint("IMAGE_OUTPUT_DIR").hint).toMatch(/source_path/);

@@ -167,4 +167,58 @@ describe("PUT /api/observe", () => {
     const seen = (await peek.json()) as { observe: { promptUsdPerMillion: number | null } };
     expect(seen.observe.promptUsdPerMillion).toBe(0.15);
   });
+
+  it("stores a GitHub PAT in sqlite, never toml", async () => {
+    const prev = process.env.GITHUB_TOKEN;
+    const prevGh = process.env.GH_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+    delete process.env.GH_TOKEN;
+    try {
+      const admin = setupOperator("kit", "a-long-enough-pass");
+      expect(admin.ok).toBe(true);
+      if (!admin.ok) {
+        return;
+      }
+      const empty = await GET(cookieReq("/api/observe", admin.token));
+      expect(empty.status).toBe(200);
+      const before = (await empty.json()) as { githubTokenSet?: boolean };
+      expect(before.githubTokenSet).toBe(false);
+
+      const ok = await PUT(
+        cookieReq("/api/observe", admin.token, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ confirm: true, githubToken: "ghp_secret" }),
+        }),
+      );
+      expect(ok.status).toBe(200);
+      const body = (await ok.json()) as { githubTokenSet?: boolean };
+      expect(body.githubTokenSet).toBe(true);
+      expect(JSON.stringify(body)).not.toContain("ghp_secret");
+      const toml = readFileSync(process.env.GANTREE_TOML!, "utf8");
+      expect(toml).not.toMatch(/ghp_|github_token/i);
+
+      const keep = await PUT(
+        cookieReq("/api/observe", admin.token, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ confirm: true, githubToken: "" }),
+        }),
+      );
+      expect(keep.status).toBe(200);
+      const kept = (await keep.json()) as { githubTokenSet?: boolean };
+      expect(kept.githubTokenSet).toBe(true);
+    } finally {
+      if (prev === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = prev;
+      }
+      if (prevGh === undefined) {
+        delete process.env.GH_TOKEN;
+      } else {
+        process.env.GH_TOKEN = prevGh;
+      }
+    }
+  });
 });

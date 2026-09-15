@@ -51,7 +51,7 @@ export function YardSettings() {
         <h1 className="text-2xl font-semibold tracking-tight text-fg">Settings</h1>
         <p className="mt-1 text-sm text-dim">
           {pane === "yard"
-            ? "Retain, timezone, default pin, optional $/1M. Session idle stays in the door — not this table."
+            ? "Retain, timezone, default pin, GitHub PAT, optional $/1M. Session idle stays in the door — not this table."
             : pane === "pendant"
               ? "Cloudflare token and Google OAuth for the pendant Worker. Save pushes secrets. Build mints per-crane bearers."
               : admin

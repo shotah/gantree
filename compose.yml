@@ -27,6 +27,8 @@ services:
       GANTREE_ROOT: /app
       GANTREE_HOST_ROOT: ${GANTREE_HOST_ROOT:-${PWD}}
       GANTREE_DB: /app/var/gantree.db
+      # PAT for gantry tools-fetch (`download_tag=latest`). Empty is fine.
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-${GH_TOKEN:-}}
     ports:
       # host:container — LAN http://<mini>/ hits Vinext :3000 inside the box.
       - "${GANTREE_LISTEN:-0.0.0.0}:80:3000"

@@ -142,6 +142,7 @@ describe("YardSettings", () => {
     expect(screen.getByLabelText("turn retain days")).toBeTruthy();
     expect(screen.getByLabelText("timezone")).toBeTruthy();
     expect(screen.getByLabelText(/default image pin/)).toBeTruthy();
+    expect(screen.getByLabelText("GitHub PAT")).toBeTruthy();
     expect(screen.getByLabelText("prompt $/1M")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Save yard prefs" })).toBeTruthy();
   });

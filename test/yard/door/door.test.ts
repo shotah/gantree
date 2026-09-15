@@ -100,6 +100,7 @@ describe("yard sqlite", () => {
       "sample_turn",
       "sample_uptime",
       "yard_event",
+      "yard_settings",
     ]);
   });
 

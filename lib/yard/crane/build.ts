@@ -5,6 +5,7 @@ import { serverFromCatalog } from "../tools/packages";
 import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
 import { writeEnvFile } from "../host/envfile";
 import { ensureBoardsDir, stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
+import { resolveGithubApiToken } from "../host/github";
 import { seedPersonaFiles } from "./seed";
 import { DEFAULT_CHANNEL, DEFAULT_IMAGE, type McpServer } from "../types";
 import { loadObservePrefs } from "../observe/prefs";
@@ -148,6 +149,7 @@ export async function createOrReplaceContainer(opts: {
     `${hostBindPath(ensureBoardsDir())}:/boards`,
   ];
   const binds = mergeBinds(requiredBinds, runtime.binds);
+  const githubToken = resolveGithubApiToken(opts.env);
   const created = await docker().createContainer({
     name: opts.slug,
     Image: opts.image,
@@ -158,6 +160,7 @@ export async function createOrReplaceContainer(opts: {
       DATA_DIR: "/data",
       MCP_MANIFEST: "/etc/gantry/mcp.toml",
       ...opts.env,
+      ...(githubToken ? { GITHUB_TOKEN: githubToken } : {}),
       HOME: "/data",
       PATH: cranePath({
         envPath: opts.env.PATH,

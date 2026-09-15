@@ -115,7 +115,8 @@ Inventory is `gantree.toml` (no secrets). One mutation path: the UI
 calls `lib/yard`. Never dockerode from a React Server Component.
 
 Yard memory (`gantree.db`) is **sessions, operators, graph samples,
-audit** — not a second inventory of cranes. Operators are independent of
+audit, and a yard-wide GitHub PAT for tools-fetch** — not a second
+inventory of cranes. Operators are independent of
 each crane’s `gantry.db`. Restore a crane’s memory from a stamp; do not
 clone Kit into Ada.
 
