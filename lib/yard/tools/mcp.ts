@@ -32,14 +32,21 @@ function dirHasFile(dir: string, depth = 2): boolean {
   return false;
 }
 
-/** Flat `{name}-oauth.json` or MCP token dirs under `data/.config/`. */
+/** Flat `{name}-oauth.json`, MCP token dirs under `data/.config/`, or google-mcp's `$DATA_DIR/.google_workspace_mcp`. */
 export function oauthSessionPresent(dataDir: string | null | undefined, name: string, command?: string): boolean {
   if (!dataDir) {
     return false;
   }
-  const roots = [resolve(dataDir, `${name}-oauth.json`), resolve(dataDir, ".config", name), resolve(dataDir, ".config", `${name}-mcp`)];
+  const roots = [
+    resolve(dataDir, `${name}-oauth.json`),
+    resolve(dataDir, ".config", name),
+    resolve(dataDir, ".config", `${name}-mcp`),
+  ];
   if (command && command !== name && command !== `${name}-mcp`) {
     roots.push(resolve(dataDir, ".config", command));
+  }
+  if (name === "google" || command === "google-mcp") {
+    roots.push(resolve(dataDir, ".google_workspace_mcp"));
   }
   for (const p of roots) {
     try {

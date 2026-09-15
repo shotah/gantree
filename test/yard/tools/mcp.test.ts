@@ -45,6 +45,43 @@ describe("mcpSnapshot", () => {
     expect(after).toMatchObject({ listed: 2, published: 2, skipped: 0 });
   });
 
+  it("treats data/.google_workspace_mcp credentials as an oauth session", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const env = join(root, ".env");
+    const data = join(root, "data");
+    mkdirSync(join(data, ".google_workspace_mcp", "credentials"), { recursive: true });
+    writeFileSync(
+      mcp,
+      stringifyMcpToml([{ name: "math", command: "mcp-go-math" }, { name: "google", command: "google-mcp", auth_args: ["auth"] }]),
+    );
+    writeFileSync(env, "CHANNEL=telegram\nGOOGLE_OAUTH_CLIENT_ID=id\nGOOGLE_OAUTH_CLIENT_SECRET=sec\n");
+    writeFileSync(join(data, ".google_workspace_mcp", "credentials", "ada@example.com.json"), "{}");
+    const snap = mcpSnapshot({ mcpManifest: mcp, envFile: env, dataDir: data });
+    expect(snap).toMatchObject({ listed: 2, published: 2, skipped: 0, authMissing: [] });
+  });
+
+  it("does not count google workspace credentials as oauth for other servers", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const mcp = join(root, "mcp.toml");
+    const env = join(root, ".env");
+    const data = join(root, "data");
+    mkdirSync(join(data, ".google_workspace_mcp", "credentials"), { recursive: true });
+    writeFileSync(
+      mcp,
+      stringifyMcpToml([
+        { name: "strava", command: "strava-mcp", auth_args: ["auth"] },
+        { name: "google", command: "google-mcp", auth_args: ["auth"] },
+      ]),
+    );
+    writeFileSync(env, "CHANNEL=telegram\nSTRAVA_CLIENT_ID=id\nSTRAVA_CLIENT_SECRET=sec\nGOOGLE_OAUTH_CLIENT_ID=id\nGOOGLE_OAUTH_CLIENT_SECRET=sec\n");
+    writeFileSync(join(data, ".google_workspace_mcp", "credentials", "ada@example.com.json"), "{}");
+    const snap = mcpSnapshot({ mcpManifest: mcp, envFile: env, dataDir: data });
+    expect(snap).toMatchObject({ listed: 2, published: 1, skipped: 1, skippedNames: ["strava"], authMissing: ["strava"] });
+  });
+
   it("treats data/.config token dirs as an oauth session", () => {
     const root = mkdtempSync(join(process.cwd(), ".tmp-"));
     dirs.push(root);
