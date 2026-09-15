@@ -124,7 +124,12 @@ download_url = &quot;https://github.com/you/rentals-search-mcp/releases/download
 </code></pre>
 <p>Placeholders in <code>download_url</code>: <code>{tag}</code> <code>{version}</code> <code>{os}</code> <code>{arch}</code>.
 <code>download_tag = &quot;latest&quot;</code> only works when the URL is
-<code>https://github.com/&lt;owner&gt;/&lt;repo&gt;/…</code>.</p>
+<code>https://github.com/&lt;owner&gt;/&lt;repo&gt;/…</code>. Each <code>latest</code> hits GitHub&#39;s REST
+API once. Unauthenticated that is 60 requests/hour per public IP — a
+few cranes with many servers will 403. Paste one GitHub PAT in
+<strong>Settings → Yard</strong> (sqlite, not toml). Fine-grained Contents: read on
+the MCP repos is enough. Compose <code>GITHUB_TOKEN</code> still works as a
+fallback. <code>gantry tools-fetch</code> already sends it.</p>
 <p>Then on the crane dashboard:</p>
 <ol>
 <li>Put required keys in the crane <code>.env</code> (Secrets lists catalog

@@ -146,6 +146,10 @@ gantree <code>:3000</code>.</p>
 <p>Add / remove / change access are <strong>confirm-scary</strong> (checkbox), like a
 token push. You cannot delete the last operator, or the last admin, or
 demote the last admin.</p>
+<p>Admin also gets a <strong>Yard</strong> fold: retain, timezone, default image pin,
+rates, and a <strong>GitHub PAT</strong> for <code>tools-fetch</code> (<code>download_tag=latest</code>).
+The PAT lives in yard sqlite, not <code>gantree.toml</code>, and is not copied into
+each crane <code>.env</code>. Compose <code>GITHUB_TOKEN</code> still works if you prefer env.</p>
 <p>Admin also gets a <strong>Pendant</strong> fold: Cloudflare API token, account,
 Worker name, origin, and the Google Web client. <strong>Save and push</strong> puts
 those on the Worker (no wrangler). Build a crane from there — channel

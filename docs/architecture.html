@@ -180,7 +180,8 @@ Metrics and container env still work without it; persona and <code>mcp.toml</cod
 <p>Inventory is <code>gantree.toml</code> (no secrets). One mutation path: the UI
 calls <code>lib/yard</code>. Never dockerode from a React Server Component.</p>
 <p>Yard memory (<code>gantree.db</code>) is <strong>sessions, operators, graph samples,
-audit</strong> — not a second inventory of cranes. Operators are independent of
+audit, and a yard-wide GitHub PAT for tools-fetch</strong> — not a second
+inventory of cranes. Operators are independent of
 each crane’s <code>gantry.db</code>. Restore a crane’s memory from a stamp; do not
 clone Kit into Ada.</p>
 <p>Recreate / pin <strong>keep</strong> the crane’s host <code>user</code> (Vinext uid:gid, never
