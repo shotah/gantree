@@ -4,7 +4,7 @@ import { LIFE_CAST_GRANT, LIFE_GRANT, SLIM_GRANT, loadCatalog } from "../tools/c
 import { serverFromCatalog } from "../tools/packages";
 import { cranePath, craneRuntime, docker, hostBindPath, hostUserSpec, inspectByName, mergeBinds, normalizeName } from "../host/docker";
 import { writeEnvFile } from "../host/envfile";
-import { ensureBoardsDir, stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
+import { ensureBoardsDir, preparePersonaBind, stringifyMcpToml, tomlPath, upsertTomlGantry, writeText, yardRoot } from "../host/files";
 import { resolveGithubApiToken } from "../host/github";
 import { seedPersonaFiles } from "./seed";
 import { DEFAULT_CHANNEL, DEFAULT_IMAGE, type McpServer } from "../types";
@@ -76,6 +76,7 @@ export function writeCraneFiles(input: BuildInput): {
     ...(input.env ?? {}),
   });
   const user = hostUserSpec(dataDir, dir, tomlPath());
+  preparePersonaBind(personaDir, user);
   writeText(
     resolve(dir, "compose.yml"),
     [
@@ -142,6 +143,7 @@ export async function createOrReplaceContainer(opts: {
     await c.remove({ force: true });
   }
   dropStaleDoctorSnapshot(opts.dataDir);
+  preparePersonaBind(opts.personaDir, runtime.user);
   const requiredBinds = [
     `${hostBindPath(opts.personaDir)}:/persona`,
     `${hostBindPath(opts.dataDir)}:/data`,

@@ -1,9 +1,10 @@
-import { canMutateCrane, denyUnlessCraneMutate, denyUnlessCraneRead, operatorFromRequest, recordFromRequest, withDoor } from "@/lib/yard/door";
 import { resolve } from "node:path";
-import { isSecretKey, loadEnvFile, maskEnv, mergeEnv, writeEnvFile } from "@/lib/yard/host/envfile";
-import { parseMcpToml, readText, writeText } from "@/lib/yard/host/files";
+import { canMutateCrane, denyUnlessCraneMutate, denyUnlessCraneRead, operatorFromRequest, recordFromRequest, withDoor } from "@/lib/yard/door";
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { personaMarkdown, selfMarkdown } from "@/lib/yard/crane/seed";
+import { hostUserSpec } from "@/lib/yard/host/docker";
+import { isSecretKey, loadEnvFile, maskEnv, mergeEnv, writeEnvFile } from "@/lib/yard/host/envfile";
+import { parseMcpToml, preparePersonaBind, readText, writeText } from "@/lib/yard/host/files";
 
 export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
@@ -61,6 +62,9 @@ export const PUT = withDoor(async (req: Request, ctx: { params: Promise<{ slug: 
       return Response.json({ error: "no persona_dir" }, { status: 400 });
     }
     writeText(resolve(g.personaDir, "SELF.md"), body.self);
+  }
+  if (g.personaDir && (typeof body.persona === "string" || typeof body.self === "string")) {
+    preparePersonaBind(g.personaDir, hostUserSpec(g.personaDir, g.dataDir));
   }
   if (typeof body.mcp === "string") {
     if (!g.mcpManifest) {

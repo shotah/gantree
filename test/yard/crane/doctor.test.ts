@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { card } from "../card";
@@ -142,6 +142,17 @@ describe("doctor", () => {
     expect(report?.checks.find((c) => c.id === "env:google")?.ok).toBe(true);
     expect(report?.checks.find((c) => c.id === "oauth:google")?.detail).toMatch(/session file present/);
     expect(report?.checks.find((c) => c.id === "gantry-status")?.ok).toBe(true);
+  });
+
+  it("opens SELF.md so a 1000:1000 crane can self_note", async () => {
+    const files = craneFiles();
+    const self = join(files.personaDir, "SELF.md");
+    writeFileSync(self, "# me\n");
+    chmodSync(self, 0o644);
+    vi.mocked(getGantry).mockResolvedValue(card({ ...files }));
+    const report = await doctor("kit");
+    expect(report?.checks.find((c) => c.id === "self-writable")?.ok).toBe(true);
+    expect(statSync(self).mode & 0o002).toBe(0o002);
   });
 
   it("nags needs-auth and a skipped gantry status, and missing exec", async () => {

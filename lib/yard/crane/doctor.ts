@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { execStatus } from "../host/docker";
-import { envKeyNames, parseMcpToml, readText } from "../host/files";
+import { execStatus, hostUserSpec } from "../host/docker";
+import { craneCanWriteFile, envKeyNames, parseMcpToml, preparePersonaBind, readText } from "../host/files";
 import { loadCatalog } from "../tools/catalog";
 import { envKeysForServer } from "../tools/packages";
 import { oauthSessionPresent } from "../tools/mcp";
@@ -41,11 +41,24 @@ export async function doctor(slug: string): Promise<DoctorReport | null> {
   }
 
   if (g.personaDir) {
+    const user = hostUserSpec(g.personaDir, g.dataDir);
+    preparePersonaBind(g.personaDir, user);
     const persona = existsSync(resolve(g.personaDir, "PERSONA.md"));
     checks.push({
       id: "persona",
       ok: persona,
       detail: persona ? "PERSONA.md present" : `PERSONA.md missing in ${g.personaDir}`,
+    });
+    const selfPath = resolve(g.personaDir, "SELF.md");
+    const writable = existsSync(selfPath)
+      ? craneCanWriteFile(selfPath, user)
+      : craneCanWriteFile(g.personaDir, user);
+    checks.push({
+      id: "self-writable",
+      ok: writable,
+      detail: writable
+        ? "SELF.md writable by the crane"
+        : "SELF.md not writable by the crane user — self_note is disabled",
     });
   } else {
     checks.push({ id: "persona", ok: true, detail: "persona path unknown (discover mode) — skipped" });

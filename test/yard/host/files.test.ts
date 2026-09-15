@@ -1,14 +1,16 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   backupFiles,
   boardsDir,
+  craneCanWriteFile,
   ensureBoardsDir,
   envKeyNames,
   loadGantreeToml,
   mergeTomlTagColors,
   parseMcpToml,
+  preparePersonaBind,
   stringifyMcpToml,
   upsertTomlGantry,
   removeTomlGantry,
@@ -178,5 +180,21 @@ describe("backupFiles", () => {
     expect(existsSync(join(dest!, "gantry.db"))).toBe(true);
     expect(existsSync(join(dest!, "SELF.md"))).toBe(true);
     expect(existsSync(join(dest!, ".env"))).toBe(false);
+  });
+});
+
+describe("preparePersonaBind", () => {
+  it("makes SELF.md writable by a crane uid that does not own the file", () => {
+    const root = mkdtempSync(join(process.cwd(), ".tmp-"));
+    dirs.push(root);
+    const persona = join(root, "persona");
+    mkdirSync(persona);
+    const self = join(persona, "SELF.md");
+    writeFileSync(self, "# me\n");
+    chmodSync(self, 0o644);
+    expect(craneCanWriteFile(self, "99999:99999")).toBe(false);
+    preparePersonaBind(persona, "99999:99999");
+    expect(statSync(self).mode & 0o222).not.toBe(0);
+    expect(craneCanWriteFile(self, "99999:99999")).toBe(true);
   });
 });

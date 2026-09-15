@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -54,6 +54,7 @@ describe("writeCraneFiles", () => {
     expect(persona).not.toContain("A long-horizon personal agent");
     expect(self).toContain("Who You Are Becoming");
     expect(self).not.toMatch(/bullets only|stamps the header/i);
+    expect(statSync(join(out.personaDir, "SELF.md")).mode & 0o222).not.toBe(0);
     expect(persona).not.toBe(self);
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("math");
     expect(readFileSync(out.mcpManifest, "utf8")).toContain("github.com/shotah/mcp-go-math");

@@ -1,4 +1,4 @@
-import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, chownSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { parse, stringify } from "smol-toml";
 import type { McpServer } from "../types";
@@ -170,6 +170,66 @@ export function readText(path: string | null): string | null {
 export function writeText(path: string, body: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, body);
+}
+
+/** True when `userSpec` (uid:gid) can write this path — owner/group/other write bits. */
+export function craneCanWriteFile(path: string, userSpec?: string): boolean {
+  if (!existsSync(path)) {
+    return false;
+  }
+  const st = statSync(path);
+  const mode = st.mode & 0o777;
+  const m = (userSpec ?? "").match(/^(\d+):(\d+)$/);
+  const uid = m ? Number(m[1]) : Number.NaN;
+  const gid = m ? Number(m[2]) : Number.NaN;
+  if (Number.isFinite(uid) && st.uid === uid && (mode & 0o200) !== 0) {
+    return true;
+  }
+  if (Number.isFinite(gid) && st.gid === gid && (mode & 0o020) !== 0) {
+    return true;
+  }
+  return (mode & 0o002) !== 0;
+}
+
+function chownIfPossible(path: string, spec?: string): void {
+  const m = (spec ?? "").match(/^(\d+):(\d+)$/);
+  if (!m) {
+    return;
+  }
+  try {
+    chownSync(path, Number(m[1]), Number(m[2]));
+  } catch {
+    /* not root, or the path is gone */
+  }
+}
+
+/**
+ * Console-in-Docker writes PERSONA.md / SELF.md as root (644). The crane
+ * is 1000:1000 — directory 777 does not let it open those files. Chown to
+ * the crane user when we can; otherwise world-writable.
+ */
+export function preparePersonaBind(personaDir: string, userSpec?: string): void {
+  if (!personaDir || !existsSync(personaDir)) {
+    return;
+  }
+  try {
+    chmodSync(personaDir, 0o777);
+  } catch {
+    return;
+  }
+  chownIfPossible(personaDir, userSpec);
+  for (const name of readdirSync(personaDir)) {
+    const p = resolve(personaDir, name);
+    try {
+      if (statSync(p).isDirectory()) {
+        continue;
+      }
+      chmodSync(p, 0o666);
+      chownIfPossible(p, userSpec);
+    } catch {
+      /* skip a file we cannot touch */
+    }
+  }
 }
 
 export function parseMcpToml(text: string | null): McpServer[] {

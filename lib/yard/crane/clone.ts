@@ -2,9 +2,9 @@ import { copyFileSync, existsSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { copyAvatarTo } from "../host/avatar";
-import { pullImage } from "../host/docker";
+import { hostUserSpec, pullImage } from "../host/docker";
 import { loadEnvFile, writeEnvFile } from "../host/envfile";
-import { readText, setTomlGantryTags } from "../host/files";
+import { preparePersonaBind, readText, setTomlGantryTags } from "../host/files";
 import { loadObservePrefs } from "../observe/prefs";
 import { pendantChannelReady, provisionPendantCrane } from "../pendant/channel";
 import { craneDir, createOrReplaceContainer, writeCraneFiles } from "./build";
@@ -62,6 +62,7 @@ export function copyPersonaFiles(from: string, to: string): void {
     }
   }
   copyAvatarTo(from, to);
+  preparePersonaBind(to, hostUserSpec(to));
 }
 
 function composeImage(slug: string): string | null {
