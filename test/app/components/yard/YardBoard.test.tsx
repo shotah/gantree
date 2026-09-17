@@ -17,10 +17,16 @@ vi.mock("@/app/components/shared/DoorShell", () => ({
 }));
 
 import { yardFetch } from "@/app/lib/yardFetch";
+import { useDoor } from "@/app/components/shared/DoorShell";
+import { DEFAULT_IMAGE } from "@/lib/yard/types";
 
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.mocked(useDoor).mockReturnValue({
+    ready: true,
+    operator: { id: "1", name: "kit", displayName: "Kit", role: "admin", cranes: [], avatarRev: null },
+  });
 });
 
 function crane(partial: Partial<SpendRollup> & Pick<SpendRollup, "slug">): SpendRollup {
@@ -75,9 +81,10 @@ describe("YardBoard", () => {
     });
     render(<YardBoard />);
     await waitFor(() => expect(screen.getByText("kit")).toBeTruthy());
+    const kitCard = screen.getByText("kit").closest("[data-crane]");
     expect(screen.getByText("kit").closest("a")?.className).toMatch(/min-w-0/);
-    expect(screen.getByText("kit").closest("a")?.className).toMatch(/min-h-56/);
-    expect(screen.getByText("kit").closest("a")?.className).toMatch(/h-full/);
+    expect(kitCard?.className).toMatch(/min-h-56/);
+    expect(kitCard?.className).toMatch(/h-full/);
     expect(screen.getByText("2m ago")).toBeTruthy();
     expect(screen.getByLabelText("2 recoveries")).toBeTruthy();
   });
@@ -376,5 +383,64 @@ describe("YardBoard", () => {
     await waitFor(() => expect(screen.getByText("1.2.0 · cafebabe")).toBeTruthy());
     const older = screen.getByText("0.9.0 · deadbee · older");
     expect(older.className).toMatch(/text-warn/);
+    expect(screen.getByRole("button", { name: "pull + recreate old" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "pull + recreate kit" })).toBeNull();
+  });
+
+  it("pulls and recreates an older crane from the card without opening it", async () => {
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      if (url.includes("/run")) {
+        return { ok: true, json: async () => ({ ok: true, detail: "pulled" }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            gantries: [
+              card({ slug: "kit", version: "1.2.0", commit: "cafebabe", imageBehind: false }),
+              card({ slug: "old", version: "0.9.0", commit: "deadbee", imageBehind: true }),
+            ],
+          }),
+      } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "pull + recreate old" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "pull + recreate old" }));
+    await waitFor(() => {
+      expect(yardFetch).toHaveBeenCalledWith(
+        "/api/gantries/old/run",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ action: "pin", image: DEFAULT_IMAGE }),
+        }),
+      );
+    });
+  });
+
+  it("hides pull + recreate for a read-only operator", async () => {
+    vi.mocked(useDoor).mockReturnValue({
+      ready: true,
+      operator: { id: "2", name: "ada", displayName: "Ada", role: "readonly", cranes: ["old"], avatarRev: null },
+    });
+    vi.mocked(yardFetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("/api/events")) {
+        return { ok: true, json: async () => ({ events: [] }) } as Response;
+      }
+      return {
+        ok: true,
+        json: async () =>
+          inventory({
+            gantries: [card({ slug: "old", version: "0.9.0", commit: "deadbee", imageBehind: true })],
+          }),
+      } as Response;
+    });
+    render(<YardBoard />);
+    await waitFor(() => expect(screen.getByText("0.9.0 · deadbee · older")).toBeTruthy());
+    expect(screen.queryByRole("button", { name: /pull \+ recreate/ })).toBeNull();
   });
 });

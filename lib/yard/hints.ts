@@ -156,7 +156,7 @@ export const HINTS = {
     example: "tools - list granted MCP",
   },
   imagePin: {
-    hint: "Compose image tag. Keep :latest. The yard card shows the binary from gantry status — two :latest containers can still be different builds.",
+    hint: "Compose image tag. Keep :latest. Pull of latest/edge takes the newest X.Y.Z from Docker Hub (not edge). The yard card shows the binary from gantry status — two :latest containers can still be different builds.",
     example: "shotah/ai-gantry:latest",
   },
   persona: {

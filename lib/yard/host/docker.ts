@@ -15,6 +15,7 @@ import {
   shotStatusJson,
   socketLooksPresent,
 } from "./shotDocker";
+import { parseImageRef, pullResolvedImage, resolveHubImage } from "./hubImage";
 import type { GantryState } from "../types";
 
 export {
@@ -204,7 +205,16 @@ export async function containerLogsFollow(id: string, tail: number): Promise<Nod
   });
 }
 
-export async function pullImage(image: string): Promise<void> {
+async function tagImage(source: string, dest: string): Promise<void> {
+  const ref = parseImageRef(dest);
+  const tag = ref.tag || "latest";
+  if (!ref.name) {
+    throw new Error(`cannot tag ${source} as ${dest}`);
+  }
+  await docker().getImage(source).tag({ repo: ref.name, tag });
+}
+
+async function dockerPull(image: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     docker().pull(image, (err: Error | null, stream?: NodeJS.ReadableStream) => {
       if (err || !stream) {
@@ -214,6 +224,11 @@ export async function pullImage(image: string): Promise<void> {
       docker().modem.followProgress(stream, (doneErr) => (doneErr ? reject(doneErr) : resolve()));
     });
   });
+}
+
+/** Pull. Moving Hub tags (`:latest` / `:edge`) resolve to the newest `X.Y.Z` first. */
+export async function pullImage(image: string): Promise<void> {
+  await pullResolvedImage(image, { pull: dockerPull, tag: tagImage, resolve: resolveHubImage });
 }
 
 export async function containerStatsOnce(id: string) {

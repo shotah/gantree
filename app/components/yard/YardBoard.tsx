@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { fmtGantryBuild } from "@/lib/yard/crane/status";
+import { canMutateCrane } from "@/lib/yard/door/access";
+import { catchUpPin } from "@/lib/yard/host/hubImage";
 import type { CraneNag, GantryCard, StatSample, YardInventory } from "@/lib/yard/types";
 import { combineSpend, DEFAULT_SPEND_WINDOW, FAT_DATA_DIR_BYTES, fmtAgo, fmtBytes, fmtEstTokens, lastDiskBytes, type SpendWindow } from "@/lib/yard/observe/spend";
 import { BoardsCard } from "./BoardsCard";
@@ -95,7 +97,7 @@ function craneRecoveries(yard: YardInventory, slug: string): number {
 }
 
 const TILE
-  = "h-full min-w-0 cursor-grab active:cursor-grabbing [&_a]:cursor-grab [&_a]:active:cursor-grabbing";
+  = "h-full min-w-0 cursor-grab active:cursor-grabbing [&_a]:cursor-grab [&_a]:active:cursor-grabbing [&_button]:cursor-pointer";
 
 function BoardTile({
   id,
@@ -115,6 +117,10 @@ function BoardTile({
       data-board-id={id}
       draggable
       onDragStart={(e) => {
+        if ((e.target as HTMLElement).closest("button, input, select, textarea")) {
+          e.preventDefault();
+          return;
+        }
         e.dataTransfer.setData("text/plain", id);
         e.dataTransfer.effectAllowed = "move";
         suppressClick.current = true;
@@ -161,93 +167,123 @@ function GantryCardLink({
   g,
   yard,
   tagColors,
+  canPin,
+  pinning,
+  pinError,
+  onPin,
 }: {
   g: GantryCard;
   yard: YardInventory | null;
   tagColors: Record<string, string>;
+  canPin: boolean;
+  pinning: boolean;
+  pinError: string | null;
+  onPin: () => void;
 }) {
   return (
-    <Link
-      href={`/gantries/${g.slug}`}
-      className="block h-full min-h-56 min-w-0 max-w-full rounded-lg border border-line bg-panel/60 p-4 transition hover:border-accent-line max-sm:p-5"
+    <div
+      data-crane={g.slug}
+      className="flex h-full min-h-56 min-w-0 max-w-full flex-col rounded-lg border border-line bg-panel/60 transition hover:border-accent-line"
     >
-      <div className="flex min-w-0 items-start justify-between gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
-          <CraneAvatar slug={g.slug} rev={g.avatarRev} />
-          <span className="truncate">{g.slug}</span>
-        </h2>
-        <div className="flex shrink-0 items-center gap-2">
-          <Spark samples={yard?.sparks?.[g.slug]} />
-          <RecoverySpark n={yard ? craneRecoveries(yard, g.slug) : 0} />
-          <Badge state={g.state} />
+      <Link href={`/gantries/${g.slug}`} className="block min-w-0 flex-1 p-4 max-sm:p-5">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 font-semibold text-fg max-sm:text-lg">
+            <CraneAvatar slug={g.slug} rev={g.avatarRev} />
+            <span className="truncate">{g.slug}</span>
+          </h2>
+          <div className="flex shrink-0 items-center gap-2">
+            <Spark samples={yard?.sparks?.[g.slug]} />
+            <RecoverySpark n={yard ? craneRecoveries(yard, g.slug) : 0} />
+            <Badge state={g.state} />
+          </div>
         </div>
-      </div>
-      {g.tags.length ? <TagChips tags={g.tags} colors={tagColors} className="mt-2" /> : null}
-      <dl className="mt-3 min-w-0 space-y-1 text-xs text-muted max-sm:space-y-1.5 max-sm:text-sm">
-        <div className="flex min-w-0 justify-between gap-2">
-          <dt className="shrink-0">model</dt>
-          <dd className="min-w-0 truncate text-fg">{g.model ?? "—"}</dd>
-        </div>
-        <div className="flex min-w-0 justify-between gap-2">
-          <dt className="shrink-0">channel</dt>
-          <dd className="min-w-0 truncate text-fg">{g.channel ?? "—"}</dd>
-        </div>
-        <div className="flex min-w-0 justify-between gap-2">
-          <dt className="shrink-0">MCP</dt>
-          <dd className="min-w-0 truncate text-fg">
-            {g.mcpPublished}
-            {" "}
-            published ·
-            {g.mcpSkipped}
-            {" "}
-            skipped
-          </dd>
-        </div>
-        <div className="flex min-w-0 justify-between gap-2">
-          <dt className="shrink-0">est. tokens</dt>
-          <dd className="min-w-0 truncate text-fg">{yard ? craneSpendLabel(yard, g.slug) : "—"}</dd>
-        </div>
-        <div className="flex min-w-0 justify-between gap-2">
-          <dt className="shrink-0">last turn</dt>
-          <dd className="min-w-0 truncate text-fg" title={g.lastTurn ?? ""}>
-            {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
-          </dd>
-        </div>
-        {(() => {
-          const disk = lastDiskBytes(yard?.sparks?.[g.slug]);
-          if (disk == null || disk < FAT_DATA_DIR_BYTES) {
-            return null;
-          }
-          return (
-            <div className="flex min-w-0 justify-between gap-2">
-              <dt className="shrink-0">data dir</dt>
-              <dd className="min-w-0 truncate text-fg">{fmtBytes(disk)}</dd>
-            </div>
-          );
-        })()}
-        <div className="flex min-w-0 justify-between gap-2">
-          <dt className="shrink-0">gantry</dt>
-          <dd
-            className={`min-w-0 truncate ${g.imageBehind ? "text-warn" : "text-fg"}`}
-            title={[g.image, g.imageId].filter(Boolean).join(" ")}
-          >
-            {fmtGantryBuild(g) ?? g.image ?? "—"}
-            {g.imageBehind ? " · older" : ""}
-          </dd>
-        </div>
-      </dl>
-      {g.lastError ? <p className="mt-3 truncate text-xs text-danger/80">{g.lastError}</p> : null}
-      {g.mcpHint ? <p className="mt-2 truncate text-xs text-dim">{g.mcpHint}</p> : null}
-      {g.nags?.length
+        {g.tags.length ? <TagChips tags={g.tags} colors={tagColors} className="mt-2" /> : null}
+        <dl className="mt-3 min-w-0 space-y-1 text-xs text-muted max-sm:space-y-1.5 max-sm:text-sm">
+          <div className="flex min-w-0 justify-between gap-2">
+            <dt className="shrink-0">model</dt>
+            <dd className="min-w-0 truncate text-fg">{g.model ?? "—"}</dd>
+          </div>
+          <div className="flex min-w-0 justify-between gap-2">
+            <dt className="shrink-0">channel</dt>
+            <dd className="min-w-0 truncate text-fg">{g.channel ?? "—"}</dd>
+          </div>
+          <div className="flex min-w-0 justify-between gap-2">
+            <dt className="shrink-0">MCP</dt>
+            <dd className="min-w-0 truncate text-fg">
+              {g.mcpPublished}
+              {" "}
+              published ·
+              {g.mcpSkipped}
+              {" "}
+              skipped
+            </dd>
+          </div>
+          <div className="flex min-w-0 justify-between gap-2">
+            <dt className="shrink-0">est. tokens</dt>
+            <dd className="min-w-0 truncate text-fg">{yard ? craneSpendLabel(yard, g.slug) : "—"}</dd>
+          </div>
+          <div className="flex min-w-0 justify-between gap-2">
+            <dt className="shrink-0">last turn</dt>
+            <dd className="min-w-0 truncate text-fg" title={g.lastTurn ?? ""}>
+              {g.lastTurn ? fmtAgo(Date.parse(g.lastTurn)) : "—"}
+            </dd>
+          </div>
+          {(() => {
+            const disk = lastDiskBytes(yard?.sparks?.[g.slug]);
+            if (disk == null || disk < FAT_DATA_DIR_BYTES) {
+              return null;
+            }
+            return (
+              <div className="flex min-w-0 justify-between gap-2">
+                <dt className="shrink-0">data dir</dt>
+                <dd className="min-w-0 truncate text-fg">{fmtBytes(disk)}</dd>
+              </div>
+            );
+          })()}
+          <div className="flex min-w-0 justify-between gap-2">
+            <dt className="shrink-0">gantry</dt>
+            <dd
+              className={`min-w-0 truncate ${g.imageBehind ? "text-warn" : "text-fg"}`}
+              title={[g.image, g.imageId].filter(Boolean).join(" ")}
+            >
+              {fmtGantryBuild(g) ?? g.image ?? "—"}
+              {g.imageBehind ? " · older" : ""}
+            </dd>
+          </div>
+        </dl>
+        {g.lastError ? <p className="mt-3 truncate text-xs text-danger/80">{g.lastError}</p> : null}
+        {g.mcpHint ? <p className="mt-2 truncate text-xs text-dim">{g.mcpHint}</p> : null}
+        {g.nags?.length
+          ? (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {g.nags.map((n) => (
+                  <Nag key={`${n.kind}:${n.detail}`} nag={n} />
+                ))}
+              </div>
+            )
+          : null}
+      </Link>
+      {g.imageBehind && canPin
         ? (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {g.nags.map((n) => (
-                <Nag key={`${n.kind}:${n.detail}`} nag={n} />
-              ))}
+            <div className="px-4 pb-4 max-sm:px-5">
+              <button
+                type="button"
+                disabled={pinning}
+                aria-label={`pull + recreate ${g.slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onPin();
+                }}
+                className="rounded border border-warn-line px-3 py-1.5 text-xs text-warn hover:border-warn disabled:opacity-50 max-sm:text-sm"
+              >
+                {pinning ? "pulling…" : "pull + recreate"}
+              </button>
+              {pinError ? <p className="mt-1 text-xs text-danger">{pinError}</p> : null}
             </div>
           )
         : null}
-    </Link>
+    </div>
   );
 }
 
@@ -258,6 +294,7 @@ export function YardBoard() {
   const [spendWindow, setSpendWindow] = useState<SpendWindow>(DEFAULT_SPEND_WINDOW);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [order, setOrder] = useState<string[]>(() => readBoardOrder());
+  const [pinning, setPinning] = useState<Record<string, "busy" | string>>({});
   const eventsSlug = operator?.role === "admin" || (operator?.cranes.length ?? 0) !== 1 ? undefined : operator?.cranes[0];
 
   const load = useCallback(() => {
@@ -295,6 +332,30 @@ export function YardBoard() {
     const id = setInterval(load, dockerPending ? 1000 : 5000);
     return () => clearInterval(id);
   }, [load, dockerPending]);
+
+  async function pinCrane(g: GantryCard) {
+    setPinning((cur) => ({ ...cur, [g.slug]: "busy" }));
+    try {
+      const res = await yardFetch(`/api/gantries/${g.slug}/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pin", image: catchUpPin(g.image) }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+      if (!res.ok) {
+        setPinning((cur) => ({ ...cur, [g.slug]: data.detail || data.error || "pull failed" }));
+        return;
+      }
+      setPinning((cur) => {
+        const next = { ...cur };
+        delete next[g.slug];
+        return next;
+      });
+      load();
+    } catch (err) {
+      setPinning((cur) => ({ ...cur, [g.slug]: err instanceof Error ? err.message : String(err) }));
+    }
+  }
 
   function moveCard(from: string, to: string) {
     if (from === to) {
@@ -381,7 +442,15 @@ export function YardBoard() {
           }
           return (
             <BoardTile key={id} id={id} onMove={moveCard}>
-              <GantryCardLink g={g} yard={yard} tagColors={tagColors} />
+              <GantryCardLink
+                g={g}
+                yard={yard}
+                tagColors={tagColors}
+                canPin={Boolean(operator && canMutateCrane(operator, g.slug))}
+                pinning={pinning[g.slug] === "busy"}
+                pinError={pinning[g.slug] && pinning[g.slug] !== "busy" ? pinning[g.slug] : null}
+                onPin={() => void pinCrane(g)}
+              />
             </BoardTile>
           );
         })}

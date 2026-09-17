@@ -4,7 +4,7 @@ export type GantryState = "running" | "exited" | "created" | "paused" | "restart
 export type CraneNagKind = "dead" | "skipped" | "auth";
 export type CraneNag = { kind: CraneNagKind; detail: string };
 
-/** Hub image for new cranes. One pin: `:latest`. Do not sprinkle semver. */
+/** Hub image for new cranes. One pin: `:latest`. Pull of latest/edge uses the newest Hub semver, not edge. */
 export const DEFAULT_IMAGE = "shotah/ai-gantry:latest";
 
 /** New cranes talk on the phone we own. Telegram / Discord / Slack are still mouths. */
