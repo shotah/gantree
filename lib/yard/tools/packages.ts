@@ -3,9 +3,10 @@ import type { AuthFlow, CatalogEntry, McpServer } from "../types";
 /** Completer + CHANNEL — always in Secrets. Mouth tokens follow CHANNEL. */
 export const CRANE_ALWAYS_KEYS = ["LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "CHANNEL"];
 
-/** Optional crane keys for builtin web_search (Brave Search). Not required to boot. */
+/** Optional crane keys. Blank is fine: web_search stays off without Brave; the planner inherits 07:10. */
 export const CRANE_OPTIONAL_KEYS = [
   "BRAVE_SEARCH_API_KEY",
+  "DAILY_PLANNER_AT",
 ];
 
 /** PAT for `gantry tools-fetch` (`download_tag=latest`). Crane `.env` (legacy), then yard sqlite, then the gantree process. */

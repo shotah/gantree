@@ -149,6 +149,11 @@ describe("secretKeysForGrant", () => {
     expect(keys).not.toContain("GOOGLE_MAPS_API_KEY");
   });
 
+  it("lists DAILY_PLANNER_AT as an optional clock, blank inherits 07:10", () => {
+    expect(secretKeysForGrant([], [])).toContain("DAILY_PLANNER_AT");
+    expect(optionalKeysForGrant([], [])).toContain("DAILY_PLANNER_AT");
+  });
+
   it("lists USER_GOOGLE_EMAIL on google workspace, and Brave on the crane", () => {
     const catalog = loadCatalog();
     const google = catalog.filter((c) => c.name === "google");
@@ -188,6 +193,7 @@ describe("secretKeysForGrant", () => {
     expect(secrets).toEqual(expect.arrayContaining(["GOOGLE_OAUTH_CLIENT_SECRET", "USER_GOOGLE_EMAIL"]));
     expect(optionalKeysForGrant(["google"], google)).toEqual([
       "BRAVE_SEARCH_API_KEY",
+      "DAILY_PLANNER_AT",
       "USER_GOOGLE_EMAIL",
     ]);
     expect(envKeysForServer({ name: "google" }, google)).toEqual([

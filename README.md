@@ -144,7 +144,7 @@ chart is wrong.
 | The same person next week | `SELF.md` + inspectable SQLite. `/new` distills; it does not wipe who they are. |
 | Many turns that finish | Mid-chain does not die. Garmin → sheet → Strava is one thread. |
 | Parallel, then chain | Fan out what is independent (contacts *and* free/busy). Sequence what is not (then create the event). |
-| Aims that outlive the chat | Cron, quiet watches, a spark of life — the Completer only runs when something actually changed. |
+| Aims that outlive the chat | One daily planner, cron, and quiet watches — the planner is a single clock; watches still wait for a change. |
 | A box you can own | Distroless, outbound-only, env + mounts. MCP listed in `mcp.toml` is the grant. |
 
 Want another brain? Another process. Not another tab. Chat, memory, and

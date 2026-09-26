@@ -23,6 +23,11 @@ describe("envfile", () => {
     expect(masked.TELEGRAM_BOT_TOKEN).toEqual({ set: true, secret: true, value: "" });
     expect(masked.PENDANT_BEARER).toEqual({ set: true, secret: true, value: "" });
     expect(masked.CHANNEL?.value).toBe("telegram");
+    expect(maskEnv({ DAILY_PLANNER_AT: "09:30" }).DAILY_PLANNER_AT).toEqual({
+      set: true,
+      secret: false,
+      value: "09:30",
+    });
     expect(mergeEnv({ TELEGRAM_BOT_TOKEN: "abc" }, { TELEGRAM_BOT_TOKEN: "" })).toEqual({
       TELEGRAM_BOT_TOKEN: "abc",
     });

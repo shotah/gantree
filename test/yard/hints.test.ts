@@ -43,6 +43,13 @@ describe("envHint", () => {
     expect(envHint("BRAVE_SEARCH_API_KEY").example).toMatch(/dashboard/i);
   });
 
+  it("names DAILY_PLANNER_AT as one local clock, not a secret", () => {
+    expect(envHint("DAILY_PLANNER_AT").hint).toMatch(/one planning session/i);
+    expect(envHint("DAILY_PLANNER_AT").hint).toMatch(/CRON_TZ/);
+    expect(envHint("DAILY_PLANNER_AT").hint).toMatch(/\/planner/);
+    expect(envHint("DAILY_PLANNER_AT").example).toBe("07:10");
+  });
+
   it("names GITHUB_TOKEN as the yard-wide tools-fetch PAT, not a model key", () => {
     expect(envHint("GITHUB_TOKEN")).toEqual(HINTS.githubToken);
     expect(HINTS.githubToken.hint).toMatch(/tools-fetch/i);

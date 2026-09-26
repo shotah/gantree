@@ -24,6 +24,11 @@ describe("persona seed", () => {
     expect(text).toContain("Independent lookups");
     expect(text).toContain("pref/hours");
     expect(text).toContain("pref/calendar");
+    expect(text).toContain("cron / daily planner");
+    expect(text).toContain("for the daily planner");
+    expect(text).not.toContain("cron / spark");
+    expect(text).not.toContain("/spark");
+    expect(text).not.toContain("/engagement");
     expect(text).toContain("yes boss");
     expect(text).toContain("empty calendar");
     expect(text).toContain("ping you at 2");

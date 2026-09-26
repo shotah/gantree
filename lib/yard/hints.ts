@@ -285,6 +285,10 @@ const ENV_HINTS: Record<string, HintCopy> = {
     hint: "Brave Search subscription token for builtin web_search. Titles, URLs, snippets — not a second model. Subscribe at api-dashboard.search.brave.com.",
     example: "a long token from the dashboard",
   },
+  DAILY_PLANNER_AT: {
+    hint: "One planning session a day, local clock (CRON_TZ). HH:MM or H:MM. Blank inherits 07:10. /planner 09:30 on the crane overrides this for that agent and is stored in SQLite.",
+    example: "07:10",
+  },
   GITHUB_TOKEN: HINTS.githubToken,
   IMAGE_API_KEY: {
     hint: "Gemini / Vertex key for image-generation-mcp. Blank uses the crane LLM_API_KEY. Not Workspace OAuth.",
