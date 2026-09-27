@@ -29,9 +29,12 @@ describe("persona seed", () => {
     expect(text).not.toContain("cron / spark");
     expect(text).not.toContain("/spark");
     expect(text).not.toContain("/engagement");
-    expect(text).toContain("yes boss");
     expect(text).toContain("empty calendar");
     expect(text).toContain("ping you at 2");
+    expect(text).toContain("aim_log");
+    expect(text).toContain("todo/");
+    expect(text).toContain("want me to add");
+    expect(text).toContain("Anything else I can do");
     expect(text).toContain("self_note");
     expect(text).toContain("memory_store");
     expect(text).toContain("mcp_enable");
