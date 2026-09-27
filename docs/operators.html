@@ -97,13 +97,15 @@ in your own script — <code>日本語, English</code>)</li>
 <li>description</li>
 <li>chat ids (Telegram numeric, Slack <code>U…</code>, Discord snowflake, Google <code>sub</code>) — stored on
 you. Google <code>sub</code> is optional: after they talk, spend offers to store the digits.
-Telegram / pendant panels write them onto a crane allowlist; they are not
-auto-copied, and the crane never writes <code>.env</code>. How they line up with the
-pendant’s Google sign-in: <a href="access.html">access.md</a></li>
+Telegram ids stay on the profile until a crane panel saves its allowlist.
+Assigning a user on a crane writes that person&#39;s email (and Google sub, if
+set) into the pendant allowlist and tags their login name on the board.
+How they line up with the pendant’s Google sign-in: <a href="access.html">access.md</a></li>
 <li>passphrase (current + new + confirm, plus the confirm-scary checkbox)</li>
 </ul>
 <p>Those fields are what <strong>Inject user</strong> on a crane copies into <code>PERSONA.md</code>
 <strong>About you</strong> (name, email, timezone, location, languages, notes, chat ids).
+The crane&#39;s assigned user is the one that dialog opens on.
 A blank field leaves the seed&#39;s bullet alone — an operator with no languages
 set keeps the template&#39;s <code>English</code>, so speakers of anything else should fill
 it in before injecting. The file starts from the ai-gantry seed
