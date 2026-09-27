@@ -311,6 +311,7 @@ export function AgentDashboard({ slug }: { slug: string }) {
         ? (
             <InjectUserModal
               persona={persona}
+              preferredId={gantry?.user}
               onClose={() => setInjectOpen(false)}
               onInject={(next, label) => {
                 setPersona(next);

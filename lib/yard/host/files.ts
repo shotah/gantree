@@ -12,6 +12,8 @@ export type TomlGantry = {
   mcp_manifest?: string;
   env_file?: string;
   tags?: string[];
+  /** Operator this crane is for. Login name is also a board tag. */
+  user?: string;
 };
 
 export type GantreeToml = {
@@ -117,6 +119,30 @@ export function setTomlGantryTags(slug: string, tags: string[]): boolean {
     next.tags = tags;
   } else {
     delete next.tags;
+  }
+  doc.gantry[i] = next;
+  saveGantreeToml(doc);
+  return true;
+}
+
+export function setTomlGantryUser(slug: string, user: string | null): boolean {
+  const doc = loadGantreeToml();
+  if (!doc?.gantry?.length) {
+    return false;
+  }
+  const i = doc.gantry.findIndex((g) => g.slug === slug);
+  if (i < 0) {
+    return false;
+  }
+  const cur = doc.gantry[i];
+  if (!cur) {
+    return false;
+  }
+  const next = { ...cur };
+  if (user) {
+    next.user = user;
+  } else {
+    delete next.user;
   }
   doc.gantry[i] = next;
   saveGantreeToml(doc);

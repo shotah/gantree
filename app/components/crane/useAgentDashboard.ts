@@ -354,6 +354,35 @@ export function useAgentDashboard(slug: string) {
     refresh();
   }
 
+  async function saveUser(userId: string | null) {
+    setBusy(true);
+    const res = await yardFetch(`/api/gantries/${slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: userId }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      detail?: string;
+      user?: string | null;
+      tags?: string[];
+      tagColors?: Record<string, string>;
+      pendant?: string;
+    };
+    setNotice(res.ok ? (data.detail || "user saved") : data.error || "could not assign user");
+    if (res.ok && gantry) {
+      setGantry({ ...gantry, user: data.user ?? null, tags: data.tags ?? gantry.tags });
+      if (data.tagColors) {
+        setTagColors(data.tagColors);
+      }
+      if (data.pendant === "added") {
+        setEnvRecreateOpen(true);
+      }
+    }
+    setBusy(false);
+    refresh();
+  }
+
   const granted = new Set((files?.servers ?? []).map((s) => s.name));
   const mouthChannel
     = (secretDraft.CHANNEL ?? files?.env?.CHANNEL?.value ?? gantry?.channel ?? "").trim();
@@ -449,6 +478,7 @@ export function useAgentDashboard(slug: string) {
     saveMarkdown,
     saveEnv,
     saveTags,
+    saveUser,
     granted,
     secretKeys,
     optionalSecretKeys,

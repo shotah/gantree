@@ -1,4 +1,5 @@
-import { canBuildCrane, canMutateCrane, denyUnlessCraneMutate, denyUnlessCraneRead, operatorFromRequest, recordFromRequest, withDoor } from "@/lib/yard/door";
+import { canBuildCrane, canMutateCrane, denyUnlessCraneMutate, denyUnlessCraneRead, getOperator, operatorFromRequest, recordFromRequest, withDoor } from "@/lib/yard/door";
+import { assignCraneUser } from "@/lib/yard/crane/assignUser";
 import { destroyCrane } from "@/lib/yard/crane/destroy";
 import { getGantry } from "@/lib/yard/crane/inventory";
 import { coerceTagColors, parseTagColors, parseTags } from "@/lib/yard/crane/tags";
@@ -48,7 +49,32 @@ export const PATCH = withDoor(async (req: Request, ctx: { params: Promise<{ slug
   if (!gantry) {
     return Response.json({ error: "not found" }, { status: 404 });
   }
-  const body = (await req.json().catch(() => ({}))) as { tags?: unknown; tagColors?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { tags?: unknown; tagColors?: unknown; user?: unknown };
+  const hasUser = Object.prototype.hasOwnProperty.call(body, "user");
+  if (hasUser) {
+    if (body.user !== null && typeof body.user !== "string") {
+      return Response.json({ error: "user must be an operator id" }, { status: 400 });
+    }
+    const id = typeof body.user === "string" ? body.user.trim() : "";
+    const next = id ? getOperator(id) : null;
+    if (id && !next) {
+      return Response.json({ error: "operator not found" }, { status: 404 });
+    }
+    const prev = gantry.user ? getOperator(gantry.user) : null;
+    const result = assignCraneUser(slug, next, { previousName: prev?.name ?? null });
+    if (!result.ok) {
+      return Response.json({ error: result.error }, { status: 400 });
+    }
+    recordFromRequest(req, "user", slug, result.detail);
+    return Response.json({
+      ok: true,
+      user: result.user,
+      tags: result.tags,
+      pendant: result.pendant,
+      detail: result.detail,
+      tagColors: coerceTagColors(loadTomlTagColors()),
+    });
+  }
   const hasTags = Object.prototype.hasOwnProperty.call(body, "tags");
   const hasColors = Object.prototype.hasOwnProperty.call(body, "tagColors");
   if (!hasTags && !hasColors) {

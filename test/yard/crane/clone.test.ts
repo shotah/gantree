@@ -31,7 +31,7 @@ import { addOperator, listYardEvents, loginOperator, SESSION_COOKIE, setupOperat
 import { closeYardDb } from "@/lib/yard/door/store";
 import { listGantryContainers, pullImage } from "@/lib/yard/host/docker";
 import { loadEnvFile } from "@/lib/yard/host/envfile";
-import { loadGantreeToml, mergeTomlTagColors, setTomlGantryTags } from "@/lib/yard/host/files";
+import { loadGantreeToml, mergeTomlTagColors, setTomlGantryTags, setTomlGantryUser } from "@/lib/yard/host/files";
 
 const dirs: string[] = [];
 const pass = "a-long-enough-pass";
@@ -136,6 +136,7 @@ describe("cloneCrane", () => {
 
   it("copies settings by default shape: env, mcp grants, image, tags — not persona or memories", async () => {
     seedJules();
+    setTomlGantryUser("jules", "op-sam");
     mergeTomlTagColors({ house: "green" });
     const out = await cloneCrane("jules", { slug: "kit-copy", settings: true, persona: false, database: false });
     expect(out.ok).toBe(true);
@@ -153,6 +154,7 @@ describe("cloneCrane", () => {
     expect(existsSync(join(destDir, "persona", "avatar.jpg"))).toBe(false);
     const doc = loadGantreeToml();
     expect(doc?.gantry?.find((g) => g.slug === "kit-copy")?.tags).toEqual(["house"]);
+    expect(doc?.gantry?.find((g) => g.slug === "kit-copy")?.user).toBe("op-sam");
     expect(doc?.tag_color).toEqual({ house: "green" });
     expect(createOrReplaceContainer).toHaveBeenCalledWith(
       expect.objectContaining({

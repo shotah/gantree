@@ -163,7 +163,11 @@ export const HINTS = {
     hint: "Who she should be and who you are. New cranes get the ai-gantry template. Replace from template only fills the box — Save writes the file. Inject user copies your profile into About you.",
   },
   injectUser: {
-    hint: "Admin only. Copies selected profile fields into About you (name, email, timezone, location, languages, notes, chat ids). Identity (the agent's name) stays put. Save still writes the file.",
+    hint: "Admin only. Copies selected profile fields into About you (name, email, timezone, location, languages, notes, chat ids). The crane's assigned user is selected first. Identity (the agent's name) stays put. Save still writes the file.",
+  },
+  craneUser: {
+    hint: "Who this agent is for. Their login name becomes a board tag, their email (and Google sub, if set) is added to the pendant allowlist, and Inject user opens on them. Recreate so the pendant picks up the email.",
+    example: "ada",
   },
   self: {
     hint: "The agent's voice, rituals, and north-star aims. /new distills the thread here. Prune it — don't treat it as config.",

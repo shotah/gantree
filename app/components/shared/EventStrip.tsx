@@ -23,6 +23,7 @@ const EVENT_KINDS = [
   "revoke",
   "env",
   "tags",
+  "user",
   "allowlist",
   "telegram-profile",
   "telegram-new",

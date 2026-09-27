@@ -188,6 +188,7 @@ function buildInventory(): YardInventory {
         mcpManifest: abs(row.mcp_manifest),
         envFile: abs(row.env_file),
         tags: coerceTags(row.tags),
+        user: coerceUser(row.user),
       });
     });
     return { source: "gantree.toml", yard: toml.yard || "home", gantries: markBehind(gantries), dockerError, dockerPending, tagColors: coerceTagColors(toml.tag_color) };
@@ -205,6 +206,7 @@ function buildInventory(): YardInventory {
       mcpManifest: null,
       envFile: null,
       tags: [],
+      user: null,
     }),
   );
   return {
@@ -228,6 +230,7 @@ function cardFrom(opts: {
   mcpManifest: string | null;
   envFile: string | null;
   tags: string[];
+  user: string | null;
 }): GantryCard {
   const image = opts.enrich?.image ?? opts.listed?.image ?? null;
   const state = opts.enrich?.state ?? opts.listed?.state ?? "unknown";
@@ -276,7 +279,16 @@ function cardFrom(opts: {
     envFile: opts.envFile,
     avatarRev: findAvatar(opts.personaDir)?.rev ?? null,
     tags: opts.tags,
+    user: opts.user,
   };
+}
+
+function coerceUser(raw: unknown): string | null {
+  if (typeof raw !== "string") {
+    return null;
+  }
+  const t = raw.trim();
+  return t || null;
 }
 
 function markBehind(gantries: GantryCard[]): GantryCard[] {

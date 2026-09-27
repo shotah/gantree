@@ -88,4 +88,21 @@ describe("InjectUserModal", () => {
     expect(screen.getByRole("checkbox", { name: /languages/ })).toHaveProperty("disabled", true);
     expect(screen.getByRole("checkbox", { name: /display name/ })).toHaveProperty("disabled", false);
   });
+
+  it("opens on the crane's assigned user ahead of the signed-in operator", async () => {
+    vi.mocked(yardFetch).mockResolvedValue(
+      (await json({
+        you: { id: "1", name: "kit", displayName: "Kit" },
+        operators: [
+          { id: "1", name: "kit", displayName: "Kit", email: "kit@example.com", channels: { telegram: [], slack: [], discord: [], google: [] } },
+          { id: "2", name: "ada", displayName: "Ada", email: "ada@example.com", channels: { telegram: [], slack: [], discord: [], google: [] } },
+        ],
+      })) as Response,
+    );
+    render(
+      <InjectUserModal persona="# x\n" preferredId="2" onClose={() => undefined} onInject={() => undefined} />,
+    );
+    await waitFor(() => expect(screen.getByText("ada@example.com")).toBeTruthy());
+    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("2");
+  });
 });

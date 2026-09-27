@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { copyAvatarTo } from "../host/avatar";
 import { hostUserSpec, pullImage } from "../host/docker";
 import { loadEnvFile, writeEnvFile } from "../host/envfile";
-import { preparePersonaBind, readText, setTomlGantryTags } from "../host/files";
+import { preparePersonaBind, readText, setTomlGantryTags, setTomlGantryUser } from "../host/files";
 import { loadObservePrefs } from "../observe/prefs";
 import { pendantChannelReady, provisionPendantCrane } from "../pendant/channel";
 import { craneDir, createOrReplaceContainer, writeCraneFiles } from "./build";
@@ -138,6 +138,9 @@ export async function cloneCrane(
   }
   if (opts.settings && (source.tags ?? []).length) {
     setTomlGantryTags(dest, source.tags ?? []);
+  }
+  if (opts.settings && source.user) {
+    setTomlGantryUser(dest, source.user);
   }
   if (opts.database && source.dataDir) {
     copyGantryDb(source.dataDir, files.dataDir);

@@ -1,3 +1,4 @@
+import { detachOperatorFromCranes, refreshAssignedCranes } from "../crane/assignUser";
 import { accessForRole, serializeCranes } from "./access";
 import {
   parseChannelIds,
@@ -143,6 +144,7 @@ export function removeOperator(_actorId: string, targetId: string): { ok: true }
   if (target.role === "admin" && adminCount() <= 1) {
     return { ok: false, error: "cannot delete the last admin", status: 400 };
   }
+  detachOperatorFromCranes(target);
   yardDb().prepare("DELETE FROM operator WHERE id = ?").run(targetId);
   removeOperatorAvatar(targetId);
   return { ok: true };
@@ -352,6 +354,9 @@ export function updateOwnProfile(
   const next = getOperator(operatorId);
   if (!next) {
     return { ok: false, error: "operator write vanished", status: 500 };
+  }
+  if (name !== row.name || email !== (row.email ?? "") || patch.channels !== undefined) {
+    refreshAssignedCranes(next, row.name);
   }
   return { ok: true, operator: next };
 }

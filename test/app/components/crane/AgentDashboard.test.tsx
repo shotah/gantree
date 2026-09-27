@@ -61,6 +61,7 @@ function mockCrane(
     catalog?: { name: string; command: string; envKeys: string[]; optionalEnvKeys?: string[]; blurb: string }[];
     tags?: string[];
     tagColors?: Record<string, string>;
+    user?: string | null;
     channel?: string;
     avatarRev?: number | null;
   },
@@ -68,7 +69,14 @@ function mockCrane(
   canBuild = false,
 ) {
   const puts: unknown[] = [];
-  const disk = { ...files, tags: files.tags ?? [], tagColors: files.tagColors ?? {}, channel: files.channel ?? "telegram", avatarRev: files.avatarRev ?? null };
+  const disk = {
+    ...files,
+    tags: files.tags ?? [],
+    tagColors: files.tagColors ?? {},
+    user: files.user ?? null,
+    channel: files.channel ?? "telegram",
+    avatarRev: files.avatarRev ?? null,
+  };
   vi.mocked(yardFetch).mockImplementation((input, init) => {
     const u = String(input);
     if (u.includes("/files") && init?.method === "PUT") {
@@ -140,18 +148,39 @@ function mockCrane(
       return json({ ok: true, slug: body.slug ?? "noodles-copy", detail: "cloned" }, 201);
     }
     if (u === "/api/gantries/noodles" && init?.method === "PATCH") {
-      const body = JSON.parse(String(init.body)) as { tags?: string[]; tagColors?: Record<string, string> };
+      const body = JSON.parse(String(init.body)) as { tags?: string[]; tagColors?: Record<string, string>; user?: string | null };
       if (Array.isArray(body.tags)) {
         disk.tags = body.tags;
       }
       if (body.tagColors) {
         disk.tagColors = { ...disk.tagColors, ...body.tagColors };
       }
+      if (Object.prototype.hasOwnProperty.call(body, "user")) {
+        disk.user = typeof body.user === "string" ? body.user : null;
+        disk.tags = [...disk.tags, "ada"];
+        return json({
+          ok: true,
+          user: disk.user,
+          tags: disk.tags,
+          tagColors: disk.tagColors,
+          pendant: "added",
+          detail: "ada is the user; tagged ada; pendant email saved — recreate to apply",
+        });
+      }
       return json({ ok: true, tags: disk.tags, tagColors: disk.tagColors });
     }
     if (u === "/api/gantries/noodles") {
       return json({
-        ...card({ slug: "noodles", channel: disk.channel, canMutate, canBuild, personaDir: "/tmp/persona", tags: disk.tags, avatarRev: disk.avatarRev }),
+        ...card({
+          slug: "noodles",
+          channel: disk.channel,
+          canMutate,
+          canBuild,
+          personaDir: "/tmp/persona",
+          tags: disk.tags,
+          avatarRev: disk.avatarRev,
+          user: disk.user,
+        }),
         tagColors: disk.tagColors,
       });
     }
@@ -807,5 +836,27 @@ describe("AgentDashboard tags", () => {
     fireEvent.click(screen.getByRole("button", { name: /Tags/ }));
     await waitFor(() => expect(screen.getByText("read only")).toBeTruthy());
     expect(screen.queryByPlaceholderText("home")).toBeNull();
+  });
+
+  it("assigns a user, tags them, and asks to recreate for the pendant email", async () => {
+    vi.mocked(useDoor).mockReturnValue(adminDoor);
+    mockCrane({ persona: "# you\n", self: "# me\n", writable: true });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Tags/ }));
+    const user = await waitFor(() => screen.getByRole("combobox", { name: "user" }));
+    fireEvent.change(user, { target: { value: "2" } });
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some((c) => {
+          if (String(c[0]) !== "/api/gantries/noodles" || c[1]?.method !== "PATCH") {
+            return false;
+          }
+          const body = JSON.parse(String(c[1]?.body ?? "{}")) as { user?: string };
+          return body.user === "2";
+        }),
+      ).toBe(true),
+    );
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "Recreate to apply .env" })).toBeTruthy());
   });
 });

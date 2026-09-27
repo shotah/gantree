@@ -37,6 +37,8 @@ export type GantryCard = {
   avatarRev: number | null;
   /** Board labels from gantree.toml — whose keys, which house. Never secrets. */
   tags: string[];
+  /** Operator id this crane is for. Their login name is one of `tags`. */
+  user?: string | null;
   /** Harness semver from `gantry status`. Not the compose `:latest` tag. */
   version?: string | null;
   /** Short git sha from `gantry status` when the image was built. */

@@ -28,10 +28,12 @@ type OperatorOption = {
 
 export function InjectUserModal({
   persona,
+  preferredId,
   onClose,
   onInject,
 }: {
   persona: string;
+  preferredId?: string | null;
   onClose: () => void;
   onInject: (next: string, label: string) => void;
 }) {
@@ -55,7 +57,8 @@ export function InjectUserModal({
         }
         const list = d.operators ?? [];
         setOperators(list);
-        const prefer = d.you?.id && list.some((o) => o.id === d.you?.id) ? d.you.id : (list[0]?.id ?? "");
+        const assigned = preferredId && list.some((o) => o.id === preferredId) ? preferredId : "";
+        const prefer = assigned || (d.you?.id && list.some((o) => o.id === d.you?.id) ? d.you.id : (list[0]?.id ?? ""));
         setSelectedId(prefer);
         const op = list.find((o) => o.id === prefer);
         if (op) {
@@ -71,7 +74,7 @@ export function InjectUserModal({
     return () => {
       live = false;
     };
-  }, []);
+  }, [preferredId]);
 
   const op = operators?.find((o) => o.id === selectedId);
   const personaOp = op ? asPersonaOperator(op) : null;

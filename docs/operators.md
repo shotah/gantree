@@ -72,13 +72,15 @@ Here you can change:
 - description
 - chat ids (Telegram numeric, Slack `U…`, Discord snowflake, Google `sub`) — stored on
   you. Google `sub` is optional: after they talk, spend offers to store the digits.
-  Telegram / pendant panels write them onto a crane allowlist; they are not
-  auto-copied, and the crane never writes `.env`. How they line up with the
-  pendant’s Google sign-in: [access.md](access.md)
+  Telegram ids stay on the profile until a crane panel saves its allowlist.
+  Assigning a user on a crane writes that person's email (and Google sub, if
+  set) into the pendant allowlist and tags their login name on the board.
+  How they line up with the pendant’s Google sign-in: [access.md](access.md)
 - passphrase (current + new + confirm, plus the confirm-scary checkbox)
 
 Those fields are what **Inject user** on a crane copies into `PERSONA.md`
 **About you** (name, email, timezone, location, languages, notes, chat ids).
+The crane's assigned user is the one that dialog opens on.
 A blank field leaves the seed's bullet alone — an operator with no languages
 set keeps the template's `English`, so speakers of anything else should fill
 it in before injecting. The file starts from the ai-gantry seed

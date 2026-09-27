@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { yardFetch } from "@/app/lib/yardFetch";
 import { HINTS } from "@/lib/yard/hints";
 import { parseTag, TAG_MAX, type TagColor } from "@/lib/yard/crane/tags";
 import { craneLayoutKey, DashFold } from "../shared/DashFold";
@@ -8,12 +9,33 @@ import { HintField } from "../shared/HintField";
 import { TagChips, TagSwatches } from "../shared/TagChips";
 import type { AgentDash } from "./useAgentDashboard";
 
+type UserOption = { id: string; name: string; displayName: string };
+
 export function TagsFold({ dash }: { dash: AgentDash }) {
-  const { gantry, tagColors, mutate, busy, saveTags } = dash;
+  const { gantry, tagColors, mutate, busy, admin, saveTags, saveUser } = dash;
   const tags = gantry?.tags ?? [];
   const [draft, setDraft] = useState("");
   const [hue, setHue] = useState<TagColor>("red");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [operators, setOperators] = useState<UserOption[]>([]);
+
+  useEffect(() => {
+    if (!admin) {
+      return;
+    }
+    let live = true;
+    yardFetch("/api/operators")
+      .then((r) => r.json())
+      .then((d: { operators?: UserOption[] }) => {
+        if (live) {
+          setOperators(d.operators ?? []);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [admin]);
 
   async function add(raw: string) {
     const t = parseTag(raw);
@@ -43,6 +65,26 @@ export function TagsFold({ dash }: { dash: AgentDash }) {
       hint="whose keys, which house"
       summary={tags.length ? tags.join(" · ") : "none"}
     >
+      {admin && mutate
+        ? (
+            <HintField label="user" className="mb-3 max-w-xs" {...HINTS.craneUser}>
+              <select
+                className="rounded border border-line bg-canvas px-2 py-1 text-xs text-fg max-sm:text-sm"
+                value={gantry?.user ?? ""}
+                disabled={busy}
+                onChange={(e) => void saveUser(e.target.value || null)}
+              >
+                <option value="">none</option>
+                {operators.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.displayName || o.name}
+                    {o.displayName && o.displayName !== o.name ? ` (${o.name})` : ""}
+                  </option>
+                ))}
+              </select>
+            </HintField>
+          )
+        : null}
       <p className="mb-2 text-xs text-faint">
         Color is yard-wide — the same label stays the same hue on every card. Pick a hue, then Add. Click a chip to repaint it.
       </p>
