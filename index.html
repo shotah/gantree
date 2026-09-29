@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>gantree — shipping yard for personal agents</title>
-  <meta name="description" content="Shipping yard for personal agents. A long-horizon Go harness you run — not a Claude Code plugin marketplace.">
+  <title>gantree — the household</title>
+  <meta name="description" content="Front door for the household. One crane (ai-gantry), this yard, and mouths that dial one mailbox: pendant, cab, and helm.">
   <link rel="canonical" href="https://shotah.github.io/gantree/">
   <meta name="theme-color" content="#0e1316">
-  <meta property="og:title" content="gantree — shipping yard for personal agents">
-  <meta property="og:description" content="Shipping yard for personal agents. A long-horizon Go harness you run — not a Claude Code plugin marketplace.">
+  <meta property="og:title" content="gantree — the household">
+  <meta property="og:description" content="Front door for the household. One crane (ai-gantry), this yard, and mouths that dial one mailbox: pendant, cab, and helm.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://shotah.github.io/gantree/">
   <meta property="og:image" content="https://shotah.github.io/gantree/assets/banner.png">
@@ -41,75 +41,107 @@
   </header>
   <main id="content" class="wrap">
     <div class="hero">
-  <img class="banner" src="assets/banner.svg" width="1280" height="420" alt="Shipping yard for personal agents — operator plane, not the chat">
+  <img class="map" src="assets/ecosystem.svg" width="1280" height="460" alt="The household: gantree writes files to the crane and never sits in the turn. Pendant, cab, and helm dial the mailbox. The crane dials out to that room, to Telegram, and to a model.">
   <div class="lede">
-    <p class="kicker">The product is the crane</p>
-    <h1>A long-horizon harness you run. Not a plugin pack inside someone else’s.</h1>
-    <p>
-      Most things branded “harness engineering” are skills, agents, and slash
-      commands that sit inside Claude Code or Copilot. That is a wrapper around
-      a host you do not own. The host still holds context, tools, and whether
-      the trajectory finishes.
-    </p>
+    <p class="kicker">The household</p>
+    <h1>The crane is the product. This is the door to the whole household.</h1>
     <p>
       <a href="https://github.com/shotah/ai-gantry">ai-gantry</a> is the
-      runtime: one Distroless Go process, one persona, one OpenAI-compat model,
-      memory you can <code>sqlite3</code>, chat that dials out. Gantree is the
-      shipping yard those cranes live in — a board for an operator, never a hop
-      in a chat turn. The default mouth is
-      <a href="https://github.com/shotah/gantry-pendant">gantry-pendant</a>
-      (Telegram, Discord, and Slack still work).
+      runtime: one Distroless Go process, one persona, one OpenAI-compat
+      model, memory you can <code>sqlite3</code>. Chat dials out.
+      <code>/new</code> distills; the person is still there on Thursday.
+      Health is an exit code. <strong>No open ports. Ever.</strong>
     </p>
-    <dl class="defs">
+    <p>
+      Most things branded “harness engineering” are skills and slash
+      commands inside a host you do not own. This stack is the host.
+      Gantree is the shipping yard those cranes live in — a board for an
+      operator, never a hop in a chat turn. You talk through a mailbox we
+      own:
+      <a href="https://github.com/shotah/gantry-pendant">gantry-pendant</a>
+      in the browser,
+      <a href="https://github.com/shotah/gantry-cab">gantry-cab</a> on
+      Android (and Android Auto),
+      <a href="https://github.com/shotah/gantry-helm">gantry-helm</a> on
+      iPhone (and CarPlay). Telegram, Discord, and Slack still work.
+    </p>
+  </div>
+  <dl class="defs">
       <div>
         <dt>gantry</dt>
         <dd>The rigid frame that holds and positions tools. The frame does nothing by itself; the tools and the memory do the work.</dd>
       </div>
       <div>
         <dt>gantree</dt>
-        <dd>The shipping yard those cranes live in. Files and Docker. Pull, don’t punch.</dd>
+        <dd>The shipping yard those cranes live in. Files and Docker. Pull, don’t punch. Never a hop in a turn.</dd>
+      </div>
+      <div>
+        <dt>pendant</dt>
+        <dd>The web app and the mailbox. React, open it anywhere — desktop or phone. One Cloudflare Durable Object room per crane. The browser and the crane both dial in.</dd>
+      </div>
+      <div>
+        <dt>cab</dt>
+        <dd>The Android seat. Pocket thread and Auto message cards. Same room, same crane. A native app on the pendant mailbox.</dd>
+      </div>
+      <div>
+        <dt>helm</dt>
+        <dd>The iPhone sister. Pocket thread and CarPlay message cards. Same mailbox. Same frames.</dd>
       </div>
     </dl>
     <div class="cta">
       <a class="btn primary" href="docs/install.html">Stand up the yard</a>
-      <a class="btn" href="https://github.com/shotah/ai-gantry">The harness</a>
-      <a class="btn" href="https://github.com/shotah/gantree">GitHub</a>
+      <a class="btn" href="https://github.com/shotah/ai-gantry">The crane</a>
+      <a class="btn" href="https://github.com/shotah/gantry-pendant">The mailbox</a>
+      <a class="btn" href="https://github.com/shotah/gantry-cab">Android</a>
+      <a class="btn" href="https://github.com/shotah/gantry-helm">iPhone</a>
     </div>
-  </div>
 </div>
 
 <section>
-  <p class="kicker">The household</p>
-  <h2>Three repos. One file contract. No shared database.</h2>
+  <p class="kicker">Five repos</p>
+  <h2>One file contract. No shared database.</h2>
   <p>
     The crane never learns the yard exists. The Worker never sees the yard
     cookie. Gantree writes files (and pendant Worker secrets from Settings).
-    The crane’s <code>.env</code> is the one human allowlist.
+    The crane’s <code>.env</code> is the one human allowlist. MCP binaries
+    are optional children, when you grant them.
   </p>
-  <pre class="diagram">browser ──► gantree (this repo) ──files + Docker──► ai-gantry
-                                                      │
-                         default mouth               │  optional
-phone ──Google──► gantry-pendant ◄──dials allow───────┤  Telegram / Discord / Slack
-                   MCP children live inside the crane, if granted</pre>
-  <dl class="defs">
-    <div>
-      <dt>ai-gantry</dt>
-      <dd>The product. Distroless Go. Persona, memory, MCP. Outbound only. <strong>No open ports. Ever.</strong></dd>
-    </div>
-    <div>
-      <dt>gantree</dt>
-      <dd>This board. Named pets, grants, doctor, spend. Never a hop in a turn.</dd>
-    </div>
-    <div>
-      <dt>gantry-pendant</dt>
-      <dd>Default phone mouth. Cloudflare Worker. Google door. Room list from the crane’s <code>allow</code> frame.</dd>
-    </div>
-  </dl>
+  <div class="family">
+    <a href="https://github.com/shotah/ai-gantry">
+      <strong>ai-gantry</strong>
+      <em>The crane</em>
+      <span>Distroless Go. One persona, one model. Dials out. Reads env and files. Never opens a port.</span>
+    </a>
+    <a href="docs/architecture.html">
+      <strong>gantree</strong>
+      <em>This yard</em>
+      <span>Board, grants, doctor, spend. Writes <code>.env</code>, <code>mcp.toml</code>, persona, Docker. Pulls logs after the fact.</span>
+    </a>
+    <a href="https://github.com/shotah/gantry-pendant">
+      <strong>gantry-pendant</strong>
+      <em>Mailbox + web app</em>
+      <span>React, in a browser, anywhere. Google door. One Durable Object room per crane slug. The yard pushes secrets.</span>
+    </a>
+    <a href="https://github.com/shotah/gantry-cab">
+      <strong>gantry-cab</strong>
+      <em>Android + Auto</em>
+      <span>Native app. Dials the pendant mailbox, <code>role=phone</code>. Android Auto reads Kit aloud over maps.</span>
+    </a>
+    <a href="https://github.com/shotah/gantry-helm">
+      <strong>gantry-helm</strong>
+      <em>iPhone + CarPlay</em>
+      <span>Native app. Same mailbox, same room. CarPlay message cards. One Worker for every mouth.</span>
+    </a>
+  </div>
   <p>
-    Access across the three:
+    How a person crosses the yard, the pendant, and the crane:
     <a href="docs/access.html">access</a>.
     How the yard is put together:
     <a href="docs/architecture.html">architecture</a>.
+    How the wires meet:
+    <a href="https://github.com/shotah/ai-gantry/blob/main/docs/ecosystem.md">ecosystem</a>.
+    What every mouth has to paint the same way:
+    <a href="https://github.com/shotah/gantry-pendant/blob/main/docs/frontends.md">frontends</a>.
   </p>
 </section>
 
@@ -123,7 +155,7 @@ phone ──Google──► gantry-pendant ◄──dials allow─────�
         <li>A binary you run. Aims, personality, and work still exist on Thursday.</li>
         <li>The model is a socket — Ollama, Gemini, ChatGPT, Grok. Swap it. The loop stays.</li>
         <li>MCP listed in <code>mcp.toml</code> is the grant. Omit it and it does not exist.</li>
-        <li>Outbound chat. Default mouth is the pendant; Telegram, Discord, and Slack still work. <strong>No open ports. Ever.</strong></li>
+        <li>Outbound chat. Default channel is pendant: the web app, cab, and helm share the room. Telegram, Discord, and Slack still work. <strong>No open ports. Ever.</strong></li>
         <li>Independent lookups fan out in one round; the next round uses the results. Garmin → sheet → Strava is one thread.</li>
       </ul>
     </article>
@@ -144,15 +176,39 @@ phone ──Google──► gantry-pendant ◄──dials allow─────�
   <p class="kicker">The crane</p>
   <h2>ai-gantry holds the person. The yard does not talk.</h2>
   <p>
-    One process. One persona. Chat is the pendant. Health is an exit code, not a
-    port. Mid-chain does not die on a typo — the loop was hardened on the 7–12B
+    One process. One persona. Chat is a mouth. Health is an exit code.
+    Mid-chain does not die on a typo — the loop was hardened on the 7–12B
     class, then pointed at Flash when you want the trajectory now.
+    Chat, memory, cron, and web search work with zero extra tools.
   </p>
   <pre class="diagram">static binary + persona + mcp.toml + any OpenAI-compat LLM  →  outbound chat</pre>
   <p>
-    Want a bot tonight? Stay here. Settings → Pendant, then build a crane — this yard
-    pulls <code>shotah/ai-gantry</code>, writes the files, recreates. Default channel is
-    pendant. You do not need the other checkout to stand one up.
+    <code>PERSONA.md</code> is who it should be, written by you.
+    <code>SELF.md</code> is voice and a few north-star aims, written by
+    the agent, and it survives <code>/new</code>. Two files. The live
+    tool catalog stays in the turn, from <code>mcp.toml</code>.
+  </p>
+</section>
+
+<section>
+  <p class="kicker">The mouths</p>
+  <h2>One mailbox. A browser and two native apps. Vendor chat skips it.</h2>
+  <p>
+    Pendant is a React web app. Open it on a desktop or a phone, wherever
+    a browser is. Cab and helm are the native apps. All three dial the
+    same Durable Object — on the wire the role is <code>phone</code>.
+    The crane dials that room <code>role=crane</code>, outbound only.
+    The Mini opens zero inbound ports. Home internet can drop; a note
+    still waits in the room, and Kit thinks again when the crane has a
+    network.
+  </p>
+  <p>
+    Goals and the pocket list are snapshots the crane pushes. Photos ride
+    the same frame as the caption. Voice stays on the device — the wire
+    carries text, including a spoken turn, and no audio. Cab is Kotlin.
+    Helm is Swift. Android Auto and CarPlay are message cards on that
+    room. One <code>CHANNEL</code> per crane. The yard writes
+    <code>CHANNEL=pendant</code> and mints the bearer.
   </p>
 </section>
 
@@ -160,10 +216,13 @@ phone ──Google──► gantry-pendant ◄──dials allow─────�
   <p class="kicker">The yard</p>
   <h2>Operate named pets. Never sit in the turn.</h2>
   <p>
-    Gantree is the operator plane: board, doctor, grants, logs, spend. It reads
-    Docker and files after the fact. If a chart would make the harness slower,
-    the chart is wrong. Agents open zero inbound ports. Only this UI is
-    reachable, and only through a path you chose.
+    Gantree is the operator plane: board, doctor, grants, logs, spend. It
+    reads Docker and files after the fact. If a chart would make the
+    harness slower, the chart is wrong. Agents open zero inbound ports.
+    Only this UI is reachable, and only through a path you chose.
+  </p>
+  <p>
+    <img class="wide" src="assets/banner.svg" width="1280" height="420" alt="Shipping yard — one console, many cranes, outbound only">
   </p>
   <p>
     <img class="wide" src="assets/docs/yard.png" width="960" alt="Yard board — host, boards, named cranes, spend, tags">
@@ -191,32 +250,44 @@ npm install
 npm run build
 npm start                 # http://127.0.0.1:3000</pre>
   <p>
-    Open the board. Settings → Pendant. Build a crane. Grant a tool. Message it on your phone.
-    The UI never sits in a chat turn. Home Mini vs cloud VM:
+    Open the board. Settings → Pendant. Build a crane. Grant a tool.
+    Message it from the browser, from Cab, or from Helm. The UI never sits
+    in a chat turn. You do not need the other checkouts to stand a crane
+    up — this yard pulls <code>shotah/ai-gantry</code>, writes the files,
+    recreates. Home Mini vs cloud VM:
     <a href="docs/install.html">install</a>.
   </p>
 </section>
 
 <section>
-  <p class="kicker">Operator docs</p>
-  <h2>The board, the door, the files.</h2>
+  <p class="kicker">Start here</p>
+  <h2>The board, the door, the mouths.</h2>
   <div class="docs">
     <a href="docs/install.html"><strong>Install</strong><span>Home Mini or cloud VM. Same console. Zero inbound agent ports.</span></a>
-    <a href="docs/console.html"><strong>Console</strong><span>Board, grants, doctor, avatars. Default mouth is the pendant.</span></a>
+    <a href="docs/console.html"><strong>Console</strong><span>Board, grants, doctor, avatars. Default channel is pendant.</span></a>
     <a href="docs/operators.html"><strong>Operators</strong><span>Setup, login, profile, roles on a handful of people.</span></a>
     <a href="docs/headless.html"><strong>Headless</strong><span>Attach existing dirs, tunnels, the gotchas.</span></a>
     <a href="docs/architecture.html"><strong>Architecture</strong><span>Why Vinext on the Docker host, and why the yard pulls.</span></a>
     <a href="docs/access.html"><strong>Access</strong><span>One person across yard, pendant, and crane.</span></a>
     <a href="docs/security.html"><strong>Security</strong><span>The door: bind, passphrases, sessions. Not a reason to open WAN 3000.</span></a>
-    <a href="https://github.com/shotah/gantry-pendant"><strong>gantry-pendant</strong><span>Default phone mouth — Worker, Google door, room per crane.</span></a>
-    <a href="https://github.com/shotah/ai-gantry"><strong>ai-gantry</strong><span>Design, features, MCP — the harness repo.</span></a>
+    <a href="https://github.com/shotah/ai-gantry"><strong>ai-gantry</strong><span>The harness. Design, persona, MCP, the loop.</span></a>
+    <a href="https://github.com/shotah/gantry-pendant"><strong>gantry-pendant</strong><span>Mailbox and React web app. Open it anywhere. One room per crane.</span></a>
+    <a href="https://github.com/shotah/gantry-cab"><strong>gantry-cab</strong><span>Android app. Pocket thread and Android Auto on that mailbox.</span></a>
+    <a href="https://github.com/shotah/gantry-helm"><strong>gantry-helm</strong><span>iPhone app. Pocket thread and CarPlay on that same room.</span></a>
+    <a href="https://github.com/shotah/ai-gantry/blob/main/docs/ecosystem.md"><strong>Ecosystem</strong><span>How the wires and the doors line up, from the crane’s side.</span></a>
   </div>
 </section>
 
   </main>
   <footer class="foot">
     <div class="wrap">
-      <span>MIT · operator plane for <a href="https://github.com/shotah/ai-gantry">ai-gantry</a></span>
+      <span>MIT · the household</span>
+      <span>
+        <a href="https://github.com/shotah/ai-gantry">ai-gantry</a>
+        · <a href="https://github.com/shotah/gantry-pendant">pendant</a>
+        · <a href="https://github.com/shotah/gantry-cab">cab</a>
+        · <a href="https://github.com/shotah/gantry-helm">helm</a>
+      </span>
       <span><a href="https://github.com/shotah/gantree">github.com/shotah/gantree</a></span>
     </div>
   </footer>
