@@ -22,6 +22,7 @@ export function ToolsFold({ dash }: { dash: AgentDash }) {
     setAuthCode,
     toggleGrant,
     authOp,
+    googleAccount,
     fetchBins,
   } = dash;
 
@@ -50,6 +51,9 @@ export function ToolsFold({ dash }: { dash: AgentDash }) {
           const on = granted.has(c.name);
           const needsAuth = Boolean(c.auth_args?.length) && on;
           const open = authFor === c.name;
+          const google = c.name === "google";
+          const accounts = google ? (files?.googleAccounts ?? []) : [];
+          const defaultEmail = (files?.env?.USER_GOOGLE_EMAIL?.value ?? "").trim().toLowerCase();
           return (
             <div key={c.name} className="flex flex-col gap-2 rounded border border-line px-3 py-2 text-sm">
               <div className="flex items-start gap-3">
@@ -83,14 +87,66 @@ export function ToolsFold({ dash }: { dash: AgentDash }) {
                         }}
                         className="rounded border border-accent-line px-2 py-1 text-xs text-mark"
                       >
-                        needs auth
+                        {google ? "add account" : "needs auth"}
                       </button>
                     )
                   : null}
               </div>
+              {google && on && !open && accounts.length
+                ? (
+                    <p className="ml-7 font-mono text-[11px] text-dim">{accounts.join(", ")}</p>
+                  )
+                : null}
               {needsAuth && open
                 ? (
                     <div className="ml-7 space-y-2 rounded border border-line bg-canvas/80 p-2 text-xs">
+                      {google
+                        ? (
+                            <div className="space-y-2">
+                              <p className="text-muted">
+                                Signed in
+                                {accounts.length ? `: ${accounts.join(", ")}` : ": none yet"}
+                                . Another hop adds an account. It does not replace the others.
+                              </p>
+                              <label className="flex flex-col gap-1 text-dim">
+                                default account
+                                <select
+                                  aria-label="default Google account"
+                                  className="rounded border border-line bg-panel px-2 py-1 text-fg"
+                                  value={accounts.includes(defaultEmail) ? defaultEmail : ""}
+                                  disabled={busy}
+                                  onChange={(e) => void googleAccount("default", e.target.value || null)}
+                                >
+                                  <option value="">none — pass user_google_email</option>
+                                  {accounts.map((email) => (
+                                    <option key={email} value={email}>
+                                      {email}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              {accounts.length
+                                ? (
+                                    <ul className="space-y-1">
+                                      {accounts.map((email) => (
+                                        <li key={email} className="flex items-center justify-between gap-2">
+                                          <span className="font-mono text-fg">{email}</span>
+                                          <button
+                                            type="button"
+                                            disabled={busy}
+                                            onClick={() => void googleAccount("remove", email)}
+                                            className="rounded border border-edge px-2 py-1 hover:border-danger disabled:opacity-50"
+                                          >
+                                            {`Remove ${email}`}
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )
+                                : null}
+                            </div>
+                          )
+                        : null}
                       <p className="text-muted">
                         After
                         {" "}
@@ -114,7 +170,7 @@ export function ToolsFold({ dash }: { dash: AgentDash }) {
                           onClick={() => authOp(c.name, "start")}
                           className="rounded border border-edge px-2 py-1 hover:border-accent disabled:opacity-50"
                         >
-                          start hop
+                          {google ? "add account" : "start hop"}
                         </button>
                         {c.authFlow === "device"
                           ? (

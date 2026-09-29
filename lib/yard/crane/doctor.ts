@@ -4,6 +4,7 @@ import { execStatus, hostUserSpec } from "../host/docker";
 import { craneCanWriteFile, envKeyNames, parseMcpToml, preparePersonaBind, readText } from "../host/files";
 import { loadCatalog } from "../tools/catalog";
 import { envKeysForServer } from "../tools/packages";
+import { listGoogleAccounts } from "../tools/googleAccounts";
 import { oauthSessionPresent } from "../tools/mcp";
 import type { DoctorCheck, DoctorReport } from "../types";
 import { getGantry } from "./inventory";
@@ -193,13 +194,17 @@ function pushFileMcpChecks(
       detail: missing.length ? `${s.name}: missing env ${missing.join(", ")}` : `${s.name}: required env keys present (or none)`,
     });
     if (cat?.auth_args?.length || s.auth_args?.length) {
-      const oauthFile = oauthSessionPresent(dataDir, s.name, cat?.command ?? s.command);
+      const command = cat?.command ?? s.command;
+      const oauthFile = oauthSessionPresent(dataDir, s.name, command);
+      const accounts = s.name === "google" || command === "google-mcp" ? listGoogleAccounts(dataDir) : [];
       checks.push({
         id: `oauth:${s.name}`,
         ok: true,
-        detail: oauthFile
-          ? `${s.name}: oauth session file present`
-          : `${s.name}: needs auth (no session file spotted; confirm in chat /auth)`,
+        detail: accounts.length
+          ? `${s.name}: ${accounts.join(", ")}`
+          : oauthFile
+            ? `${s.name}: oauth session file present`
+            : `${s.name}: needs auth (no session file spotted; confirm in chat /auth)`,
       });
     }
   }

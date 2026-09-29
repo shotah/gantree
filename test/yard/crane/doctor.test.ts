@@ -144,6 +144,25 @@ describe("doctor", () => {
     expect(report?.checks.find((c) => c.id === "gantry-status")?.ok).toBe(true);
   });
 
+  it("names each Google credential file and does not read it", async () => {
+    const files = craneFiles();
+    mkdirSync(join(files.dataDir, ".google_workspace_mcp", "credentials"), { recursive: true });
+    writeFileSync(
+      join(files.dataDir, ".google_workspace_mcp", "credentials", "Ada@Example.com.json"),
+      '{"refresh_token":"secret-token"}',
+    );
+    writeFileSync(
+      join(files.dataDir, ".google_workspace_mcp", "credentials", "ada@work.com.json"),
+      "{}",
+    );
+    vi.mocked(getGantry).mockResolvedValue(card({ ...files }));
+    const report = await doctor("kit");
+    const detail = report?.checks.find((c) => c.id === "oauth:google")?.detail ?? "";
+    expect(detail).toContain("ada@example.com");
+    expect(detail).toContain("ada@work.com");
+    expect(detail).not.toContain("secret-token");
+  });
+
   it("opens SELF.md so a 1000:1000 crane can self_note", async () => {
     const files = craneFiles();
     const self = join(files.personaDir, "SELF.md");

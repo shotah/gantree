@@ -16,12 +16,16 @@ describe("DOC_PAGES", () => {
 });
 
 describe("site pitch", () => {
-  it("names the three-repo household", () => {
+  it("names the household and the mouths on the mailbox", () => {
     const home = readFileSync("site/home.html", "utf8");
-    expect(home).toContain("Three repos");
+    expect(home).toContain("assets/ecosystem.svg");
     expect(home).toContain("ai-gantry");
     expect(home).toContain("gantry-pendant");
-    expect(home).toContain("Default mouth is the pendant");
+    expect(home).toContain("gantry-cab");
+    expect(home).toContain("gantry-helm");
+    expect(home).toContain("React web app");
     expect(home).toContain("never a hop");
+    expect(home).toContain("No open ports");
+    expect(home).not.toContain("phone PWA");
   });
 });

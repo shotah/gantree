@@ -25,6 +25,8 @@ export type CraneFiles = {
   mcp: string | null;
   servers: McpServer[];
   env?: Record<string, EnvRow>;
+  /** Workspace addresses from credential filenames. Not token contents. */
+  googleAccounts?: string[];
   writable: boolean;
 };
 
@@ -188,6 +190,22 @@ export function useAgentDashboard(slug: string) {
     setNotice(data.detail || data.error || "auth");
     if (op === "exchange" && res.ok) {
       setAuthCode("");
+    }
+    setBusy(false);
+    refresh();
+  }
+
+  async function googleAccount(op: "remove" | "default", email: string | null) {
+    setBusy(true);
+    const res = await yardFetch(`/api/gantries/${slug}/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ op, email }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string; recreate?: boolean };
+    setNotice(data.detail || data.error || res.statusText);
+    if (res.ok && data.recreate) {
+      setEnvRecreateOpen(true);
     }
     setBusy(false);
     refresh();
@@ -470,6 +488,7 @@ export function useAgentDashboard(slug: string) {
     cloneTo,
     act,
     authOp,
+    googleAccount,
     toggleGrant,
     fetchBins,
     uploadPhoto,

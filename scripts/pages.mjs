@@ -186,7 +186,13 @@ function layout({
   </main>
   <footer class="foot">
     <div class="wrap">
-      <span>MIT · operator plane for <a href="${CRANE_REPO}">ai-gantry</a></span>
+      <span>MIT · the household</span>
+      <span>
+        <a href="${CRANE_REPO}">ai-gantry</a>
+        · <a href="https://github.com/shotah/gantry-pendant">pendant</a>
+        · <a href="https://github.com/shotah/gantry-cab">cab</a>
+        · <a href="https://github.com/shotah/gantry-helm">helm</a>
+      </span>
       <span><a href="${YARD_REPO}">github.com/shotah/gantree</a></span>
     </div>
   </footer>
@@ -196,7 +202,7 @@ function layout({
 }
 
 const HOME_DESCRIPTION
-  = "Shipping yard for personal agents. A long-horizon Go harness you run — not a Claude Code plugin marketplace.";
+  = "Front door for the household. One crane (ai-gantry), this yard, and mouths that dial one mailbox: pendant, cab, and helm.";
 
 export function buildPages(rootDir, outDir) {
   mkdirSync(outDir, { recursive: true });
@@ -206,7 +212,7 @@ export function buildPages(rootDir, outDir) {
 
   const homeBody = readFileSync(join(rootDir, "site", "home.html"), "utf8");
   writeFileSync(join(outDir, "index.html"), layout({
-    title: "gantree — shipping yard for personal agents",
+    title: "gantree — the household",
     description: HOME_DESCRIPTION,
     canonical: `${PAGES_ORIGIN}/`,
     depth: 0,

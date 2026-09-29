@@ -24,6 +24,7 @@ const EVENT_KINDS = [
   "env",
   "tags",
   "user",
+  "google-account",
   "allowlist",
   "telegram-profile",
   "telegram-new",

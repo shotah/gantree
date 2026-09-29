@@ -5,6 +5,7 @@ import { personaMarkdown, selfMarkdown } from "@/lib/yard/crane/seed";
 import { hostUserSpec } from "@/lib/yard/host/docker";
 import { isSecretKey, loadEnvFile, maskEnv, mergeEnv, writeEnvFile } from "@/lib/yard/host/envfile";
 import { parseMcpToml, preparePersonaBind, readText, writeText } from "@/lib/yard/host/files";
+import { listGoogleAccounts } from "@/lib/yard/tools/googleAccounts";
 
 export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: string }> }) => {
   const { slug } = await ctx.params;
@@ -30,6 +31,7 @@ export const GET = withDoor(async (req: Request, ctx: { params: Promise<{ slug: 
     mcp: readText(g.mcpManifest),
     servers: parseMcpToml(readText(g.mcpManifest)),
     env: maskEnv(env),
+    googleAccounts: listGoogleAccounts(g.dataDir),
     writable: Boolean(g.personaDir || g.mcpManifest || g.envFile) && Boolean(you && canMutateCrane(you, slug)),
   });
 });

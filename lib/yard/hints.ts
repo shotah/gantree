@@ -282,7 +282,7 @@ const ENV_HINTS: Record<string, HintCopy> = {
     example: "ada@example.com, 1182…:bob@example.com",
   },
   USER_GOOGLE_EMAIL: {
-    hint: "Default Google account for workspace tools (Gmail, Calendar, Drive). Not required for web_search. Not a password, not the AI Studio key.",
+    hint: "Optional default Workspace account (Gmail, Calendar, Drive). Leave blank when more than one account is signed in — each call must pass user_google_email. Not required for web_search. Not a password, not the AI Studio key.",
     example: "you@gmail.com",
   },
   BRAVE_SEARCH_API_KEY: {

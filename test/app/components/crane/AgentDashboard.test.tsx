@@ -58,10 +58,11 @@ function mockCrane(
     writable: boolean;
     env?: Record<string, { set: boolean; secret: boolean; value: string }>;
     servers?: { name: string; command?: string; env_keys?: string[] }[];
-    catalog?: { name: string; command: string; envKeys: string[]; optionalEnvKeys?: string[]; blurb: string }[];
+    catalog?: { name: string; command: string; envKeys: string[]; optionalEnvKeys?: string[]; auth_args?: string[]; blurb: string }[];
     tags?: string[];
     tagColors?: Record<string, string>;
     user?: string | null;
+    googleAccounts?: string[];
     channel?: string;
     avatarRev?: number | null;
   },
@@ -74,6 +75,7 @@ function mockCrane(
     tags: files.tags ?? [],
     tagColors: files.tagColors ?? {},
     user: files.user ?? null,
+    googleAccounts: files.googleAccounts ?? [],
     channel: files.channel ?? "telegram",
     avatarRev: files.avatarRev ?? null,
   };
@@ -129,6 +131,7 @@ function mockCrane(
         servers: disk.servers ?? [],
         env: disk.env ?? {},
         writable: disk.writable,
+        googleAccounts: disk.googleAccounts,
       });
     }
     if (u.includes("/doctor")) {
@@ -136,6 +139,18 @@ function mockCrane(
     }
     if (u.includes("/stats")) {
       return json({ host: [], turns: [], mcp: [], uptime: [] });
+    }
+    if (u.includes("/google") && init?.method === "POST") {
+      const body = JSON.parse(String(init.body)) as { op?: string; email?: string | null };
+      if (body.op === "remove" && body.email) {
+        disk.googleAccounts = disk.googleAccounts.filter((e) => e !== body.email);
+      }
+      return json({
+        ok: true,
+        accounts: disk.googleAccounts,
+        recreate: body.op === "default",
+        detail: body.op === "remove" ? `removed ${body.email}` : "default cleared — recreate to apply",
+      });
     }
     if (u.includes("/grant")) {
       return json({ catalog: disk.catalog ?? [] });
@@ -448,6 +463,44 @@ describe("AgentDashboard secrets", () => {
     await waitFor(() => expect(screen.getByLabelText("USER_GOOGLE_EMAIL")).toBeTruthy());
     expect((screen.getByLabelText("USER_GOOGLE_EMAIL") as HTMLInputElement).placeholder).toBe("");
     expect(screen.queryByRole("button", { name: /need a key/ })).toBeNull();
+  });
+
+  it("lists signed-in Google filenames and removes one account", async () => {
+    mockCrane({
+      persona: "# you\n",
+      self: "# me\n",
+      writable: true,
+      googleAccounts: ["ada@example.com", "ada@work.com"],
+      servers: [{ name: "google", command: "google-mcp" }],
+      catalog: [
+        {
+          name: "google",
+          command: "google-mcp",
+          envKeys: ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+          optionalEnvKeys: ["USER_GOOGLE_EMAIL"],
+          auth_args: ["auth"],
+          blurb: "Workspace.",
+        },
+      ],
+    });
+    render(<AgentDashboard slug="noodles" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "noodles" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Tools/ }));
+    await waitFor(() => expect(screen.getByText("ada@example.com, ada@work.com")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "add account" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Remove ada@work.com" })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Remove ada@work.com" }));
+    await waitFor(() =>
+      expect(
+        vi.mocked(yardFetch).mock.calls.some((c) => {
+          if (!String(c[0]).includes("/google") || c[1]?.method !== "POST") {
+            return false;
+          }
+          const body = JSON.parse(String(c[1]?.body ?? "{}")) as { op?: string; email?: string };
+          return body.op === "remove" && body.email === "ada@work.com";
+        }),
+      ).toBe(true),
+    );
   });
 
   it("keeps dots for an existing secret and still flags a missing one", async () => {
